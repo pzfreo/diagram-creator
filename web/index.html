@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Build123d Generator</title>
+    
+    <!-- 
+      Using Pyodide v0.29.0 
+      As requested, updating to the latest version to resolve micropip issues.
+    -->
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.29.0/full/pyodide.js"></script>
+
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; max-width: 900px; margin: 2rem auto; padding: 0 1rem; background: #f0f2f5; }
+        .container { background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: grid; grid-template-columns: 300px 1fr; gap: 2rem; }
+        .status-bar { background: #e0f2fe; color: #0369a1; padding: 10px; border-radius: 6px; margin-bottom: 20px; font-weight: bold; text-align: center; border: 1px solid #bae6fd; }
+        label { display: block; margin-top: 1rem; font-weight: 600; color: #4b5563; }
+        input { width: 100%; padding: 8px; margin-top: 4px; border: 1px solid #d1d5db; border-radius: 4px; box-sizing: border-box; }
+        button { width: 100%; margin-top: 20px; padding: 12px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; transition: background 0.2s; }
+        #gen-btn { background: #2563eb; color: white; }
+        #gen-btn:hover { background: #1d4ed8; }
+        #gen-btn:disabled { background: #93c5fd; cursor: not-allowed; }
+        #preview { border: 2px dashed #e5e7eb; display: flex; align-items: center; justify-content: center; min-height: 400px; background: #fafafa; border-radius: 8px; overflow: hidden; }
+        svg { max-width: 100%; max-height: 100%; }
+    </style>
+</head>
+<body>
+
+    <h1>📐 Build123d Generator</h1>
+    <div id="status" class="status-bar">⏳ Loading Python Engine...</div>
+
+    <div class="container">
+        <div class="controls">
+            <label>Length (mm)</label>
+            <input type="number" id="length" value="100">
+            <label>Width (mm)</label>
+            <input type="number" id="width" value="50">
+            <label>Hole Radius (mm)</label>
+            <input type="number" id="radius" value="10">
+
+            <button id="gen-btn" disabled onclick="runGeneration()">Generate Diagram</button>
+            <button id="dl-btn" onclick="downloadSVG()" style="background:#10b981; color:white; display:none; margin-top:10px;">Download SVG</button>
+        </div>
+
+        <div id="preview">
+            <span style="color: #9ca3af;">Preview will appear here</span>
+        </div>
+    </div>
+
+    <script>
+        let pyodide = null;
+        const statusEl = document.getElementById("status");
+        const btnEl = document.getElementById("gen-btn");
+
+        async function main() {
+            try {
+                // 1. Initialize Pyodide (v0.29.0)
+                pyodide = await loadPyodide();
+                statusEl.innerText = "📦 Configuring Environment...";
+
+                // 2. Load Micropip
+                await pyodide.loadPackage("micropip");
+                
+                // 3. Execute your snippet
+                await pyodide.runPythonAsync(`
+                    import micropip
+                    import js
+
+                    print("1. Setting Index URLs...")
+                    micropip.set_index_urls(["https://yeicor.github.io/OCP.wasm", "https://pypi.org/simple"])
+
+                    print("2. Installing lib3mf...")
+                    await micropip.install("lib3mf")
+                    
+                    print("3. Mocking py-lib3mf...")
+                    micropip.add_mock_package("py-lib3mf", "2.4.1", modules={"py_lib3mf": '''from lib3mf import *'''})
+
+                    print("4. Installing build123d & dependencies...")
+                    # We add svgpathtools and numpy here as they are needed for your logic
+                    await micropip.install(["build123d", "sqlite3", "svgpathtools", "numpy"])
+                    
+                    print("✅ Packages Installed!")
+                `);
+
+                // 4. Load Logic File
+                // FIX: Point to ../src/logic.py instead of ./logic.py
+                statusEl.innerText = "🐍 Loading Logic...";
+                const response = await fetch("../src/logic.py");
+                
+                if (!response.ok) {
+                    throw new Error(`Could not fetch logic.py (Status: ${response.status}). Ensure run_web.py is running from project root.`);
+                }
+                
+                const logicCode = await response.text();
+                pyodide.FS.writeFile("logic.py", logicCode);
+
+                // 5. Import Logic
+                await pyodide.runPythonAsync(`
+                    import logic
+                    from logic import generate_plate_svg
+                    print("✅ Logic Loaded")
+                `);
+
+                statusEl.innerText = "✅ Ready! Click Generate.";
+                statusEl.style.background = "#dcfce7";
+                statusEl.style.color = "#166534";
+                statusEl.style.border = "1px solid #bbf7d0";
+                btnEl.disabled = false;
+
+            } catch (err) {
+                statusEl.innerText = "❌ Error: " + err.message;
+                statusEl.style.background = "#fee2e2";
+                statusEl.style.color = "#991b1b";
+                console.error(err);
+            }
+        }
+
+        async function runGeneration() {
+            const l = document.getElementById("length").value;
+            const w = document.getElementById("width").value;
+            const r = document.getElementById("radius").value;
+
+            statusEl.innerText = "⚙️ Generating...";
+            
+            try {
+                const code = `logic.generate_plate_svg(${l}, ${w}, ${r})`;
+                const svgContent = await pyodide.runPythonAsync(code);
+
+                document.getElementById("preview").innerHTML = svgContent;
+                document.getElementById("dl-btn").style.display = "inline-block";
+                statusEl.innerText = "✅ Generated successfully";
+            } catch (err) {
+                alert("Generation Error: " + err.message);
+                statusEl.innerText = "❌ Generation Failed";
+                console.error(err);
+            }
+        }
+
+        function downloadSVG() {
+            const content = document.getElementById("preview").innerHTML;
+            const blob = new Blob([content], {type: 'image/svg+xml'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'diagram.svg';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+
+        main();
+    </script>
+</body>
+</html>
