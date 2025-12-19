@@ -8,23 +8,6 @@
     <!-- 1. Pyodide (Python Engine) -->
     <script src="https://cdn.jsdelivr.net/pyodide/v0.29.0/full/pyodide.js"></script>
 
-    <!-- 2. PDF Libraries -->
-    <!-- Load jsPDF -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    
-    <!-- 
-       CRITICAL FIX: svg2pdf expects 'window.jsPDF' to exist to extend it.
-       jsPDF 2.x puts it under 'window.jspdf.jsPDF', so we alias it here manually.
-    -->
-    <script>
-        if (window.jspdf && window.jspdf.jsPDF) {
-            window.jsPDF = window.jspdf.jsPDF;
-        }
-    </script>
-
-    <!-- Load svg2pdf (Must be loaded AFTER the shim above) -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/svg2pdf.js/2.2.1/svg2pdf.umd.min.js"></script>
-
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; max-width: 900px; margin: 2rem auto; padding: 0 1rem; background: #f0f2f5; }
         .container { background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: grid; grid-template-columns: 300px 1fr; gap: 2rem; }
@@ -63,7 +46,7 @@
             
             <div id="dl-buttons" class="btn-group">
                 <button id="dl-svg" onclick="downloadSVG()">SVG</button>
-                <button id="dl-pdf" onclick="downloadPDF()">PDF</button>
+                <button id="dl-pdf">PDF</button>
             </div>
         </div>
 
@@ -72,6 +55,7 @@
         </div>
     </div>
 
+    <!-- MAIN APP SCRIPT -->
     <script>
         let pyodide = null;
         const statusEl = document.getElementById("status");
@@ -79,13 +63,11 @@
 
         async function main() {
             try {
-                // Initialize Pyodide
                 pyodide = await loadPyodide();
                 statusEl.innerText = "📦 Configuring Environment...";
 
                 await pyodide.loadPackage("micropip");
                 
-                // Configure Environment
                 await pyodide.runPythonAsync(`
                     import micropip
                     import js
@@ -105,13 +87,22 @@
                     print("✅ Packages Installed!")
                 `);
 
-                // Load Logic
                 statusEl.innerText = "🐍 Loading Logic...";
-                const response = await fetch("./logic.py");
                 
+                // --- ROBUST FETCH LOGIC ---
+                // 1. Try fetching from the same directory (Production/GitHub Pages structure)
+                let response = await fetch("./logic.py");
+                
+                // 2. If that fails (404), assume we are in Local Dev mode and look in src/
                 if (!response.ok) {
-                    throw new Error(`Could not fetch logic.py. If running locally, ensure run_web.py is used.`);
+                    console.log("Production path failed, trying local development path...");
+                    response = await fetch("../src/logic.py");
                 }
+
+                if (!response.ok) {
+                    throw new Error(`Could not find logic.py in ./ (Prod) or ../src/ (Dev). Check your server.`);
+                }
+                // --------------------------
                 
                 const logicCode = await response.text();
                 pyodide.FS.writeFile("logic.py", logicCode);
@@ -148,10 +139,7 @@
                 const svgContent = await pyodide.runPythonAsync(code);
 
                 document.getElementById("preview").innerHTML = svgContent;
-                
-                // Show both download buttons
                 document.getElementById("dl-buttons").style.display = "flex";
-                
                 statusEl.innerText = "✅ Generated successfully";
             } catch (err) {
                 alert("Generation Error: " + err.message);
@@ -172,8 +160,15 @@
             document.body.removeChild(a);
         }
 
-        // --- PDF FUNCTION ---
-        async function downloadPDF() {
+        main();
+    </script>
+
+    <!-- PDF MODULE SCRIPT (ESM) -->
+    <script type="module">
+        import { jsPDF } from "https://cdn.jsdelivr.net/npm/jspdf@2.5.1/+esm";
+        import { svg2pdf } from "https://cdn.jsdelivr.net/npm/svg2pdf.js@2.2.4/+esm";
+
+        document.getElementById("dl-pdf").addEventListener("click", async () => {
             const svgElement = document.querySelector("#preview svg");
             
             if (!svgElement) {
@@ -182,21 +177,27 @@
             }
 
             try {
-                // Ensure jsPDF constructor is available
-                // window.jsPDF should now be populated by our shim in the <head>
-                const doc = new window.jsPDF({
+                const doc = new jsPDF({
                     orientation: 'landscape',
                     unit: 'mm',
                     format: 'a4'
                 });
 
-                // Add SVG to PDF
-                // svg2pdf extends the jsPDF object with .svg()
-                await doc.svg(svgElement, {
+                let width_mm, height_mm;
+                
+                if (svgElement.viewBox && svgElement.viewBox.baseVal) {
+                    width_mm = svgElement.viewBox.baseVal.width;
+                    height_mm = svgElement.viewBox.baseVal.height;
+                } else {
+                    width_mm = parseFloat(svgElement.getAttribute("width")) || 200;
+                    height_mm = parseFloat(svgElement.getAttribute("height")) || 100;
+                }
+
+                await svg2pdf(svgElement, doc, {
                     x: 10,
                     y: 10,
-                    width: 277,
-                    height: 190
+                    width: width_mm,
+                    height: height_mm
                 });
 
                 doc.save("diagram.pdf");
@@ -205,9 +206,7 @@
                 console.error(err);
                 alert("PDF Generation failed: " + err.message);
             }
-        }
-
-        main();
+        });
     </script>
 </body>
 </html>
