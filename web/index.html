@@ -5,11 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Build123d Generator</title>
     
-    <!-- 
-      Using Pyodide v0.29.0 
-      As requested, updating to the latest version to resolve micropip issues.
-    -->
+    <!-- 1. Pyodide (Python Engine) -->
     <script src="https://cdn.jsdelivr.net/pyodide/v0.29.0/full/pyodide.js"></script>
+
+    <!-- 2. PDF Libraries (New!) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/svg2pdf.js/2.2.1/svg2pdf.umd.min.js"></script>
 
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; max-width: 900px; margin: 2rem auto; padding: 0 1rem; background: #f0f2f5; }
@@ -21,6 +22,13 @@
         #gen-btn { background: #2563eb; color: white; }
         #gen-btn:hover { background: #1d4ed8; }
         #gen-btn:disabled { background: #93c5fd; cursor: not-allowed; }
+        
+        /* New styling for button group */
+        .btn-group { display: flex; gap: 10px; margin-top: 10px; display: none; }
+        .btn-group button { margin-top: 0; flex: 1; }
+        #dl-svg { background: #10b981; color: white; }
+        #dl-pdf { background: #ef4444; color: white; }
+
         #preview { border: 2px dashed #e5e7eb; display: flex; align-items: center; justify-content: center; min-height: 400px; background: #fafafa; border-radius: 8px; overflow: hidden; }
         svg { max-width: 100%; max-height: 100%; }
     </style>
@@ -40,7 +48,12 @@
             <input type="number" id="radius" value="10">
 
             <button id="gen-btn" disabled onclick="runGeneration()">Generate Diagram</button>
-            <button id="dl-btn" onclick="downloadSVG()" style="background:#10b981; color:white; display:none; margin-top:10px;">Download SVG</button>
+            
+            <!-- Download Buttons -->
+            <div id="dl-buttons" class="btn-group">
+                <button id="dl-svg" onclick="downloadSVG()">SVG</button>
+                <button id="dl-pdf" onclick="downloadPDF()">PDF</button>
+            </div>
         </div>
 
         <div id="preview">
@@ -55,14 +68,13 @@
 
         async function main() {
             try {
-                // 1. Initialize Pyodide (v0.29.0)
+                // Initialize Pyodide
                 pyodide = await loadPyodide();
                 statusEl.innerText = "📦 Configuring Environment...";
 
-                // 2. Load Micropip
                 await pyodide.loadPackage("micropip");
                 
-                // 3. Execute your snippet
+                // Configure Environment
                 await pyodide.runPythonAsync(`
                     import micropip
                     import js
@@ -77,25 +89,22 @@
                     micropip.add_mock_package("py-lib3mf", "2.4.1", modules={"py_lib3mf": '''from lib3mf import *'''})
 
                     print("4. Installing build123d & dependencies...")
-                    # We add svgpathtools and numpy here as they are needed for your logic
                     await micropip.install(["build123d", "sqlite3", "svgpathtools", "numpy"])
                     
                     print("✅ Packages Installed!")
                 `);
 
-                // 4. Load Logic File
-                // FIX: Point to ../src/logic.py instead of ./logic.py
+                // Load Logic
                 statusEl.innerText = "🐍 Loading Logic...";
-                const response = await fetch("../src/logic.py");
+                const response = await fetch("./logic.py");
                 
                 if (!response.ok) {
-                    throw new Error(`Could not fetch logic.py (Status: ${response.status}). Ensure run_web.py is running from project root.`);
+                    throw new Error(`Could not fetch logic.py. If running locally, ensure run_web.py is used.`);
                 }
                 
                 const logicCode = await response.text();
                 pyodide.FS.writeFile("logic.py", logicCode);
 
-                // 5. Import Logic
                 await pyodide.runPythonAsync(`
                     import logic
                     from logic import generate_plate_svg
@@ -128,7 +137,10 @@
                 const svgContent = await pyodide.runPythonAsync(code);
 
                 document.getElementById("preview").innerHTML = svgContent;
-                document.getElementById("dl-btn").style.display = "inline-block";
+                
+                // Show both download buttons
+                document.getElementById("dl-buttons").style.display = "flex";
+                
                 statusEl.innerText = "✅ Generated successfully";
             } catch (err) {
                 alert("Generation Error: " + err.message);
@@ -147,6 +159,41 @@
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
+        }
+
+        // --- NEW PDF FUNCTION ---
+        async function downloadPDF() {
+            const svgElement = document.querySelector("#preview svg");
+            
+            if (!svgElement) {
+                alert("Please generate a diagram first.");
+                return;
+            }
+
+            try {
+                const { jsPDF } = window.jspdf;
+                
+                // Create a PDF (A4 size, Landscape)
+                const doc = new jsPDF({
+                    orientation: 'landscape',
+                    unit: 'mm',
+                    format: 'a4'
+                });
+
+                // Convert the SVG Element to PDF
+                await doc.svg(svgElement, {
+                    x: 10,
+                    y: 10,
+                    width: 277,  // A4 width (297) - margins (20)
+                    height: 190  // A4 height (210) - margins (20)
+                });
+
+                doc.save("diagram.pdf");
+                
+            } catch (err) {
+                console.error(err);
+                alert("PDF Generation failed: " + err.message);
+            }
         }
 
         main();
