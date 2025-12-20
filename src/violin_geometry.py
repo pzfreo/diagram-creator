@@ -462,22 +462,211 @@ def generate_neck_svg(params: Dict[str, Any]) -> str:
     return svg_content
 
 
+def generate_side_view_svg(params: Dict[str, Any]) -> str:
+    """
+    MOCK: Generates side view showing neck profile, angle, and body joint.
+
+    In a real implementation, this would show:
+    - Neck thickness profile from nut to heel
+    - Neck angle relative to body
+    - Joint detail where neck meets body
+    - Side profile of scroll
+
+    Args:
+        params: Validated parameter dictionary
+
+    Returns:
+        SVG string of side view
+    """
+    neck_length = params.get('neck_length', 130.0)
+    thickness_nut = params.get('thickness_at_nut', 19.0)
+    thickness_heel = params.get('thickness_at_heel', 22.0)
+    scroll_diameter = params.get('scroll_diameter', 58.0)
+
+    # Mock: Create simple side profile
+    with BuildSketch() as side_view:
+        # Neck shaft (tapered thickness)
+        with BuildLine():
+            points = [
+                (0, 0),                               # Top at nut
+                (neck_length, 0),                     # Top at heel
+                (neck_length, -thickness_heel),       # Bottom at heel
+                (0, -thickness_nut),                  # Bottom at nut
+                (0, 0)                                # Close
+            ]
+            Polyline(*points)
+        make_face()
+
+        # Scroll side profile (simple circle)
+        with Locations((neck_length + scroll_diameter/2, -thickness_heel/2)):
+            Circle(scroll_diameter/2)
+
+        # Body joint indicator (simple rectangle)
+        with Locations((neck_length + 10, -thickness_heel - 15)):
+            Rectangle(20, 30)
+
+    # Export to SVG
+    exporter = ExportSVG(scale=1.0)
+    exporter.add_shape(side_view.sketch)
+
+    import tempfile
+    import os
+
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.svg', delete=False) as tmp:
+        temp_path = tmp.name
+
+    try:
+        exporter.write(temp_path)
+        with open(temp_path, 'r') as f:
+            svg_content = f.read()
+    finally:
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+
+    return svg_content
+
+
+def generate_top_view_svg(params: Dict[str, Any]) -> str:
+    """
+    MOCK: Generates top view showing fingerboard outline.
+
+    In a real implementation, this would show:
+    - Tapered fingerboard from nut to body
+    - Scroll from above
+    - String positions
+    - Reference centerline
+
+    Args:
+        params: Validated parameter dictionary
+
+    Returns:
+        SVG string of top view
+    """
+    # This is essentially what create_complete_template() does
+    # For now, reuse that function
+    generator = ViolinNeckGeometry(params)
+    template_sketch = generator.create_complete_template()
+
+    exporter = ExportSVG(scale=1.0)
+    exporter.add_shape(template_sketch)
+
+    import tempfile
+    import os
+
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.svg', delete=False) as tmp:
+        temp_path = tmp.name
+
+    try:
+        exporter.write(temp_path)
+        with open(temp_path, 'r') as f:
+            svg_content = f.read()
+    finally:
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+
+    return svg_content
+
+
+def generate_cross_section_svg(params: Dict[str, Any]) -> str:
+    """
+    MOCK: Generates cross-section at heel where neck joins body.
+
+    This is THE key diagram for neck shaping and joint fitting.
+
+    In a real implementation, this would show:
+    - Exact neck profile at the heel position
+    - Mortise dimensions for body joint
+    - Button placement
+    - String spacing at this point
+
+    Args:
+        params: Validated parameter dictionary
+
+    Returns:
+        SVG string of cross-section view
+    """
+    width_heel = params.get('width_at_heel', 27.0)
+    thickness_heel = params.get('thickness_at_heel', 22.0)
+    profile_type = params.get('profile_type', 'C_SHAPE')
+
+    # Generate the actual neck profile at heel position
+    generator = ViolinNeckGeometry(params)
+    profile_face = generator.create_neck_profile(position=1.0)  # 1.0 = heel
+
+    # Add body joint context (mortise outline)
+    with BuildSketch() as cross_section:
+        # Add the neck profile
+        add(profile_face)
+
+        # Add mortise outline (where neck inserts into body)
+        mortise_width = width_heel + 2
+        mortise_depth = 15
+
+        with Locations((0, -thickness_heel/2 - mortise_depth/2 - 2)):
+            Rectangle(mortise_width, mortise_depth, mode=Mode.PRIVATE)
+
+        # Add centerline reference
+        with BuildLine():
+            Line((0, thickness_heel), (0, -thickness_heel - mortise_depth - 5))
+
+    exporter = ExportSVG(scale=1.0)
+    exporter.add_shape(cross_section.sketch)
+
+    import tempfile
+    import os
+
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.svg', delete=False) as tmp:
+        temp_path = tmp.name
+
+    try:
+        exporter.write(temp_path)
+        with open(temp_path, 'r') as f:
+            svg_content = f.read()
+    finally:
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+
+    return svg_content
+
+
+def generate_multi_view_svg(params: Dict[str, Any]) -> dict:
+    """
+    Generates all three views for violin neck.
+
+    Args:
+        params: Validated parameter dictionary
+
+    Returns:
+        Dictionary with:
+        {
+            'side': SVG string,
+            'top': SVG string,
+            'cross_section': SVG string
+        }
+    """
+    return {
+        'side': generate_side_view_svg(params),
+        'top': generate_top_view_svg(params),
+        'cross_section': generate_cross_section_svg(params)
+    }
+
+
 if __name__ == '__main__':
     # Test with default parameters
     from violin_parameters import get_default_values
-    
+
     params = get_default_values()
-    
+
     print("Generating test template...")
     try:
         svg = generate_neck_svg(params)
         print(f"✓ Generated SVG ({len(svg)} bytes)")
-        
+
         # Save test output
         with open('test_neck_template.svg', 'w') as f:
             f.write(svg)
         print("✓ Saved to test_neck_template.svg")
-        
+
     except Exception as e:
         print(f"✗ Error: {e}")
         import traceback

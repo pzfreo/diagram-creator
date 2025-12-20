@@ -12,63 +12,67 @@ import json
 def generate_violin_neck(params_json: str) -> str:
     """
     Main entry point called from JavaScript.
-    
+
     Args:
         params_json: JSON string of parameter values
-        
+
     Returns:
         JSON string containing:
         {
             "success": bool,
-            "svg": str | null,
+            "views": {
+                "side": str,
+                "top": str,
+                "cross_section": str
+            } | null,
             "errors": List[str]
         }
     """
     try:
         # Parse parameters
         params = json.loads(params_json)
-        
+
         # Import here to ensure modules are loaded
         from violin_parameters import validate_parameters
-        from violin_geometry import generate_neck_svg
-        
+        from violin_geometry import generate_multi_view_svg
+
         # Validate parameters
         is_valid, errors = validate_parameters(params)
-        
+
         if not is_valid:
             return json.dumps({
                 "success": False,
-                "svg": None,
+                "views": None,
                 "errors": errors
             })
-        
-        # Generate geometry
+
+        # Generate geometry (all 3 views)
         try:
-            svg_content = generate_neck_svg(params)
-            
+            views = generate_multi_view_svg(params)
+
             return json.dumps({
                 "success": True,
-                "svg": svg_content,
+                "views": views,
                 "errors": []
             })
-            
+
         except Exception as e:
             return json.dumps({
                 "success": False,
-                "svg": None,
+                "views": None,
                 "errors": [f"Geometry generation failed: {str(e)}"]
             })
-            
+
     except json.JSONDecodeError as e:
         return json.dumps({
             "success": False,
-            "svg": None,
+            "views": None,
             "errors": [f"Invalid parameter JSON: {str(e)}"]
         })
     except Exception as e:
         return json.dumps({
             "success": False,
-            "svg": None,
+            "views": None,
             "errors": [f"Unexpected error: {str(e)}"]
         })
 
@@ -124,10 +128,13 @@ if __name__ == '__main__':
     print("\n2. Testing generation...")
     result = generate_violin_neck(params_json)
     result_data = json.loads(result)
-    
+
     if result_data['success']:
         print(f"✓ Generation successful!")
-        print(f"  SVG size: {len(result_data['svg'])} bytes")
+        views = result_data['views']
+        print(f"  Side view: {len(views['side'])} bytes")
+        print(f"  Top view: {len(views['top'])} bytes")
+        print(f"  Cross-section: {len(views['cross_section'])} bytes")
     else:
         print(f"✗ Generation failed:")
         for error in result_data['errors']:
