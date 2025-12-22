@@ -99,7 +99,7 @@ class BooleanParameter:
     default: bool
     description: str
     category: str
-    
+
     def to_dict(self) -> dict:
         return {
             'type': 'boolean',
@@ -111,11 +111,43 @@ class BooleanParameter:
         }
 
 
+@dataclass
+class StringParameter:
+    """Text/string parameter"""
+    name: str
+    label: str
+    default: str
+    description: str
+    category: str
+    max_length: int = 100
+
+    def to_dict(self) -> dict:
+        return {
+            'type': 'string',
+            'name': self.name,
+            'label': self.label,
+            'default': self.default,
+            'description': self.description,
+            'category': self.category,
+            'max_length': self.max_length
+        }
+
+
 # ============================================
 # PARAMETER DEFINITIONS - YOUR FOCUS AREA
 # ============================================
 
 INSTRUMENT_PARAMETERS = {
+    # Instrument Name
+    'instrument_name': StringParameter(
+        name='instrument_name',
+        label='Instrument Name',
+        default='My Instrument',
+        description='Name/label for this instrument (used in filenames)',
+        category='General',
+        max_length=50
+    ),
+
     # # Instrument Type
     # 'instrument_type': EnumParameter(
     #     name='instrument_type',
@@ -474,13 +506,15 @@ def get_parameters_as_json() -> str:
 def get_default_values() -> Dict[str, Any]:
     """Returns dictionary of all default parameter values"""
     defaults = {}
-    
+
     for name, param in INSTRUMENT_PARAMETERS.items():
         if isinstance(param, EnumParameter):
             defaults[name] = param.default.name
+        elif isinstance(param, StringParameter):
+            defaults[name] = param.default
         else:
             defaults[name] = param.default
-            
+
     return defaults
 
 

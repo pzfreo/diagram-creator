@@ -487,11 +487,26 @@ def generate_side_view_svg(params: Dict[str, Any]) -> str:
     body_width = params.get('body_width')
     overstand = params.get('overstand', 0)
     fb_thickness_at_nut = params.get('fb_thickness_at_nut', 5.0)
+    fb_thickness_at_join = params.get('fb_thickness_at_join', 7.0)
     string_height_nut = params.get('string_height_nut', 0.5)
+    string_height_eof = params.get('string_height_eof', 4.0)
+    fingerboard_length = params.get('fingerboard_length', 270.0)
+    instrument_name = params.get('instrument_name', 'Instrument')
+    generator_url = params.get('_generator_url', 'https://github.com/pzfreo/diagram-creator')
 
-    # Calculate neck angle
+    # Calculate neck angle precisely (without rounding) for accurate geometry
+    string_height_at_join = (string_height_eof - string_height_nut) * (neck_stop / fingerboard_length) + string_height_nut
+    opposite = arching_height + bridge_height - overstand - fb_thickness_at_join - string_height_at_join
+    string_angle_to_ribs = math.atan(opposite / body_stop) * 180 / math.pi
+    opposite_string_to_fb = string_height_eof - string_height_nut
+    string_angle_to_fb = math.atan(opposite_string_to_fb / fingerboard_length) * 180 / math.pi
+    opposite_fb = fb_thickness_at_join - fb_thickness_at_nut
+    fingerboard_angle = math.atan(opposite_fb / neck_stop) * 180 / math.pi
+    neck_angle_deg = 90 - (string_angle_to_ribs - string_angle_to_fb - fingerboard_angle)
+
+    # Get rounded value for display only
     derived = calculate_derived_values(params)
-    neck_angle_deg = derived.get('Neck Angle', 0)
+    neck_angle_deg_display = derived.get('Neck Angle', 0)
 
     # Export to SVG
     exporter = ExportSVG(scale=1.0,unit=Unit.MM, line_weight=0.5)
@@ -598,14 +613,111 @@ def generate_side_view_svg(params: Dict[str, Any]) -> str:
     radius_line_2 = Edge.make_line((neck_end_x, neck_end_y), nut_arc_points[-1])
     exporter.add_shape(radius_line_2, layer="schematic")
 
-    # Add angle annotation between the two lines
+    # Add angle annotation between the two lines (use rounded value for display)
     for shape, layer in create_angle_dimension(neck_vertical_line, neck_angled_line,
-                                              label=f"{neck_angle_deg:.1f}°",
+                                              label=f"{neck_angle_deg_display:.1f}°",
                                               arc_radius=12, line_extension=0):
         exporter.add_shape(shape, layer=layer)
 
+    # Add fingerboard
+    # Fingerboard bottom: runs along the neck surface from nut toward body for length fingerboard_length
+    # Need to reverse direction (add π) since neck_line_angle points from body to nut
+    fb_direction_angle = neck_line_angle + math.pi
+    fb_bottom_end_x = neck_end_x + fingerboard_length * math.cos(fb_direction_angle)
+    fb_bottom_end_y = neck_end_y + fingerboard_length * math.sin(fb_direction_angle)
+    fb_bottom_line = Edge.make_line((neck_end_x, neck_end_y), (fb_bottom_end_x, fb_bottom_end_y))
+    exporter.add_shape(fb_bottom_line, layer="drawing")
+
+    # Fingerboard left edge (at nut): perpendicular to bottom, length fb_thickness_at_nut
+    fb_top_left_x = neck_end_x + fb_thickness_at_nut * math.cos(fb_direction_angle + math.pi/2)
+    fb_top_left_y = neck_end_y + fb_thickness_at_nut * math.sin(fb_direction_angle + math.pi/2)
+    fb_left_edge = Edge.make_line((neck_end_x, neck_end_y), (fb_top_left_x, fb_top_left_y))
+    exporter.add_shape(fb_left_edge, layer="drawing")
+
+    # Fingerboard top edge: extrapolate thickness from nut to join, then continue to end
+    # At join (neck_stop distance), thickness = fb_thickness_at_join
+    # At end (fingerboard_length), extrapolate linearly
+    fb_thickness_at_end = fb_thickness_at_nut + (fb_thickness_at_join - fb_thickness_at_nut) * (fingerboard_length / neck_stop)
+
+    # Top right corner: offset perpendicular from bottom right corner
+    fb_top_right_x = fb_bottom_end_x + fb_thickness_at_end * math.cos(fb_direction_angle + math.pi/2)
+    fb_top_right_y = fb_bottom_end_y + fb_thickness_at_end * math.sin(fb_direction_angle + math.pi/2)
+    fb_top_edge = Edge.make_line((fb_top_left_x, fb_top_left_y), (fb_top_right_x, fb_top_right_y))
+    exporter.add_shape(fb_top_edge, layer="drawing")
+
+    # Fingerboard right edge: closes the rectangle
+    fb_right_edge = Edge.make_line((fb_bottom_end_x, fb_bottom_end_y), (fb_top_right_x, fb_top_right_y))
+    exporter.add_shape(fb_right_edge, layer="drawing")
+
+    # Add strings from top of nut to top of bridge
+    # Top of nut: the outermost point of the nut quarter circle (perpendicular to neck surface)
+    # Using the same direction as the rotated nut (neck_line_angle - math.pi/2)
+    nut_top_x = neck_end_x + nut_radius * math.cos(neck_line_angle - math.pi/2)
+    nut_top_y = neck_end_y + nut_radius * math.sin(neck_line_angle - math.pi/2)
+
+    # Top of bridge: at (body_stop, arching_height + bridge_height)
+    bridge_top_x = body_stop
+    bridge_top_y = arching_height + bridge_height
+
+    # Draw string line
+    string_line = Edge.make_line((nut_top_x, nut_top_y), (bridge_top_x, bridge_top_y))
+    exporter.add_shape(string_line, layer="drawing")
+
+    # Calculate string height above end of fingerboard (perpendicular to fingerboard surface)
+    # Find the position along the fingerboard bottom at fingerboard_length
+    # This is the same as fb_bottom_end position
+
+    # Find where the string crosses at this position along the fingerboard
+    # We need to find the intersection or projection
+    # String line goes from (nut_top_x, nut_top_y) to (bridge_top_x, bridge_top_y)
+    # We want to find the string position at the same distance along the fingerboard as fb_bottom_end
+
+    # Use parametric approach: find string position at the x,y position of fingerboard end
+    # Calculate where string intersects with perpendicular from fingerboard end
+    string_dx = bridge_top_x - nut_top_x
+    string_dy = bridge_top_y - nut_top_y
+
+    # Vector from nut to fingerboard end (along fingerboard)
+    fb_dx = fb_bottom_end_x - neck_end_x
+    fb_dy = fb_bottom_end_y - neck_end_y
+
+    # Find parameter t along string line for the position above fingerboard end
+    # Project the fingerboard endpoint onto the string line direction
+    if string_dx != 0:
+        t = fb_dx / string_dx
+    else:
+        t = fb_dy / string_dy if string_dy != 0 else 0
+
+    string_x_at_fb_end = nut_top_x + t * string_dx
+    string_y_at_fb_end = nut_top_y + t * string_dy
+
+    # Calculate perpendicular distance from string point to fingerboard top surface
+    # Vector from fingerboard top surface to string
+    vec_x = string_x_at_fb_end - fb_top_right_x
+    vec_y = string_y_at_fb_end - fb_top_right_y
+
+    # Perpendicular direction to fingerboard (fb_direction_angle + pi/2)
+    perp_angle = fb_direction_angle + math.pi/2
+    perp_dx = math.cos(perp_angle)
+    perp_dy = math.sin(perp_angle)
+
+    # Project vector onto perpendicular direction (dot product)
+    string_height_at_fb_end = vec_x * perp_dx + vec_y * perp_dy
+
+    # Point on fingerboard surface directly below string (for dimension line)
+    fb_surface_point_x = string_x_at_fb_end - string_height_at_fb_end * perp_dx
+    fb_surface_point_y = string_y_at_fb_end - string_height_at_fb_end * perp_dy
+
     # Add dimension annotations using helper functions
     dim_font_size = 8*PTS_MM
+
+    # Dimension: string height above end of fingerboard (perpendicular)
+    string_height_feature_line = Edge.make_line((fb_surface_point_x, fb_surface_point_y),
+                                                 (string_x_at_fb_end, string_y_at_fb_end))
+    for shape, layer in create_vertical_dimension(string_height_feature_line,
+                                                   f"{string_height_at_fb_end:.1f}",
+                                                   offset_x=8, font_size=dim_font_size):
+        exporter.add_shape(shape, layer=layer)
 
     # Dimension: horizontal distance from nut to x=0 (neck projection)
     # The nut is at (neck_end_x, neck_end_y), we want horizontal distance to (0, neck_end_y)
@@ -668,10 +780,23 @@ def generate_side_view_svg(params: Dict[str, Any]) -> str:
     # Highest point is the top of the bridge line
     max_y = arching_height + bridge_height
     title_gap = 10  # 1cm gap
-    title_text = Text("Side View", 12*PTS_MM, font=font_name)
-    # Rough centering: "Side View" at 12pt is ~30mm wide, so offset by ~15mm
-    title_text = title_text.move(Location((body_length/2 - 15, max_y + title_gap)))
+    title_font_size = 14*PTS_MM
+    title_text = Text(instrument_name, title_font_size, font=font_name)
+    # Center the title (approximate centering based on character width)
+    title_width_approx = len(instrument_name) * title_font_size * 0.6
+    title_text = title_text.move(Location((body_length/2 - title_width_approx/2, max_y + title_gap)))
     exporter.add_shape(title_text, layer="text")
+
+    # Find the minimum y coordinate to place footer below everything
+    # The lowest point is from the dimension lines below the body
+    bottom_y = belly_edge_thickness - rib_height
+    min_y = bottom_y - 30 - 15  # Below the body_length dimension line (-30) and gap (-15)
+
+    # Footer text - small text with generator URL
+    footer_font_size = 6*PTS_MM
+    footer_text = Text(f"Generated by {generator_url}", footer_font_size, font=font_name)
+    footer_text = footer_text.move(Location((0, min_y)))
+    exporter.add_shape(footer_text, layer="text")
 
     return exporter_to_svg(exporter)
     

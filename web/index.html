@@ -515,6 +515,62 @@
             opacity: 0.3;
         }
 
+        .dimensions-table-container {
+            width: 100%;
+            height: 100%;
+            overflow-y: auto;
+            padding: 1rem;
+            background: white;
+            border-radius: 8px;
+        }
+
+        .dimensions-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        .dimensions-table th {
+            background: #8B4513;
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid #6B3410;
+        }
+
+        .dimensions-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .dimensions-table tr:hover {
+            background: #f9fafb;
+        }
+
+        .dimensions-table .category-header {
+            background: #f3f4f6;
+            font-weight: 600;
+            color: #374151;
+            padding: 8px 12px;
+        }
+
+        .dimensions-table .param-name {
+            font-weight: 500;
+            color: #1f2937;
+        }
+
+        .dimensions-table .param-value {
+            color: #4b5563;
+            text-align: right;
+        }
+
+        .dimensions-table .param-unit {
+            color: #6b7280;
+            font-size: 0.85rem;
+            font-style: italic;
+        }
+
         .error-panel {
             background: #fee2e2;
             border: 2px solid #fecaca;
@@ -669,6 +725,9 @@
                         <button class="view-tab" data-view="cross_section" onclick="switchView('cross_section')">
                             Cross-Section
                         </button>
+                        <button class="view-tab" data-view="dimensions" onclick="switchView('dimensions')">
+                            Dimensions
+                        </button>
                     </div>
 
                     <div id="zoom-controls" class="zoom-controls">
@@ -678,7 +737,6 @@
                     </div>
 
                     <div id="download-buttons" class="download-buttons">
-                        <button class="btn-svg" id="dl-svg" onclick="downloadSVG()" disabled>📥 SVG</button>
                         <button class="btn-pdf" id="dl-pdf" onclick="downloadPDF()" disabled>📄 PDF</button>
                     </div>
                 </div>
@@ -707,12 +765,13 @@
         window.state = {
             pyodide: null,
             isGenerating: false,
-            views: null,              // Stores all 3 SVG views
+            views: null,              // Stores all 3 SVG views + dimensions table
             currentView: 'side',      // Currently displayed view (default to side)
             svgCanvas: null,          // SVG.js canvas for zoom/pan
             initialViewBox: null,     // Initial viewBox for zoom reset
             parameterDefinitions: null,
-            presets: null
+            presets: null,
+            derivedValues: null       // Stores calculated derived values
         };
 
         const state = window.state;  // Local reference
@@ -728,7 +787,6 @@
             presetSelect: document.getElementById('preset'),
             viewTabs: document.getElementById('view-tabs'),
             zoomControls: document.getElementById('zoom-controls'),
-            dlSvg: document.getElementById('dl-svg'),
             dlPdf: document.getElementById('dl-pdf')
         };
 
@@ -948,6 +1006,26 @@
                 checkboxDiv.appendChild(input);
                 checkboxDiv.appendChild(label);
                 group.appendChild(checkboxDiv);
+
+            } else if (param.type === 'string') {
+                const labelDiv = document.createElement('div');
+                labelDiv.className = 'param-label';
+
+                const label = document.createElement('label');
+                label.textContent = param.label;
+                label.htmlFor = name;
+                labelDiv.appendChild(label);
+                group.appendChild(labelDiv);
+
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.id = name;
+                input.name = name;
+                input.value = param.default;
+                input.maxLength = param.max_length || 100;
+                input.addEventListener('change', hideErrors);
+                input.addEventListener('input', debounce(updateDerivedValues, 300));
+                group.appendChild(input);
             }
 
             if (param.description) {
@@ -1004,12 +1082,68 @@
                     params[name] = parseFloat(element.value);
                 } else if (param.type === 'boolean') {
                     params[name] = element.checked;
+                } else if (param.type === 'string') {
+                    params[name] = element.value;
                 } else if (param.type === 'enum') {
                     params[name] = element.value;
                 }
             }
 
             return params;
+        }
+
+        function generateDimensionsTableHTML(params, derivedValues) {
+            const categories = state.parameterDefinitions.categories || [];
+            const paramDefs = state.parameterDefinitions.parameters || {};
+
+            let html = '<div class="dimensions-table-container">';
+            html += '<table class="dimensions-table">';
+            html += '<thead><tr><th>Parameter</th><th>Value</th></tr></thead>';
+            html += '<tbody>';
+
+            // Group parameters by category
+            for (const category of categories) {
+                // Add category header
+                html += `<tr><td colspan="2" class="category-header">${category}</td></tr>`;
+
+                // Add parameters in this category
+                for (const [name, param] of Object.entries(paramDefs)) {
+                    if (param.category !== category) continue;
+
+                    const value = params[name];
+                    let displayValue = value;
+
+                    // Format the value based on type
+                    if (param.type === 'number') {
+                        displayValue = `${value} <span class="param-unit">${param.unit}</span>`;
+                    } else if (param.type === 'boolean') {
+                        displayValue = value ? 'Yes' : 'No';
+                    } else if (param.type === 'enum') {
+                        // Find the label for this enum value
+                        const option = param.options.find(opt => opt.value === value);
+                        displayValue = option ? option.label : value;
+                    }
+
+                    html += `<tr>`;
+                    html += `<td class="param-name">${param.label}</td>`;
+                    html += `<td class="param-value">${displayValue}</td>`;
+                    html += `</tr>`;
+                }
+            }
+
+            // Add derived/calculated values section
+            if (derivedValues && Object.keys(derivedValues).length > 0) {
+                html += `<tr><td colspan="2" class="category-header">Calculated Values</td></tr>`;
+                for (const [label, value] of Object.entries(derivedValues)) {
+                    html += `<tr>`;
+                    html += `<td class="param-name">${label}</td>`;
+                    html += `<td class="param-value">${value}</td>`;
+                    html += `</tr>`;
+                }
+            }
+
+            html += '</tbody></table></div>';
+            return html;
         }
 
         async function generateNeck() {
@@ -1023,6 +1157,8 @@
 
             try {
                 const params = collectParameters();
+                // Add current URL for footer
+                params._generator_url = window.location.href;
                 const paramsJson = JSON.stringify(params);
 
                 const resultJson = await state.pyodide.runPythonAsync(`
@@ -1036,11 +1172,21 @@
                     // Store all views
                     state.views = result.views;
 
+                    // Get derived values for dimensions table
+                    const derivedResultJson = await state.pyodide.runPythonAsync(`
+                        from instrument_generator import get_derived_values
+                        get_derived_values('${paramsJson.replace(/'/g, "\\'")}')
+                    `);
+                    const derivedResult = JSON.parse(derivedResultJson);
+                    state.derivedValues = derivedResult.success ? derivedResult.values : {};
+
+                    // Generate dimensions table view
+                    state.views.dimensions = generateDimensionsTableHTML(params, state.derivedValues);
+
                     // Display current view
                     displayCurrentView();
 
                     // Enable download buttons
-                    elements.dlSvg.disabled = false;
                     elements.dlPdf.disabled = false;
                     elements.preview.classList.add('has-content');
 
@@ -1075,6 +1221,28 @@
 
             // Clear container
             elements.preview.innerHTML = '';
+
+            // Handle dimensions table view differently
+            if (state.currentView === 'dimensions') {
+                // Hide zoom controls for table view
+                elements.zoomControls.style.display = 'none';
+
+                // Display the table HTML directly
+                elements.preview.innerHTML = state.views[state.currentView];
+
+                // Update tab highlighting
+                document.querySelectorAll('.view-tab').forEach(tab => {
+                    if (tab.dataset.view === state.currentView) {
+                        tab.classList.add('active');
+                    } else {
+                        tab.classList.remove('active');
+                    }
+                });
+                return;
+            }
+
+            // Show zoom controls for SVG views
+            elements.zoomControls.style.display = 'flex';
 
             // Create SVG.js canvas (CSS handles sizing with width/height 100%)
             state.svgCanvas = SVG()
@@ -1164,6 +1332,17 @@
             }
         }
 
+        function sanitizeFilename(name) {
+            // Remove or replace characters not allowed in filenames
+            return name.replace(/[<>:"/\\|?*]/g, '_').replace(/\s+/g, '_');
+        }
+
+        function getInstrumentFilename() {
+            const params = collectParameters();
+            const instrumentName = params.instrument_name || 'instrument';
+            return sanitizeFilename(instrumentName);
+        }
+
         function downloadSVG() {
             if (!state.views || !state.views[state.currentView]) {
                 alert('Please generate a template first.');
@@ -1176,12 +1355,13 @@
                 'cross_section': 'cross-section'
             };
 
+            const filename = getInstrumentFilename();
             const svgContent = state.views[state.currentView];
             const blob = new Blob([svgContent], { type: 'image/svg+xml' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `instrument_neck_${viewNames[state.currentView]}.svg`;
+            a.download = `${filename}_${viewNames[state.currentView]}.svg`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
@@ -1216,8 +1396,9 @@
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
+            const filename = getInstrumentFilename();
             const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
-            a.download = `instrument_params_${timestamp}.json`;
+            a.download = `${filename}_params_${timestamp}.json`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
@@ -1347,6 +1528,7 @@
     </script>
 
     <!-- PDF Export (optional) -->
+    <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
     <script type="module">
         import { jsPDF } from "https://cdn.jsdelivr.net/npm/jspdf@2.5.1/+esm";
         import { svg2pdf } from "https://cdn.jsdelivr.net/npm/svg2pdf.js@2.2.4/+esm";
@@ -1358,8 +1540,93 @@
             }
 
             try {
+                const currentView = window.state.currentView;
+
+                // Handle dimensions table view differently
+                if (currentView === 'dimensions') {
+                    const doc = new jsPDF({
+                        orientation: 'portrait',
+                        unit: 'mm',
+                        format: 'a4'
+                    });
+
+                    // Get parameters and derived values
+                    const params = collectParameters();
+                    const derivedValues = window.state.derivedValues || {};
+                    const paramDefs = window.state.parameterDefinitions.parameters || {};
+                    const categories = window.state.parameterDefinitions.categories || [];
+
+                    // Add title
+                    const instrumentName = params.instrument_name || 'Instrument';
+                    doc.setFontSize(16);
+                    doc.text(`${instrumentName} - Dimensions`, 105, 15, { align: 'center' });
+
+                    let yPos = 25;
+
+                    // Create table data grouped by category
+                    for (const category of categories) {
+                        const categoryRows = [];
+
+                        for (const [name, param] of Object.entries(paramDefs)) {
+                            if (param.category !== category) continue;
+
+                            const value = params[name];
+                            let displayValue = value;
+
+                            // Format the value based on type
+                            if (param.type === 'number') {
+                                displayValue = `${value} ${param.unit}`;
+                            } else if (param.type === 'boolean') {
+                                displayValue = value ? 'Yes' : 'No';
+                            } else if (param.type === 'enum') {
+                                const option = param.options.find(opt => opt.value === value);
+                                displayValue = option ? option.label : value;
+                            }
+
+                            categoryRows.push([param.label, displayValue]);
+                        }
+
+                        if (categoryRows.length > 0) {
+                            doc.autoTable({
+                                startY: yPos,
+                                head: [[category, '']],
+                                body: categoryRows,
+                                theme: 'grid',
+                                headStyles: { fillColor: [139, 69, 19], fontSize: 12, fontStyle: 'bold' },
+                                margin: { left: 15, right: 15 },
+                                columnStyles: {
+                                    0: { cellWidth: 100 },
+                                    1: { cellWidth: 75, halign: 'right' }
+                                }
+                            });
+                            yPos = doc.lastAutoTable.finalY + 5;
+                        }
+                    }
+
+                    // Add derived values
+                    if (Object.keys(derivedValues).length > 0) {
+                        const derivedRows = Object.entries(derivedValues).map(([label, value]) => [label, value]);
+                        doc.autoTable({
+                            startY: yPos,
+                            head: [['Calculated Values', '']],
+                            body: derivedRows,
+                            theme: 'grid',
+                            headStyles: { fillColor: [139, 69, 19], fontSize: 12, fontStyle: 'bold' },
+                            margin: { left: 15, right: 15 },
+                            columnStyles: {
+                                0: { cellWidth: 100 },
+                                1: { cellWidth: 75, halign: 'right' }
+                            }
+                        });
+                    }
+
+                    const filename = sanitizeFilename(instrumentName);
+                    doc.save(`${filename}_dimensions.pdf`);
+                    return;
+                }
+
                 // Use the raw SVG content from state, not the DOM element
-                const svgContent = window.state.views[window.state.currentView];
+                const svgContent = window.state.views[currentView];
 
                 // Create a temporary SVG element from the raw content
                 const parser = new DOMParser();
@@ -1449,9 +1716,14 @@
                     'cross_section': 'cross-section'
                 };
 
+                // Get instrument name for filename
+                const params = collectParameters();
+                const instrumentName = params.instrument_name || 'instrument';
+                const filename = sanitizeFilename(instrumentName);
+
                 const currentView = window.state.currentView;
                 console.log(`PDF: ${selectedFormat.name.toUpperCase()} ${selectedOrientation}, SVG size: ${svgWidth}x${svgHeight}mm`);
-                doc.save(`instrument_neck_${viewNames[currentView]}_${selectedFormat.name}.pdf`);
+                doc.save(`${filename}_${viewNames[currentView]}_${selectedFormat.name}.pdf`);
 
             } catch (error) {
                 console.error('PDF error:', error);
