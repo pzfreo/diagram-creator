@@ -238,6 +238,19 @@ INSTRUMENT_PARAMETERS = {
         step=0.1
     ),
 
+    # Belly edge thickness
+    'belly_edge_thickness': NumericParameter(
+        name='belly_edge_thickness',
+        label='Belly Edge Thickness',
+        unit='mm',
+        default=3.5,
+        min_val=0.0,
+        max_val=10.0,
+        description='Thickness of belly (top plate) at the edge',
+        category='Basic Dimensions',
+        step=0.1
+    ),
+
     # Bridge Height
     'bridge_height': NumericParameter(
         name='bridge_height',

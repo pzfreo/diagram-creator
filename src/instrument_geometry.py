@@ -307,32 +307,40 @@ def generate_side_view_svg(params: Dict[str, Any]) -> str:
     neck_thickness_at_first = params.get('neck_thickness_at_first')
     neck_thickness_at_seventh = params.get('neck_thickness_at_seventh')
     bridge_height = params.get('bridge_height')
+    belly_edge_thickness = params.get('belly_edge_thickness')
 
     # Export to SVG
     exporter = ExportSVG(scale=1.0,unit=Unit.MM, line_weight=0.5)
     exporter.add_layer("text",fill_color=(0,0,255),line_type=LineType.HIDDEN)
     exporter.add_layer("drawing",fill_color=None, line_color=(0,0,0),line_type=LineType.CONTINUOUS)
+    exporter.add_layer("schematic",fill_color=None, line_color=(0,0,0),line_type=LineType.DASHED)
     exporter.add_layer("dimensions",fill_color=(255,0,0), line_color=(255,0,0),line_type=LineType.DASHED)
     exporter.add_layer("extensions",fill_color=None, line_color=(255,0,0),line_type=LineType.CONTINUOUS)
     exporter.add_layer("arrows",fill_color=(255,0,0), line_color=(255,0,0),line_type=LineType.CONTINUOUS)
 
-    # Add rectangle for body with top-left corner at (0,0)
+    # Add belly edge thickness rectangle at top
+    belly_rect = Rectangle(width=body_length, height=belly_edge_thickness)
+    belly_rect = belly_rect.move(Location((body_length/2, belly_edge_thickness/2)))
+    exporter.add_shape(belly_rect, layer="drawing")
+
+    # Add rectangle for body (ribs) with top at belly edge thickness
     # Rectangle is centered by default, so we need to move it
     rect = Rectangle(width=body_length, height=rib_height)
-    rect = rect.move(Location((body_length/2, -rib_height/2)))
+    rect = rect.move(Location((body_length/2, belly_edge_thickness - rib_height/2)))
     exporter.add_shape(rect, layer="drawing")
 
-    # Add arched top curve through three points:
-    # - Top left corner: (0, 0)
+    # Add arched top curve through three points (schematic/approximate):
+    # - Start from bottom of belly: (0, belly_edge_thickness)
     # - Peak at body_stop: (body_stop, arching_height)
-    # - Top right corner: (body_length, 0)
+    # - End at bottom of belly: (body_length, belly_edge_thickness)
+    # Note: Using dashed line to indicate this is an approximate representation
     arch_points = [
-        (0, 0),
+        (0, belly_edge_thickness),
         (body_stop, arching_height),
-        (body_length, 0)
+        (body_length, belly_edge_thickness)
     ]
     arch_curve = Spline(*arch_points)
-    exporter.add_shape(arch_curve, layer="drawing")
+    exporter.add_shape(arch_curve, layer="schematic")
 
     # Add vertical line from arch peak extending by bridge_height
     bridge_line = Edge.make_line((body_stop, arching_height), (body_stop, arching_height + bridge_height))
@@ -359,35 +367,48 @@ def generate_side_view_svg(params: Dict[str, Any]) -> str:
     # Add dimension annotations using helper functions
     dim_font_size = 8*PTS_MM
 
-    # Dimension: arching_height (vertical, from base to arch peak)
+    # Dimension: arching_height (vertical, from top of belly to arch peak - includes belly thickness)
     arch_feature_line = Edge.make_line((body_stop, 0), (body_stop, arching_height))
     for shape, layer in create_vertical_dimension(arch_feature_line, f"{arching_height:.1f}",
                                                    offset_x=8, font_size=dim_font_size):
         exporter.add_shape(shape, layer=layer)
 
-    # Dimension: body_stop (horizontal, at bottom)
-    body_stop_feature_line = Edge.make_line((0, -rib_height), (body_stop, -rib_height))
+    # Dimension: body_stop (horizontal, with extension lines below body)
+    bottom_y = belly_edge_thickness - rib_height
+    body_stop_feature_line = Edge.make_line((0, bottom_y), (body_stop, bottom_y))
     for shape, layer in create_horizontal_dimension(body_stop_feature_line, f"{body_stop:.1f}",
-                                                     offset_y=-10, font_size=dim_font_size):
+                                                     offset_y=-15, extension_length=3, font_size=dim_font_size):
         exporter.add_shape(shape, layer=layer)
 
-    # Dimension: body_length (horizontal, at bottom below body_stop)
-    body_length_feature_line = Edge.make_line((0, -rib_height), (body_length, -rib_height))
+    # Dimension: body_length (horizontal, further below with extension lines)
+    body_length_feature_line = Edge.make_line((0, bottom_y), (body_length, bottom_y))
     for shape, layer in create_horizontal_dimension(body_length_feature_line, f"{body_length:.1f}",
-                                                     offset_y=-20, font_size=dim_font_size):
+                                                     offset_y=-30, extension_length=3, font_size=dim_font_size):
         exporter.add_shape(shape, layer=layer)
 
-    # Dimension: rib_height (vertical, on right side, no extensions needed)
+    # Dimension: rib_height (vertical, on right side)
     rib_dim_x = body_length + 10
-    dim_p1 = (rib_dim_x, 0)
-    dim_p2 = (rib_dim_x, -rib_height)
+    dim_p1 = (rib_dim_x, belly_edge_thickness)
+    dim_p2 = (rib_dim_x, belly_edge_thickness - rib_height)
     rib_dim_line = Edge.make_line(dim_p1, dim_p2)
     exporter.add_shape(rib_dim_line, layer="dimensions")
     for arrow in create_dimension_arrows(dim_p1, dim_p2, 3.0):
         exporter.add_shape(arrow, layer="arrows")
     rib_text = Text(f"{rib_height:.1f}", dim_font_size, font=font_name)
-    rib_text = rib_text.move(Location((rib_dim_x + dim_font_size, -rib_height/2)))
+    rib_text = rib_text.move(Location((rib_dim_x + dim_font_size, belly_edge_thickness - rib_height/2)))
     exporter.add_shape(rib_text, layer="extensions")
+
+    # Dimension: belly_edge_thickness (vertical, on right side above ribs)
+    belly_dim_x = body_length + 10
+    dim_p1 = (belly_dim_x, 0)
+    dim_p2 = (belly_dim_x, belly_edge_thickness)
+    belly_dim_line = Edge.make_line(dim_p1, dim_p2)
+    exporter.add_shape(belly_dim_line, layer="dimensions")
+    for arrow in create_dimension_arrows(dim_p1, dim_p2, 3.0):
+        exporter.add_shape(arrow, layer="arrows")
+    belly_text = Text(f"{belly_edge_thickness:.1f}", dim_font_size, font=font_name)
+    belly_text = belly_text.move(Location((belly_dim_x + dim_font_size, belly_edge_thickness/2)))
+    exporter.add_shape(belly_text, layer="extensions")
 
     # Dimension: bridge_height (vertical, from arch peak to top of bridge)
     bridge_feature_line = Edge.make_line((body_stop, arching_height), (body_stop, arching_height + bridge_height))
