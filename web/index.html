@@ -1231,17 +1231,81 @@
                 const svgDoc = parser.parseFromString(svgContent, 'image/svg+xml');
                 const svgElement = svgDoc.documentElement;
 
+                // Get SVG dimensions from viewBox or width/height attributes
+                let svgWidth, svgHeight;
+                const viewBox = svgElement.getAttribute('viewBox');
+
+                if (viewBox) {
+                    const [, , width, height] = viewBox.split(/\s+/).map(parseFloat);
+                    svgWidth = width;
+                    svgHeight = height;
+                } else {
+                    svgWidth = parseFloat(svgElement.getAttribute('width')) || 210;
+                    svgHeight = parseFloat(svgElement.getAttribute('height')) || 297;
+                }
+
+                // ISO A sizes (width x height in mm)
+                const isoSizes = [
+                    { name: 'a4', width: 210, height: 297 },
+                    { name: 'a3', width: 297, height: 420 },
+                    { name: 'a2', width: 420, height: 594 },
+                    { name: 'a1', width: 594, height: 841 },
+                    { name: 'a0', width: 841, height: 1189 }
+                ];
+
+                // Add margins (20mm on each side)
+                const margin = 20;
+                const requiredWidth = svgWidth + (margin * 2);
+                const requiredHeight = svgHeight + (margin * 2);
+
+                // Find the smallest ISO A size that fits the content
+                // Try both portrait and landscape orientations
+                let selectedFormat = null;
+                let selectedOrientation = 'portrait';
+
+                for (const size of isoSizes) {
+                    // Try portrait
+                    if (size.width >= requiredWidth && size.height >= requiredHeight) {
+                        selectedFormat = size;
+                        selectedOrientation = 'portrait';
+                        break;
+                    }
+                    // Try landscape
+                    if (size.height >= requiredWidth && size.width >= requiredHeight) {
+                        selectedFormat = size;
+                        selectedOrientation = 'landscape';
+                        break;
+                    }
+                }
+
+                // Fallback to A0 landscape if content is too large
+                if (!selectedFormat) {
+                    selectedFormat = isoSizes[4]; // A0
+                    selectedOrientation = 'landscape';
+                    console.warn('Content too large for A0, using A0 landscape with scaling');
+                }
+
+                // Create PDF with selected size and orientation
                 const doc = new jsPDF({
-                    orientation: 'portrait',
+                    orientation: selectedOrientation,
                     unit: 'mm',
-                    format: 'a4'
+                    format: selectedFormat.name
                 });
 
+                // Get page dimensions
+                const pageWidth = doc.internal.pageSize.getWidth();
+                const pageHeight = doc.internal.pageSize.getHeight();
+
+                // Center the SVG on the page with margins
+                const x = (pageWidth - svgWidth) / 2;
+                const y = (pageHeight - svgHeight) / 2;
+
+                // Convert SVG to PDF at 1:1 scale (1mm SVG = 1mm PDF)
                 await svg2pdf(svgElement, doc, {
-                    x: 10,
-                    y: 10,
-                    width: 190,
-                    height: 277
+                    x: x,
+                    y: y,
+                    width: svgWidth,
+                    height: svgHeight
                 });
 
                 const viewNames = {
@@ -1251,7 +1315,8 @@
                 };
 
                 const currentView = window.state.currentView;
-                doc.save(`instrument_neck_${viewNames[currentView]}.pdf`);
+                console.log(`PDF: ${selectedFormat.name.toUpperCase()} ${selectedOrientation}, SVG size: ${svgWidth}x${svgHeight}mm`);
+                doc.save(`instrument_neck_${viewNames[currentView]}_${selectedFormat.name}.pdf`);
 
             } catch (error) {
                 console.error('PDF error:', error);
