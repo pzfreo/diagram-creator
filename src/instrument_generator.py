@@ -77,6 +77,33 @@ def generate_violin_neck(params_json: str) -> str:
         })
 
 
+def get_derived_values(params_json: str) -> str:
+    """
+    Calculate derived values for the frontend.
+    
+    Args:
+        params_json: JSON string of parameter values
+        
+    Returns:
+        JSON string containing derived values dictionary
+    """
+    try:
+        from instrument_geometry import calculate_derived_values
+        
+        params = json.loads(params_json)
+        derived = calculate_derived_values(params)
+        
+        return json.dumps({
+            "success": True,
+            "values": derived
+        })
+    except Exception as e:
+        return json.dumps({
+            "success": False,
+            "error": str(e)
+        })
+
+
 def get_parameter_definitions() -> str:
     """
     Get parameter definitions for UI generation.

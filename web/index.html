@@ -1,10 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Instrument Neck Geometry Generator</title>
-    
+
     <!-- Pyodide -->
     <script src="https://cdn.jsdelivr.net/pyodide/v0.29.0/full/pyodide.js"></script>
 
@@ -13,20 +14,24 @@
     <script src="https://cdn.jsdelivr.net/npm/@svgdotjs/svg.panzoom.js@2.1.2/dist/svg.panzoom.min.js"></script>
 
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             background: linear-gradient(135deg, #8B4513 0%, #D2691E 100%);
             min-height: 100vh;
             padding: 0.75rem;
         }
-        
+
         .app-container {
             max-width: 1400px;
             margin: 0 auto;
         }
-        
+
         header {
             text-align: center;
             color: white;
@@ -36,7 +41,7 @@
         h1 {
             font-size: 1.5rem;
             margin: 0;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
         }
 
         .subtitle {
@@ -48,19 +53,38 @@
             padding: 6px 12px;
             border-radius: 6px;
             margin-bottom: 0.75rem;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
             display: flex;
             align-items: center;
             gap: 8px;
             transition: all 0.3s ease;
             font-size: 0.85rem;
         }
-        
-        .status-bar.loading { background: #fef3c7; color: #92400e; border-left: 4px solid #f59e0b; }
-        .status-bar.ready { background: #d1fae5; color: #065f46; border-left: 4px solid #10b981; }
-        .status-bar.error { background: #fee2e2; color: #991b1b; border-left: 4px solid #ef4444; }
-        .status-bar.generating { background: #dbeafe; color: #1e40af; border-left: 4px solid #3b82f6; }
-        
+
+        .status-bar.loading {
+            background: #fef3c7;
+            color: #92400e;
+            border-left: 4px solid #f59e0b;
+        }
+
+        .status-bar.ready {
+            background: #d1fae5;
+            color: #065f46;
+            border-left: 4px solid #10b981;
+        }
+
+        .status-bar.error {
+            background: #fee2e2;
+            color: #991b1b;
+            border-left: 4px solid #ef4444;
+        }
+
+        .status-bar.generating {
+            background: #dbeafe;
+            color: #1e40af;
+            border-left: 4px solid #3b82f6;
+        }
+
         .spinner {
             width: 14px;
             height: 14px;
@@ -70,30 +94,36 @@
             animation: spin 0.8s linear infinite;
             display: none;
         }
-        
+
         .status-bar.loading .spinner,
-        .status-bar.generating .spinner { display: block; }
-        
-        @keyframes spin { to { transform: rotate(360deg); } }
-        
+        .status-bar.generating .spinner {
+            display: block;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
         .main-container {
             background: white;
             border-radius: 12px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
             display: grid;
             grid-template-columns: 315px 1fr;
             gap: 0;
             overflow: hidden;
             height: calc(100vh - 80px);
         }
-        
+
         @media (max-width: 1024px) {
             .main-container {
                 grid-template-columns: 1fr;
                 max-height: none;
             }
         }
-        
+
         .controls-panel {
             background: #f9fafb;
             padding: 0;
@@ -111,7 +141,7 @@
             background: #f9fafb;
             padding: 1rem 1.5rem;
             border-bottom: 2px solid #e5e7eb;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
         }
 
         .scrollable-params {
@@ -200,7 +230,7 @@
         #load-params-input {
             display: none;
         }
-        
+
         .category-section {
             margin-bottom: 1.5rem;
             background: white;
@@ -208,7 +238,7 @@
             padding: 1rem;
             border: 1px solid #e5e7eb;
         }
-        
+
         .category-title {
             font-weight: 700;
             color: #8B4513;
@@ -219,41 +249,41 @@
             border-bottom: 2px solid #D2691E;
             padding-bottom: 0.5rem;
         }
-        
+
         .param-group {
             margin-bottom: 1rem;
         }
-        
+
         .param-group:last-child {
             margin-bottom: 0;
         }
-        
+
         .param-label {
             display: flex;
             justify-content: space-between;
             align-items: baseline;
             margin-bottom: 0.4rem;
         }
-        
+
         .param-label label {
             font-weight: 600;
             color: #374151;
             font-size: 0.85rem;
         }
-        
+
         .param-unit {
             font-size: 0.75rem;
             color: #6b7280;
             font-weight: normal;
         }
-        
+
         .param-description {
             font-size: 0.7rem;
             color: #6b7280;
             margin-top: 0.25rem;
             line-height: 1.3;
         }
-        
+
         input[type="number"],
         input[type="range"],
         select {
@@ -264,28 +294,28 @@
             font-size: 0.9rem;
             transition: border-color 0.2s;
         }
-        
+
         input[type="number"]:focus,
         select:focus {
             outline: none;
             border-color: #8B4513;
         }
-        
+
         input[type="range"] {
             padding: 0;
         }
-        
+
         input[type="checkbox"] {
             width: 18px;
             height: 18px;
             margin-right: 8px;
         }
-        
+
         .checkbox-group {
             display: flex;
             align-items: center;
         }
-        
+
         .range-value {
             display: inline-block;
             min-width: 50px;
@@ -294,7 +324,7 @@
             color: #374151;
             font-weight: 600;
         }
-        
+
         .generate-btn {
             width: 100%;
             padding: 14px;
@@ -333,7 +363,7 @@
             letter-spacing: 0.5px;
             font-weight: 400;
         }
-        
+
         .download-buttons {
             display: flex;
             gap: 8px;
@@ -372,7 +402,7 @@
         .btn-pdf:hover:not(:disabled) {
             background: #dc2626;
         }
-        
+
         .preview-panel {
             padding: 2rem;
             display: flex;
@@ -466,25 +496,25 @@
         }
 
         /* SVG.js canvas should fill container */
-        #preview-container > svg {
+        #preview-container>svg {
             width: 100% !important;
             height: 100% !important;
             display: block;
         }
-        
+
         .preview-placeholder {
             text-align: center;
             color: #9ca3af;
             padding: 2rem;
         }
-        
+
         .preview-placeholder svg {
             width: 80px;
             height: 80px;
             margin-bottom: 1rem;
             opacity: 0.3;
         }
-        
+
         .error-panel {
             background: #fee2e2;
             border: 2px solid #fecaca;
@@ -493,22 +523,22 @@
             margin-top: 1rem;
             display: none;
         }
-        
+
         .error-panel.show {
             display: block;
         }
-        
+
         .error-panel h3 {
             color: #991b1b;
             font-size: 0.9rem;
             margin-bottom: 0.5rem;
         }
-        
+
         .error-panel ul {
             list-style: none;
             padding: 0;
         }
-        
+
         .error-panel li {
             color: #7f1d1d;
             font-size: 0.85rem;
@@ -516,7 +546,7 @@
             padding-left: 1.5rem;
             position: relative;
         }
-        
+
         .error-panel li:before {
             content: "•";
             position: absolute;
@@ -538,13 +568,46 @@
                 flex: 0 0 auto;
             }
         }
+
+        .calculated-metrics {
+            margin-top: 1rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid #e5e7eb;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .metric-card {
+            background: white;
+            padding: 8px;
+            border-radius: 6px;
+            border: 1px solid #e5e7eb;
+            font-size: 0.8rem;
+        }
+
+        .metric-label {
+            color: #6b7280;
+            display: block;
+            margin-bottom: 2px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+
+        .metric-value {
+            color: #111827;
+            font-weight: 700;
+            font-family: monospace;
+        }
     </style>
 </head>
+
 <body>
     <div class="app-container">
         <header>
             <h1>🎻 Instrument Neck Geometry Generator</h1>
-            <p class="subtitle">Parametric CAD for Lutherie - Design precise neck templates based on historical and modern measurements</p>
+            <p class="subtitle">Parametric CAD for Lutherie - Design precise neck templates based on historical and
+                modern measurements</p>
         </header>
 
         <div id="status" class="status-bar loading">
@@ -571,9 +634,14 @@
                         <span class="param-management-label">Parameters</span>
                         <div class="param-buttons">
                             <button class="param-btn param-btn-save" onclick="saveParameters()">💾 Save</button>
-                            <button class="param-btn param-btn-load" onclick="document.getElementById('load-params-input').click()">📂 Load</button>
+                            <button class="param-btn param-btn-load"
+                                onclick="document.getElementById('load-params-input').click()">📂 Load</button>
                             <input type="file" id="load-params-input" accept=".json" onchange="loadParameters(event)" />
                         </div>
+                    </div>
+
+                    <div id="calculated-fields" class="calculated-metrics" style="display: none;">
+                        <!-- Calculated fields will appear here -->
                     </div>
                 </div>
 
@@ -618,8 +686,8 @@
                 <div id="preview-container">
                     <div class="preview-placeholder">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z"/>
-                            <circle cx="12" cy="12" r="3"/>
+                            <path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z" />
+                            <circle cx="12" cy="12" r="3" />
                         </svg>
                         <div style="font-size: 1.1rem; font-weight: 600; margin-bottom: 0.5rem;">
                             Neck Template Preview
@@ -685,7 +753,7 @@
 
                 setStatus('loading', 'Installing package manager...');
                 await state.pyodide.loadPackage('micropip');
-                
+
                 setStatus('loading', 'Installing CAD libraries (this may take 1-2 minutes)...');
                 await state.pyodide.runPythonAsync(`
                     import micropip
@@ -713,19 +781,21 @@
                 `);
 
                 setStatus('loading', 'Loading instrument neck modules...');
-                
+
                 // Load Python modules
                 const modules = ['instrument_parameters.py', 'instrument_geometry.py', 'instrument_generator.py'];
-                
+
                 for (const moduleName of modules) {
-                    let response = await fetch(`./${moduleName}`);
+                    // Add timestamp to prevent caching during development
+                    const timestamp = new Date().getTime();
+                    let response = await fetch(`./${moduleName}?t=${timestamp}`);
                     if (!response.ok) {
-                        response = await fetch(`../src/${moduleName}`);
+                        response = await fetch(`../src/${moduleName}?t=${timestamp}`);
                     }
                     if (!response.ok) {
                         throw new Error(`Could not find ${moduleName}`);
                     }
-                    
+
                     const code = await response.text();
                     state.pyodide.FS.writeFile(moduleName, code);
                 }
@@ -744,20 +814,23 @@
                     from instrument_generator import get_parameter_definitions
                     get_parameter_definitions()
                 `);
-                
+
                 state.parameterDefinitions = JSON.parse(paramDefsJson);
-                
+
                 // Get presets
                 const presetsJson = await state.pyodide.runPythonAsync(`
                     from instrument_generator import get_presets
                     get_presets()
                 `);
-                
+
                 state.presets = JSON.parse(presetsJson);
-                
+
                 // Generate UI
                 generateUI();
                 populatePresets();
+
+                // Initial update of derived values
+                updateDerivedValues();
 
                 setStatus('ready', '✅ Ready! Adjust parameters and generate your template');
                 elements.genBtn.disabled = false;
@@ -779,7 +852,7 @@
             for (const category of categories) {
                 const section = document.createElement('div');
                 section.className = 'category-section';
-                
+
                 const title = document.createElement('div');
                 title.className = 'category-title';
                 title.textContent = category;
@@ -802,15 +875,15 @@
             if (param.type === 'number') {
                 const labelDiv = document.createElement('div');
                 labelDiv.className = 'param-label';
-                
+
                 const label = document.createElement('label');
                 label.textContent = param.label;
                 label.htmlFor = name;
-                
+
                 const unit = document.createElement('span');
                 unit.className = 'param-unit';
                 unit.textContent = param.unit;
-                
+
                 labelDiv.appendChild(label);
                 labelDiv.appendChild(unit);
                 group.appendChild(labelDiv);
@@ -823,13 +896,15 @@
                 input.min = param.min;
                 input.max = param.max;
                 input.step = param.step;
+                input.step = param.step;
                 input.addEventListener('change', hideErrors);
+                input.addEventListener('input', debounce(updateDerivedValues, 300));
                 group.appendChild(input);
 
             } else if (param.type === 'enum') {
                 const labelDiv = document.createElement('div');
                 labelDiv.className = 'param-label';
-                
+
                 const label = document.createElement('label');
                 label.textContent = param.label;
                 label.htmlFor = name;
@@ -839,7 +914,7 @@
                 const select = document.createElement('select');
                 select.id = name;
                 select.name = name;
-                
+
                 for (const option of param.options) {
                     const opt = document.createElement('option');
                     opt.value = option.value;
@@ -849,25 +924,27 @@
                     }
                     select.appendChild(opt);
                 }
-                
+
                 select.addEventListener('change', hideErrors);
+                select.addEventListener('change', updateDerivedValues);
                 group.appendChild(select);
 
             } else if (param.type === 'boolean') {
                 const checkboxDiv = document.createElement('div');
                 checkboxDiv.className = 'checkbox-group';
-                
+
                 const input = document.createElement('input');
                 input.type = 'checkbox';
                 input.id = name;
                 input.name = name;
                 input.checked = param.default;
                 input.addEventListener('change', hideErrors);
-                
+                input.addEventListener('change', updateDerivedValues);
+
                 const label = document.createElement('label');
                 label.textContent = param.label;
                 label.htmlFor = name;
-                
+
                 checkboxDiv.appendChild(input);
                 checkboxDiv.appendChild(label);
                 group.appendChild(checkboxDiv);
@@ -885,7 +962,7 @@
 
         function populatePresets() {
             const select = elements.presetSelect;
-            
+
             for (const [name, values] of Object.entries(state.presets)) {
                 const option = document.createElement('option');
                 option.value = name;
@@ -918,7 +995,7 @@
 
         function collectParameters() {
             const params = {};
-            
+
             for (const [name, param] of Object.entries(state.parameterDefinitions.parameters)) {
                 const element = document.getElementById(name);
                 if (!element) continue;
@@ -1189,6 +1266,59 @@
 
             // Reset file input so the same file can be loaded again
             event.target.value = '';
+
+            // Update derived values after loading
+            updateDerivedValues();
+        }
+
+        async function updateDerivedValues() {
+            if (!state.pyodide || state.isGenerating) return;
+
+            try {
+                const params = collectParameters();
+                const paramsJson = JSON.stringify(params);
+
+                const resultJson = await state.pyodide.runPythonAsync(`
+                    from instrument_generator import get_derived_values
+                    get_derived_values('${paramsJson.replace(/'/g, "\\'")}')
+                `);
+
+                const result = JSON.parse(resultJson);
+                const container = document.getElementById('calculated-fields');
+
+                console.log("Derived Result:", result);
+                if (result.success && Object.keys(result.values).length > 0) {
+                    container.style.display = 'grid';
+                    container.innerHTML = '';
+
+                    for (const [label, value] of Object.entries(result.values)) {
+                        const div = document.createElement('div');
+                        div.className = 'metric-card';
+                        div.innerHTML = `
+                            <span class="metric-label">${label}</span>
+                            <span class="metric-value">${value}</span>
+                        `;
+                        container.appendChild(div);
+                    }
+                } else {
+                    container.style.display = 'none';
+                }
+
+            } catch (error) {
+                console.error("Failed to update derived values:", error);
+            }
+        }
+
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
         }
 
         // Keyboard shortcut handler
@@ -1221,7 +1351,7 @@
         import { jsPDF } from "https://cdn.jsdelivr.net/npm/jspdf@2.5.1/+esm";
         import { svg2pdf } from "https://cdn.jsdelivr.net/npm/svg2pdf.js@2.2.4/+esm";
 
-        window.downloadPDF = async function() {
+        window.downloadPDF = async function () {
             if (!window.state || !window.state.views || !window.state.views[window.state.currentView]) {
                 alert('Please generate a template first.');
                 return;
@@ -1330,4 +1460,5 @@
         };
     </script>
 </body>
+
 </html>

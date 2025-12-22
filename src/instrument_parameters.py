@@ -116,24 +116,24 @@ class BooleanParameter:
 # ============================================
 
 INSTRUMENT_PARAMETERS = {
-    # Instrument Type
-    'instrument_type': EnumParameter(
-        name='instrument_type',
-        label='Instrument Type',
-        enum_class=InstrumentType,
-        default=InstrumentType.VIOLIN,
-        description='Type of instrument (affects default proportions)',
-        category='General'
-    ),
+    # # Instrument Type
+    # 'instrument_type': EnumParameter(
+    #     name='instrument_type',
+    #     label='Instrument Type',
+    #     enum_class=InstrumentType,
+    #     default=InstrumentType.VIOLIN,
+    #     description='Type of instrument (affects default proportions)',
+    #     category='General'
+    # ),
 
     # Basic Dimensions
     'vsl': NumericParameter(
         name='vsl',
         label='Vibrating String Length',
         unit='mm',
-        default=130.0,
-        min_val=120.0,
-        max_val=180.0,
+        default=325.0,
+        min_val=10.0,
+        max_val=1000.0,
         description='Total length from nut to bridge along string path',
         category='Basic Dimensions',
         step=0.5
@@ -153,8 +153,8 @@ INSTRUMENT_PARAMETERS = {
 
 
     'neck_stop': NumericParameter(
-        name='body_stop',
-        label='Body Stop',
+        name='neck_stop',
+        label='Neck Stop',
         unit='mm',
         default=130.0,
         min_val=10.0,
@@ -278,8 +278,8 @@ INSTRUMENT_PARAMETERS = {
     ),
 
     # fb thickness at nut
-    'fb_thickness_nut': NumericParameter(
-        name='fb_thickness_nut',
+    'fb_thickness_at_nut': NumericParameter(
+        name='fb_thickness_at_nut',
         label='Fingerboard thickness at nut',
         unit='mm',
         default=5.0,
@@ -291,8 +291,8 @@ INSTRUMENT_PARAMETERS = {
     ),
 
     # fb thickness at body join
-    'fb_thickness_join': NumericParameter(
-        name='fb_thickness_join',
+    'fb_thickness_at_join': NumericParameter(
+        name='fb_thickness_at_join',
         label='Fingerboard thickness at body join',
         unit='mm',
         default=7.0,
@@ -316,12 +316,12 @@ INSTRUMENT_PARAMETERS = {
         step=0.1
     ),
 
-    # String height at nut
+    # String height at end of fingerboard
     'string_height_eof': NumericParameter(
         name='string_height_eof',
         label='String height at end of fb',
         unit='mm',
-        default=0.6,
+        default=4.0,
         min_val=0.0,
         max_val=10.0,
         description='String height at the end of the fingerboard',

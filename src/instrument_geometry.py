@@ -115,6 +115,48 @@ class NeckGeometry:
     # def get_width_at(self, position: float) -> float:
     #     """Get neck width at position (0=nut, 1=heel)"""
     #     return self.interpolate('width_at_nut', 'width_at_heel', position)
+
+
+def calculate_derived_values(params: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Calculate derived values from parameters.
+    
+    Args:
+        params: Dictionary of parameter values
+        
+    Returns:
+        Dictionary of derived values (label -> value)
+    """
+    derived = {}
+    
+    # Extract values safely
+    vsl = params.get('vsl') or 0
+    neck_stop = params.get('neck_stop') or 0
+    body_stop = params.get('body_stop') or 0
+    arching_height = params.get('arching_height') or 0
+    overstand = params.get('overstand') or 0
+    # body_length = params.get('body_length') or 0
+    # rib_height = params.get('rib_height') or 0
+    fingerboard_length = params.get('fingerboard_length') or 0
+    fb_thickness_at_join = params.get('fb_thickness_at_join') or 0
+    fb_thickness_at_nut = params.get('fb_thickness_at_nut') or 0
+    # neck_thickness_at_first = params.get('neck_thickness_at_first') or 0
+    # neck_thickness_at_seventh = params.get('neck_thickness_at_seventh') or 0
+    bridge_height = params.get('bridge_height') or 0
+
+    string_height_nut = params.get('string_height_nut') or 0    
+    string_height_eof = params.get('string_height_eof') or 0
+    string_height_at_join = (string_height_eof - string_height_nut) * (neck_stop/fingerboard_length) + string_height_nut    
+    
+    opposite = arching_height + bridge_height - overstand - fb_thickness_at_join - string_height_at_join
+    string_angle_to_ribs = math.atan(opposite / body_stop) * 180 / math.pi
+    opposite_string_to_fb = string_height_eof - string_height_nut
+    string_angle_to_fb = math.atan(opposite_string_to_fb / fingerboard_length) * 180 / math.pi
+    opposite_fb = fb_thickness_at_join - fb_thickness_at_nut
+    fingerboard_angle = round(  math.atan(opposite_fb / neck_stop) * 180 / math.pi, 1)
+    neck_angle = 90-(string_angle_to_ribs-string_angle_to_fb-fingerboard_angle)
+    derived['Neck Angle'] = round(neck_angle,1)
+    return derived
     
     
 
@@ -308,6 +350,7 @@ def generate_side_view_svg(params: Dict[str, Any]) -> str:
     neck_thickness_at_seventh = params.get('neck_thickness_at_seventh')
     bridge_height = params.get('bridge_height')
     belly_edge_thickness = params.get('belly_edge_thickness', 3.5)  # Default to 3.5mm if not provided
+    body_width = params.get('body_width')
 
     # Export to SVG
     exporter = ExportSVG(scale=1.0,unit=Unit.MM, line_weight=0.5)
@@ -483,6 +526,8 @@ if __name__ == '__main__':
 
     print("Generating test template...")
     try:
+        derived = calculate_derived_values(params)
+        print(derived)
         svg = generate_side_view_svg(params)
         print(f"✓ Generated SVG ({len(svg)} bytes)")
 
