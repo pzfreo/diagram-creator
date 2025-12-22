@@ -1368,15 +1368,7 @@
             URL.revokeObjectURL(url);
         }
 
-        function downloadPDF() {
-            if (!state.views || !state.views[state.currentView]) {
-                alert('Please generate a template first.');
-                return;
-            }
 
-            // PDF download will use the current view
-            alert('PDF export will be updated to download current view');
-        }
 
         function saveParameters() {
             const params = collectParameters();
@@ -1528,119 +1520,85 @@
     </script>
 
     <!-- PDF Export (optional) -->
+    <!-- PDF Export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/svg2pdf.js@2.2.4/dist/svg2pdf.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
-    <script type="module">
-        import { jsPDF } from "https://cdn.jsdelivr.net/npm/jspdf@2.5.1/+esm";
-        import { svg2pdf } from "https://cdn.jsdelivr.net/npm/svg2pdf.js@2.2.4/+esm";
 
+    <script>
         window.downloadPDF = async function () {
+            console.log('Starting PDF download...');
             if (!window.state || !window.state.views || !window.state.views[window.state.currentView]) {
                 alert('Please generate a template first.');
                 return;
             }
 
             try {
-                const currentView = window.state.currentView;
+                // Access jsPDF from global object (UMD build)
+                const { jsPDF } = window.jspdf;
+                if (!jsPDF) {
+                    throw new Error('jsPDF library not loaded correctly. Please reload the page.');
+                }
 
-                // Handle dimensions table view differently
+                let svg2pdf = window.svg2pdf;
+                // Check if it's inside an object (common in UMD)
+                if (typeof svg2pdf !== 'function' && svg2pdf.svg2pdf) {
+                    svg2pdf = svg2pdf.svg2pdf;
+                }
+
+                if (!svg2pdf) {
+                    throw new Error('svg2pdf library not loaded correctly. Please reload the page.');
+                }
+
+                const currentView = window.state.currentView;
+                const viewNames = {
+                    'top': 'top-view',
+                    'side': 'side-view',
+                    'cross_section': 'cross-section',
+                    'dimensions': 'dimensions'
+                };
+
+                // Get instrument name for filename
+                const params = collectParameters();
+                const instrumentName = params.instrument_name || 'instrument';
+                const filename = sanitizeFilename(instrumentName);
+
+                // Handle Dimensions Table PDF
                 if (currentView === 'dimensions') {
-                    const doc = new jsPDF({
-                        orientation: 'portrait',
-                        unit: 'mm',
-                        format: 'a4'
+                    const doc = new jsPDF();
+
+                    // Add Title
+                    doc.setFontSize(16);
+                    doc.text(`${instrumentName} - Dimensions`, 14, 15);
+
+                    doc.setFontSize(10);
+                    doc.text(`Generated: ${new Date().toLocaleDateString()}`, 14, 22);
+
+                    // Use autoTable to convert HTML table to PDF
+                    // We target the table element directly
+                    doc.autoTable({
+                        html: '.dimensions-table',
+                        startY: 25,
+                        theme: 'grid',
+                        headStyles: { fillColor: [139, 69, 19] },
+                        styles: { fontSize: 9 }
                     });
 
-                    // Get parameters and derived values
-                    const params = collectParameters();
-                    const derivedValues = window.state.derivedValues || {};
-                    const paramDefs = window.state.parameterDefinitions.parameters || {};
-                    const categories = window.state.parameterDefinitions.categories || [];
-
-                    // Add title
-                    const instrumentName = params.instrument_name || 'Instrument';
-                    doc.setFontSize(16);
-                    doc.text(`${instrumentName} - Dimensions`, 105, 15, { align: 'center' });
-
-                    let yPos = 25;
-
-                    // Create table data grouped by category
-                    for (const category of categories) {
-                        const categoryRows = [];
-
-                        for (const [name, param] of Object.entries(paramDefs)) {
-                            if (param.category !== category) continue;
-
-                            const value = params[name];
-                            let displayValue = value;
-
-                            // Format the value based on type
-                            if (param.type === 'number') {
-                                displayValue = `${value} ${param.unit}`;
-                            } else if (param.type === 'boolean') {
-                                displayValue = value ? 'Yes' : 'No';
-                            } else if (param.type === 'enum') {
-                                const option = param.options.find(opt => opt.value === value);
-                                displayValue = option ? option.label : value;
-                            }
-
-                            categoryRows.push([param.label, displayValue]);
-                        }
-
-                        if (categoryRows.length > 0) {
-                            doc.autoTable({
-                                startY: yPos,
-                                head: [[category, '']],
-                                body: categoryRows,
-                                theme: 'grid',
-                                headStyles: { fillColor: [139, 69, 19], fontSize: 12, fontStyle: 'bold' },
-                                margin: { left: 15, right: 15 },
-                                columnStyles: {
-                                    0: { cellWidth: 100 },
-                                    1: { cellWidth: 75, halign: 'right' }
-                                }
-                            });
-                            yPos = doc.lastAutoTable.finalY + 5;
-                        }
-                    }
-
-                    // Add derived values
-                    if (Object.keys(derivedValues).length > 0) {
-                        const derivedRows = Object.entries(derivedValues).map(([label, value]) => [label, value]);
-                        doc.autoTable({
-                            startY: yPos,
-                            head: [['Calculated Values', '']],
-                            body: derivedRows,
-                            theme: 'grid',
-                            headStyles: { fillColor: [139, 69, 19], fontSize: 12, fontStyle: 'bold' },
-                            margin: { left: 15, right: 15 },
-                            columnStyles: {
-                                0: { cellWidth: 100 },
-                                1: { cellWidth: 75, halign: 'right' }
-                            }
-                        });
-                    }
-
-                    const filename = sanitizeFilename(instrumentName);
                     doc.save(`${filename}_dimensions.pdf`);
                     return;
                 }
 
-                // Use the raw SVG content from state, not the DOM element
+                // Handle SVG Views
                 const svgContent = window.state.views[currentView];
-
-                // Create a temporary SVG element from the raw content
                 const parser = new DOMParser();
                 const svgDoc = parser.parseFromString(svgContent, 'image/svg+xml');
                 const svgElement = svgDoc.documentElement;
 
-                // Get SVG dimensions from viewBox or width/height attributes
+                // Get dimensions from SVG
                 let svgWidth, svgHeight;
-                const viewBox = svgElement.getAttribute('viewBox');
-
-                if (viewBox) {
-                    const [, , width, height] = viewBox.split(/\s+/).map(parseFloat);
-                    svgWidth = width;
-                    svgHeight = height;
+                if (svgElement.viewBox && svgElement.viewBox.baseVal) {
+                    svgWidth = svgElement.viewBox.baseVal.width;
+                    svgHeight = svgElement.viewBox.baseVal.height;
                 } else {
                     svgWidth = parseFloat(svgElement.getAttribute('width')) || 210;
                     svgHeight = parseFloat(svgElement.getAttribute('height')) || 297;
@@ -1661,7 +1619,6 @@
                 const requiredHeight = svgHeight + (margin * 2);
 
                 // Find the smallest ISO A size that fits the content
-                // Try both portrait and landscape orientations
                 let selectedFormat = null;
                 let selectedOrientation = 'portrait';
 
@@ -1703,25 +1660,25 @@
                 const y = (pageHeight - svgHeight) / 2;
 
                 // Convert SVG to PDF at 1:1 scale (1mm SVG = 1mm PDF)
-                await svg2pdf(svgElement, doc, {
-                    x: x,
-                    y: y,
-                    width: svgWidth,
-                    height: svgHeight
-                });
+                // svg2pdf requires the element to be in the DOM for style computation
+                document.body.appendChild(svgElement);
+                // Hide it but ensure it is rendered
+                svgElement.style.position = 'absolute';
+                svgElement.style.left = '-9999px';
+                svgElement.style.top = '-9999px';
 
-                const viewNames = {
-                    'top': 'top-view',
-                    'side': 'side-view',
-                    'cross_section': 'cross-section'
-                };
+                try {
+                    await svg2pdf(svgElement, doc, {
+                        x: x,
+                        y: y,
+                        width: svgWidth,
+                        height: svgHeight
+                    });
+                } finally {
+                    // Always remove the temporary element
+                    document.body.removeChild(svgElement);
+                }
 
-                // Get instrument name for filename
-                const params = collectParameters();
-                const instrumentName = params.instrument_name || 'instrument';
-                const filename = sanitizeFilename(instrumentName);
-
-                const currentView = window.state.currentView;
                 console.log(`PDF: ${selectedFormat.name.toUpperCase()} ${selectedOrientation}, SVG size: ${svgWidth}x${svgHeight}mm`);
                 doc.save(`${filename}_${viewNames[currentView]}_${selectedFormat.name}.pdf`);
 
