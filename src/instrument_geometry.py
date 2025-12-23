@@ -16,6 +16,9 @@ font_url = "https://raw.githubusercontent.com/pzfreo/diagram-creator/main/src/Ro
 font_file = "Roboto.ttf"
 font_name = "Roboto"
 PTS_MM = 0.352778
+# Set dimension font size for all dimensions
+dim_font_size = 8*PTS_MM
+
 
 def download_font_sync(url, filename):
     """Downloads a binary file synchronously (blocking), avoiding async/await issues."""
@@ -288,6 +291,98 @@ def create_vertical_dimension(feature_line, label, offset_x=8,
     return shapes
 
 
+def create_diagonal_dimension(feature_line, label, offset_distance=8,
+                             extension_length=3, font_size=8*PTS_MM, arrow_size=3.0):
+    """
+    Create diagonal dimension shapes from a diagonal feature line.
+
+    Args:
+        feature_line: Edge representing the feature being dimensioned (diagonal line)
+        label: Text label for the dimension (e.g., "325.0")
+        offset_distance: How far to offset the dimension line from the feature (perpendicular)
+        extension_length: Length of extension line beyond dimension line
+        font_size: Font size for dimension text
+        arrow_size: Size of arrowheads
+
+    Returns:
+        List of (shape, layer) tuples to add to exporter
+    """
+    # Get endpoints from the feature line
+    p1 = feature_line.position_at(0)
+    p2 = feature_line.position_at(1)
+    x1, y1 = p1.X, p1.Y
+    x2, y2 = p2.X, p2.Y
+
+    shapes = []
+
+    # Calculate perpendicular direction (rotated 90 degrees counterclockwise)
+    dx = x2 - x1
+    dy = y2 - y1
+    length = math.sqrt(dx**2 + dy**2)
+
+    # Unit perpendicular vector (90 degrees counterclockwise)
+    perp_x = -dy / length
+    perp_y = dx / length
+
+    # Offset points for dimension line
+    offset_x1 = x1 + perp_x * offset_distance
+    offset_y1 = y1 + perp_y * offset_distance
+    offset_x2 = x2 + perp_x * offset_distance
+    offset_y2 = y2 + perp_y * offset_distance
+
+    # Extension lines (from feature to dimension line)
+    ext1_end_x = offset_x1 + perp_x * extension_length
+    ext1_end_y = offset_y1 + perp_y * extension_length
+    ext1 = Edge.make_line((x1, y1), (ext1_end_x, ext1_end_y))
+    shapes.append((ext1, "extensions"))
+
+    ext2_end_x = offset_x2 + perp_x * extension_length
+    ext2_end_y = offset_y2 + perp_y * extension_length
+    ext2 = Edge.make_line((x2, y2), (ext2_end_x, ext2_end_y))
+    shapes.append((ext2, "extensions"))
+
+    # Dimension line (parallel to feature, but offset)
+    dim_p1 = (offset_x1, offset_y1)
+    dim_p2 = (offset_x2, offset_y2)
+    dim_line = Edge.make_line(dim_p1, dim_p2)
+    shapes.append((dim_line, "dimensions"))
+
+    # Arrows at both ends
+    arrows = create_dimension_arrows(dim_p1, dim_p2, arrow_size)
+    for arrow in arrows:
+        shapes.append((arrow, "arrows"))
+
+    # Dimension text (centered along dimension line)
+    # Position text perpendicular to dimension line, offset by font size
+    center_x = (offset_x1 + offset_x2) / 2
+    center_y = (offset_y1 + offset_y2) / 2
+
+    # Offset text further perpendicular to dimension line
+    text_offset = font_size * 0.5
+    text_x = center_x + perp_x * text_offset
+    text_y = center_y + perp_y * text_offset
+
+    # Calculate rotation angle to align text with dimension line
+    # Angle in degrees, with adjustments to keep text readable
+    angle_rad = math.atan2(dy, dx)
+    angle_deg = angle_rad * 180 / math.pi
+
+    # Keep text readable (not upside down) by flipping if needed
+    if angle_deg > 90:
+        angle_deg -= 180
+    elif angle_deg < -90:
+        angle_deg += 180
+
+    text = Text(label, font_size, font=font_name)
+    # Move to position first, then rotate around that point
+    text = text.move(Location((text_x, text_y)))
+    # Rotate around the Z-axis at the text position
+    text = text.rotate(Axis((text_x, text_y, 0), (0, 0, 1)), angle_deg)
+    shapes.append((text, "extensions"))
+
+    return shapes
+
+
 def create_horizontal_dimension(feature_line, label, offset_y=-10,
                                 extension_length=0, font_size=8*PTS_MM, arrow_size=3.0):
     """
@@ -493,6 +588,7 @@ def generate_side_view_svg(params: Dict[str, Any]) -> str:
     fingerboard_length = params.get('fingerboard_length', 270.0)
     instrument_name = params.get('instrument_name', 'Instrument')
     generator_url = params.get('_generator_url', 'https://github.com/pzfreo/diagram-creator')
+    show_measurements = params.get('show_measurements', True)
 
     # Calculate neck angle precisely (without rounding) for accurate geometry
     string_height_at_join = (string_height_eof - string_height_nut) * (neck_stop / fingerboard_length) + string_height_nut
@@ -513,9 +609,12 @@ def generate_side_view_svg(params: Dict[str, Any]) -> str:
     exporter.add_layer("text",fill_color=(0,0,255),line_type=LineType.HIDDEN)
     exporter.add_layer("drawing",fill_color=None, line_color=(0,0,0),line_type=LineType.CONTINUOUS)
     exporter.add_layer("schematic",fill_color=None, line_color=(0,0,0),line_type=LineType.DASHED)
-    exporter.add_layer("dimensions",fill_color=(255,0,0), line_color=(255,0,0),line_type=LineType.DASHED)
-    exporter.add_layer("extensions",fill_color=None, line_color=(255,0,0),line_type=LineType.CONTINUOUS)
-    exporter.add_layer("arrows",fill_color=(255,0,0), line_color=(255,0,0),line_type=LineType.CONTINUOUS)
+
+    # Dimension layers - invisible if show_measurements is False
+    dim_color = (255,0,0) if show_measurements else None
+    exporter.add_layer("dimensions",fill_color=dim_color, line_color=dim_color,line_type=LineType.DASHED)
+    exporter.add_layer("extensions",fill_color=None, line_color=dim_color,line_type=LineType.CONTINUOUS)
+    exporter.add_layer("arrows",fill_color=dim_color, line_color=dim_color,line_type=LineType.CONTINUOUS)
 
     # Add belly edge thickness rectangle at top
     belly_rect = Rectangle(width=body_length, height=belly_edge_thickness)
@@ -655,6 +754,12 @@ def generate_side_view_svg(params: Dict[str, Any]) -> str:
     nut_top_x = neck_end_x + nut_radius * math.cos(neck_line_angle - math.pi/2)
     nut_top_y = neck_end_y + nut_radius * math.sin(neck_line_angle - math.pi/2)
 
+    # Add horizontal reference line from top of ribs (0,0) extending 20mm beyond nut
+    # This is a dashed schematic line (dashing handled by SVG layer style)
+    reference_line_end_x = nut_top_x - 20
+    reference_line = Edge.make_line((0, 0), (reference_line_end_x, 0))
+    exporter.add_shape(reference_line, layer="schematic")
+
     # Top of bridge: at (body_stop, arching_height + bridge_height)
     bridge_top_x = body_stop
     bridge_top_y = arching_height + bridge_height
@@ -662,6 +767,65 @@ def generate_side_view_svg(params: Dict[str, Any]) -> str:
     # Draw string line
     string_line = Edge.make_line((nut_top_x, nut_top_y), (bridge_top_x, bridge_top_y))
     exporter.add_shape(string_line, layer="drawing")
+
+    
+    # Dimension: vertical distance from ribs (y=0) to top of nut
+    # Position this dimension at the end of the reference line
+    rib_to_nut_feature_line = Edge.make_line((reference_line_end_x, 0), (reference_line_end_x, nut_top_y))
+    for shape, layer in create_vertical_dimension(rib_to_nut_feature_line,
+                                                   f"{nut_top_y:.1f}",
+                                                   offset_x=-8, font_size=dim_font_size):
+        exporter.add_shape(shape, layer=layer)
+
+    # Calculate string length
+    string_length = math.sqrt((bridge_top_x - nut_top_x)**2 + (bridge_top_y - nut_top_y)**2)
+
+    # Add diagonal dimension for string length
+    for shape, layer in create_diagonal_dimension(string_line, f"{string_length:.1f} Calculated",
+                                                   offset_distance=10, font_size=dim_font_size):
+        exporter.add_shape(shape, layer=layer)
+
+    # Add dimension from nut to where string crosses a perpendicular to neck at body join
+    # The perpendicular is at (0, overstand) and perpendicular to the neck surface
+    # Neck direction vector
+    neck_dx = neck_end_x - 0
+    neck_dy = neck_end_y - overstand
+
+    # Perpendicular to neck (rotated 90 degrees counterclockwise)
+    perp_neck_dx = -neck_dy
+    perp_neck_dy = neck_dx
+
+    # String direction vector
+    string_dx = bridge_top_x - nut_top_x
+    string_dy = bridge_top_y - nut_top_y
+
+    # Find intersection of string line with perpendicular line at body join
+    # String: P = (nut_top_x, nut_top_y) + t * (string_dx, string_dy)
+    # Perpendicular: Q = (0, overstand) + s * (perp_neck_dx, perp_neck_dy)
+    # Solve: nut_top_x + t*string_dx = 0 + s*perp_neck_dx
+    #        nut_top_y + t*string_dy = overstand + s*perp_neck_dy
+
+    # Using Cramer's rule to solve the 2x2 system
+    det = string_dx * perp_neck_dy - string_dy * perp_neck_dx
+
+    if abs(det) > 1e-10:  # Lines are not parallel
+        t = ((0 - nut_top_x) * perp_neck_dy - (overstand - nut_top_y) * perp_neck_dx) / det
+
+        # Calculate intersection point
+        intersect_x = nut_top_x + t * string_dx
+        intersect_y = nut_top_y + t * string_dy
+
+        # Calculate distance along string from nut to intersection
+        nut_to_perp_distance = math.sqrt(
+            (intersect_x - nut_top_x)**2 + (intersect_y - nut_top_y)**2
+        )
+
+        # Create dimension line along this portion of the string (above the full string dimension)
+        nut_to_perp_line = Edge.make_line((nut_top_x, nut_top_y), (intersect_x, intersect_y))
+        for shape, layer in create_diagonal_dimension(nut_to_perp_line,
+                                                       f"{nut_to_perp_distance:.1f}",
+                                                       offset_distance=20, font_size=dim_font_size):
+            exporter.add_shape(shape, layer=layer)
 
     # Calculate string height above end of fingerboard (perpendicular to fingerboard surface)
     # Find the position along the fingerboard bottom at fingerboard_length
@@ -709,7 +873,7 @@ def generate_side_view_svg(params: Dict[str, Any]) -> str:
     fb_surface_point_y = string_y_at_fb_end - string_height_at_fb_end * perp_dy
 
     # Add dimension annotations using helper functions
-    dim_font_size = 8*PTS_MM
+    # (dim_font_size already defined above)
 
     # Dimension: string height above end of fingerboard (perpendicular)
     string_height_feature_line = Edge.make_line((fb_surface_point_x, fb_surface_point_y),
@@ -776,10 +940,10 @@ def generate_side_view_svg(params: Dict[str, Any]) -> str:
                                                    offset_x=15, font_size=dim_font_size):
         exporter.add_shape(shape, layer=layer)
 
-    # Title text - centered horizontally, 1cm above the highest point
-    # Highest point is the top of the bridge line
+    # Title text - centered horizontally, 2.5cm above the highest point
+    # Highest point is the top of the bridge line (plus some margin for dimension text)
     max_y = arching_height + bridge_height
-    title_gap = 10  # 1cm gap
+    title_gap = 25  # 2.5cm gap to account for dimension lines and text
     title_font_size = 14*PTS_MM
     title_text = Text(instrument_name, title_font_size, font=font_name)
     # Center the title (approximate centering based on character width)

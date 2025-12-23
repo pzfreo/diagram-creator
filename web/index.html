@@ -22,7 +22,7 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background: linear-gradient(135deg, #8B4513 0%, #D2691E 100%);
+            background: linear-gradient(135deg, #4F46E5 0%, #6366F1 100%);
             min-height: 100vh;
             padding: 0.75rem;
         }
@@ -203,7 +203,7 @@
         }
 
         .param-btn:hover {
-            border-color: #8B4513;
+            border-color: #4F46E5;
             background: #f9fafb;
         }
 
@@ -241,12 +241,12 @@
 
         .category-title {
             font-weight: 700;
-            color: #8B4513;
+            color: #4F46E5;
             margin-bottom: 0.75rem;
             font-size: 0.9rem;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            border-bottom: 2px solid #D2691E;
+            border-bottom: 2px solid #6366F1;
             padding-bottom: 0.5rem;
         }
 
@@ -298,7 +298,7 @@
         input[type="number"]:focus,
         select:focus {
             outline: none;
-            border-color: #8B4513;
+            border-color: #4F46E5;
         }
 
         input[type="range"] {
@@ -328,7 +328,7 @@
         .generate-btn {
             width: 100%;
             padding: 14px;
-            background: linear-gradient(135deg, #8B4513 0%, #D2691E 100%);
+            background: linear-gradient(135deg, #4F46E5 0%, #6366F1 100%);
             color: white;
             border: none;
             border-radius: 8px;
@@ -338,7 +338,7 @@
             transition: all 0.2s;
             text-transform: uppercase;
             letter-spacing: 1px;
-            box-shadow: 0 4px 6px rgba(139, 69, 19, 0.3);
+            box-shadow: 0 4px 6px rgba(79, 70, 229, 0.3);
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -347,7 +347,7 @@
 
         .generate-btn:hover:not(:disabled) {
             transform: translateY(-2px);
-            box-shadow: 0 6px 12px rgba(139, 69, 19, 0.4);
+            box-shadow: 0 6px 12px rgba(79, 70, 229, 0.4);
         }
 
         .generate-btn:disabled {
@@ -440,14 +440,14 @@
         }
 
         .view-tab:hover {
-            border-color: #8B4513;
+            border-color: #4F46E5;
             background: #f9fafb;
         }
 
         .view-tab.active {
-            background: linear-gradient(135deg, #8B4513 0%, #D2691E 100%);
+            background: linear-gradient(135deg, #4F46E5 0%, #6366F1 100%);
             color: white;
-            border-color: #8B4513;
+            border-color: #4F46E5;
         }
 
         .zoom-controls {
@@ -468,7 +468,7 @@
         }
 
         .zoom-btn:hover {
-            border-color: #8B4513;
+            border-color: #4F46E5;
             background: #f9fafb;
         }
 
@@ -485,7 +485,7 @@
 
         #preview-container.has-content {
             border-style: solid;
-            border-color: #8B4513;
+            border-color: #4F46E5;
         }
 
         #preview-container .preview-placeholder {
@@ -531,12 +531,12 @@
         }
 
         .dimensions-table th {
-            background: #8B4513;
+            background: #4F46E5;
             color: white;
             padding: 12px;
             text-align: left;
             font-weight: 600;
-            border-bottom: 2px solid #6B3410;
+            border-bottom: 2px solid #3730A3;
         }
 
         .dimensions-table td {
@@ -719,11 +719,11 @@
                         <button class="view-tab active" data-view="side" onclick="switchView('side')">
                             Side View
                         </button>
-                        <button class="view-tab" data-view="top" onclick="switchView('top')">
-                            Top View
+                        <button class="view-tab" data-view="top" onclick="switchView('top')" disabled style="opacity: 0.3; cursor: not-allowed;">
+                            Top View (Coming Soon)
                         </button>
-                        <button class="view-tab" data-view="cross_section" onclick="switchView('cross_section')">
-                            Cross-Section
+                        <button class="view-tab" data-view="cross_section" onclick="switchView('cross_section')" disabled style="opacity: 0.3; cursor: not-allowed;">
+                            Cross-Section (Coming Soon)
                         </button>
                         <button class="view-tab" data-view="dimensions" onclick="switchView('dimensions')">
                             Dimensions
@@ -804,6 +804,47 @@
             elements.errorPanel.classList.remove('show');
         }
 
+        async function loadPresetsFromDirectory() {
+            const presets = {};
+
+            try {
+                // Load preset manifest
+                const manifestResponse = await fetch('../presets/presets.json');
+                if (!manifestResponse.ok) {
+                    console.warn('No preset manifest found');
+                    return presets;
+                }
+
+                const manifest = await manifestResponse.json();
+                const presetFiles = manifest.presets || [];
+
+                // Load each preset file
+                for (const filename of presetFiles) {
+                    try {
+                        const response = await fetch(`../presets/${filename}`);
+                        if (response.ok) {
+                            const presetData = await response.json();
+                            const presetId = filename.replace('.json', '');
+
+                            if (presetData.parameters) {
+                                const instrumentName = presetData.parameters.instrument_name || presetId;
+                                presets[presetId] = {
+                                    name: instrumentName,
+                                    parameters: presetData.parameters
+                                };
+                            }
+                        }
+                    } catch (error) {
+                        console.warn(`Failed to load preset ${filename}:`, error);
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to load preset manifest:', error);
+            }
+
+            return presets;
+        }
+
         async function initializePython() {
             try {
                 setStatus('loading', 'Loading Python engine...');
@@ -875,13 +916,8 @@
 
                 state.parameterDefinitions = JSON.parse(paramDefsJson);
 
-                // Get presets
-                const presetsJson = await state.pyodide.runPythonAsync(`
-                    from instrument_generator import get_presets
-                    get_presets()
-                `);
-
-                state.presets = JSON.parse(presetsJson);
+                // Load presets from JSON files in presets directory
+                state.presets = await loadPresetsFromDirectory();
 
                 // Generate UI
                 generateUI();
@@ -1041,23 +1077,23 @@
         function populatePresets() {
             const select = elements.presetSelect;
 
-            for (const [name, values] of Object.entries(state.presets)) {
+            for (const [id, preset] of Object.entries(state.presets)) {
                 const option = document.createElement('option');
-                option.value = name;
-                option.textContent = name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                option.value = id;
+                option.textContent = preset.name || id.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
                 select.appendChild(option);
             }
         }
 
         function loadPreset() {
-            const presetName = elements.presetSelect.value;
-            if (!presetName) return;
+            const presetId = elements.presetSelect.value;
+            if (!presetId) return;
 
-            const preset = state.presets[presetName];
-            if (!preset) return;
+            const preset = state.presets[presetId];
+            if (!preset || !preset.parameters) return;
 
-            // Apply preset values
-            for (const [name, value] of Object.entries(preset)) {
+            // Apply preset parameter values
+            for (const [name, value] of Object.entries(preset.parameters)) {
                 const element = document.getElementById(name);
                 if (element) {
                     if (element.type === 'checkbox') {
@@ -1069,6 +1105,7 @@
             }
 
             hideErrors();
+            updateDerivedValues();
         }
 
         function collectParameters() {
@@ -1103,6 +1140,9 @@
 
             // Group parameters by category
             for (const category of categories) {
+                // Skip Display Options category
+                if (category === 'Display Options') continue;
+
                 // Add category header
                 html += `<tr><td colspan="2" class="category-header">${category}</td></tr>`;
 
@@ -1224,8 +1264,12 @@
 
             // Handle dimensions table view differently
             if (state.currentView === 'dimensions') {
-                // Hide zoom controls for table view
-                elements.zoomControls.style.display = 'none';
+                // Disable zoom controls for table view (keep them visible to prevent layout jump)
+                document.querySelectorAll('.zoom-btn').forEach(btn => {
+                    btn.disabled = true;
+                    btn.style.opacity = '0.3';
+                    btn.style.cursor = 'not-allowed';
+                });
 
                 // Display the table HTML directly
                 elements.preview.innerHTML = state.views[state.currentView];
@@ -1241,8 +1285,12 @@
                 return;
             }
 
-            // Show zoom controls for SVG views
-            elements.zoomControls.style.display = 'flex';
+            // Enable zoom controls for SVG views
+            document.querySelectorAll('.zoom-btn').forEach(btn => {
+                btn.disabled = false;
+                btn.style.opacity = '1';
+                btn.style.cursor = 'pointer';
+            });
 
             // Create SVG.js canvas (CSS handles sizing with width/height 100%)
             state.svgCanvas = SVG()
@@ -1580,7 +1628,7 @@
                         html: '.dimensions-table',
                         startY: 25,
                         theme: 'grid',
-                        headStyles: { fillColor: [139, 69, 19] },
+                        headStyles: { fillColor: [79, 70, 229] },
                         styles: { fontSize: 9 }
                     });
 

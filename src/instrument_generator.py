@@ -122,14 +122,47 @@ def get_parameter_definitions() -> str:
 
 def get_presets() -> str:
     """
-    Get available parameter presets.
-    
+    Get available parameter presets from the presets directory.
+
     Returns:
-        JSON string of presets
+        JSON string of presets dictionary: { preset_id: { name: str, parameters: dict } }
     """
     try:
-        from instrument_parameters import PRESETS
-        return json.dumps(PRESETS)
+        import os
+        presets = {}
+
+        # Get path to presets directory (relative to this file)
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        presets_dir = os.path.join(current_dir, '..', 'presets')
+
+        # Check if presets directory exists
+        if not os.path.exists(presets_dir):
+            return json.dumps({})
+
+        # Load all JSON files from presets directory
+        for filename in os.listdir(presets_dir):
+            if filename.endswith('.json'):
+                filepath = os.path.join(presets_dir, filename)
+                try:
+                    with open(filepath, 'r') as f:
+                        preset_data = json.load(f)
+
+                    # Extract parameters and instrument name
+                    if 'parameters' in preset_data:
+                        params = preset_data['parameters']
+                        instrument_name = params.get('instrument_name', filename.replace('.json', ''))
+
+                        # Use filename without extension as preset ID
+                        preset_id = filename.replace('.json', '')
+                        presets[preset_id] = {
+                            'name': instrument_name,
+                            'parameters': params
+                        }
+                except Exception as e:
+                    print(f"Warning: Failed to load preset {filename}: {str(e)}")
+                    continue
+
+        return json.dumps(presets)
     except Exception as e:
         return json.dumps({
             "error": f"Failed to load presets: {str(e)}"

@@ -1,0 +1,187 @@
+#!/usr/bin/env python3
+"""
+Command-line interface for generating instrument diagrams.
+
+Usage:
+    instrument-gen-cli input.json --view side --output diagram.svg
+    instrument-gen-cli input.json --view dimensions --output dimensions.html
+    instrument-gen-cli input.json --all --output-dir ./output
+"""
+
+import argparse
+import json
+import sys
+import os
+from pathlib import Path
+
+
+def load_parameters(json_file):
+    """Load parameters from a JSON file."""
+    try:
+        with open(json_file, 'r') as f:
+            data = json.load(f)
+
+        # Handle both direct parameters and wrapped format (with metadata)
+        if 'parameters' in data:
+            return data['parameters']
+        return data
+    except FileNotFoundError:
+        print(f"Error: File '{json_file}' not found", file=sys.stderr)
+        sys.exit(1)
+    except json.JSONDecodeError as e:
+        print(f"Error: Invalid JSON in '{json_file}': {e}", file=sys.stderr)
+        sys.exit(1)
+
+
+def generate_view(params, view_type):
+    """Generate a specific view."""
+    from instrument_generator import generate_violin_neck
+    from instrument_geometry import generate_side_view_svg
+
+    if view_type == 'side':
+        return generate_side_view_svg(params)
+    elif view_type == 'top':
+        # Not implemented yet
+        return '<svg><text x="10" y="20">Top view not yet implemented</text></svg>'
+    elif view_type == 'cross_section':
+        # Not implemented yet
+        return '<svg><text x="10" y="20">Cross-section view not yet implemented</text></svg>'
+    elif view_type == 'dimensions':
+        # Generate dimensions table as HTML
+        from instrument_parameters import get_parameter_categories, INSTRUMENT_PARAMETERS
+        from instrument_geometry import calculate_derived_values
+
+        categories = get_parameter_categories()
+        param_defs = INSTRUMENT_PARAMETERS
+        derived = calculate_derived_values(params)
+
+        html = '<!DOCTYPE html>\n<html>\n<head>\n'
+        html += '<meta charset="UTF-8">\n'
+        html += f'<title>{params.get("instrument_name", "Instrument")} - Dimensions</title>\n'
+        html += '<style>\n'
+        html += 'body { font-family: Arial, sans-serif; margin: 40px; }\n'
+        html += 'h1 { color: #4F46E5; }\n'
+        html += 'table { border-collapse: collapse; width: 100%; max-width: 800px; }\n'
+        html += 'th { background: #4F46E5; color: white; padding: 12px; text-align: left; }\n'
+        html += 'td { padding: 10px 12px; border-bottom: 1px solid #e5e7eb; }\n'
+        html += 'tr:hover { background: #f9fafb; }\n'
+        html += '.category-header { background: #f3f4f6; font-weight: 600; color: #374151; }\n'
+        html += '.param-unit { color: #6b7280; font-size: 0.9em; font-style: italic; }\n'
+        html += '</style>\n</head>\n<body>\n'
+        html += f'<h1>{params.get("instrument_name", "Instrument")} - Dimensions</h1>\n'
+        html += '<table>\n<thead><tr><th>Parameter</th><th>Value</th></tr></thead>\n<tbody>\n'
+
+        for category in categories:
+            if category == 'Display Options':
+                continue
+
+            html += f'<tr><td colspan="2" class="category-header">{category}</td></tr>\n'
+
+            for name, param in param_defs.items():
+                if param.category != category:
+                    continue
+
+                value = params.get(name)
+                if value is None:
+                    continue
+
+                # Check parameter type using class name
+                param_type = param.__class__.__name__
+                if param_type == 'NumericParameter':
+                    display_value = f'{value} <span class="param-unit">{param.unit}</span>'
+                elif param_type == 'BooleanParameter':
+                    display_value = 'Yes' if value else 'No'
+                elif param_type == 'EnumParameter':
+                    display_value = value
+                elif param_type == 'StringParameter':
+                    display_value = str(value)
+                else:
+                    display_value = str(value)
+
+                html += f'<tr><td>{param.label}</td><td>{display_value}</td></tr>\n'
+
+        # Add derived values
+        if derived:
+            html += '<tr><td colspan="2" class="category-header">Calculated Values</td></tr>\n'
+            for label, value in derived.items():
+                html += f'<tr><td>{label}</td><td>{value}</td></tr>\n'
+
+        html += '</tbody>\n</table>\n</body>\n</html>'
+        return html
+    else:
+        print(f"Error: Unknown view type '{view_type}'", file=sys.stderr)
+        sys.exit(1)
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description='Generate instrument diagrams from parameter files',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  # Generate side view SVG
+  instrument-gen-cli params.json --view side --output side-view.svg
+
+  # Generate dimensions table HTML
+  instrument-gen-cli params.json --view dimensions --output dimensions.html
+
+  # Generate all available views
+  instrument-gen-cli params.json --all --output-dir ./diagrams
+
+  # Print to stdout (useful for piping)
+  instrument-gen-cli params.json --view side
+        """
+    )
+
+    parser.add_argument('input', help='Input JSON parameter file')
+    parser.add_argument('--view', choices=['side', 'top', 'cross_section', 'dimensions'],
+                        help='View type to generate')
+    parser.add_argument('--output', '-o', help='Output file (default: stdout)')
+    parser.add_argument('--all', action='store_true',
+                        help='Generate all views (requires --output-dir)')
+    parser.add_argument('--output-dir', help='Output directory for --all mode')
+
+    args = parser.parse_args()
+
+    # Validation
+    if args.all and not args.output_dir:
+        parser.error('--all requires --output-dir')
+    if not args.all and not args.view:
+        parser.error('Either --view or --all must be specified')
+    if args.all and args.view:
+        parser.error('Cannot use both --all and --view')
+
+    # Load parameters
+    params = load_parameters(args.input)
+    instrument_name = params.get('instrument_name', 'instrument').replace(' ', '_')
+
+    if args.all:
+        # Generate all views
+        output_dir = Path(args.output_dir)
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+        views = {
+            'side': ('svg', generate_view(params, 'side')),
+            'dimensions': ('html', generate_view(params, 'dimensions'))
+        }
+
+        for view_name, (ext, content) in views.items():
+            output_file = output_dir / f'{instrument_name}_{view_name}.{ext}'
+            with open(output_file, 'w') as f:
+                f.write(content)
+            print(f'Generated: {output_file}')
+    else:
+        # Generate single view
+        content = generate_view(params, args.view)
+
+        if args.output:
+            with open(args.output, 'w') as f:
+                f.write(content)
+            print(f'Generated: {args.output}')
+        else:
+            # Print to stdout
+            print(content)
+
+
+if __name__ == '__main__':
+    main()

@@ -519,22 +519,10 @@ def get_default_values() -> Dict[str, Any]:
 
 
 # ============================================
-# PRESETS (Optional - for quick testing)
+# PRESETS
 # ============================================
-
-PRESETS = {
-    'basic_violin': {
-        'instrument_type': 'VIOLIN',
-        'vsl': 328.5,
-        'fingerboard_width_at_nut': 24.0,
-        'fingerboard_width_at_end': 27.0,
-        'neck_thickness_at_first': 19.5,
-        'neck_thickness_at_seventh': 21.5,
-        'body_stop': 195.0,
-        'neck_stop': 130.0
-    }
-    
-}
+# Presets are now loaded from JSON files in the presets/ directory.
+# See instrument_generator.py::get_presets() for implementation.
 
 
 if __name__ == '__main__':
