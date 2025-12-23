@@ -807,39 +807,54 @@
         async function loadPresetsFromDirectory() {
             const presets = {};
 
-            try {
-                // Load preset manifest
-                const manifestResponse = await fetch('../presets/presets.json');
-                if (!manifestResponse.ok) {
-                    console.warn('No preset manifest found');
-                    return presets;
-                }
+            // Try multiple locations for presets (GitHub Pages vs local development)
+            const presetPaths = ['./presets/', '../presets/'];
 
-                const manifest = await manifestResponse.json();
-                const presetFiles = manifest.presets || [];
-
-                // Load each preset file
-                for (const filename of presetFiles) {
-                    try {
-                        const response = await fetch(`../presets/${filename}`);
-                        if (response.ok) {
-                            const presetData = await response.json();
-                            const presetId = filename.replace('.json', '');
-
-                            if (presetData.parameters) {
-                                const instrumentName = presetData.parameters.instrument_name || presetId;
-                                presets[presetId] = {
-                                    name: instrumentName,
-                                    parameters: presetData.parameters
-                                };
-                            }
-                        }
-                    } catch (error) {
-                        console.warn(`Failed to load preset ${filename}:`, error);
+            for (const basePath of presetPaths) {
+                try {
+                    // Try to load preset manifest from this location
+                    const manifestResponse = await fetch(`${basePath}presets.json`);
+                    if (!manifestResponse.ok) {
+                        continue; // Try next location
                     }
+
+                    const manifest = await manifestResponse.json();
+                    const presetFiles = manifest.presets || [];
+
+                    // Load each preset file
+                    for (const filename of presetFiles) {
+                        try {
+                            const response = await fetch(`${basePath}${filename}`);
+                            if (response.ok) {
+                                const presetData = await response.json();
+                                const presetId = filename.replace('.json', '');
+
+                                if (presetData.parameters) {
+                                    const instrumentName = presetData.parameters.instrument_name || presetId;
+                                    presets[presetId] = {
+                                        name: instrumentName,
+                                        parameters: presetData.parameters
+                                    };
+                                }
+                            }
+                        } catch (error) {
+                            console.warn(`Failed to load preset ${filename}:`, error);
+                        }
+                    }
+
+                    // If we successfully loaded presets, don't try other paths
+                    if (Object.keys(presets).length > 0) {
+                        console.log(`Loaded ${Object.keys(presets).length} presets from ${basePath}`);
+                        break;
+                    }
+                } catch (error) {
+                    console.warn(`Failed to load presets from ${basePath}:`, error);
+                    // Continue to next path
                 }
-            } catch (error) {
-                console.error('Failed to load preset manifest:', error);
+            }
+
+            if (Object.keys(presets).length === 0) {
+                console.warn('No presets found in any location');
             }
 
             return presets;
