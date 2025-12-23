@@ -78,10 +78,12 @@
                         <button class="view-tab active" data-view="side" onclick="switchView('side')">
                             Side View
                         </button>
-                        <button class="view-tab" data-view="top" onclick="switchView('top')" disabled style="opacity: 0.3; cursor: not-allowed;">
+                        <button class="view-tab" data-view="top" onclick="switchView('top')" disabled
+                            style="opacity: 0.3; cursor: not-allowed;">
                             Top View (Coming Soon)
                         </button>
-                        <button class="view-tab" data-view="cross_section" onclick="switchView('cross_section')" disabled style="opacity: 0.3; cursor: not-allowed;">
+                        <button class="view-tab" data-view="cross_section" onclick="switchView('cross_section')"
+                            disabled style="opacity: 0.3; cursor: not-allowed;">
                             Cross-Section (Coming Soon)
                         </button>
                         <button class="view-tab" data-view="dimensions" onclick="switchView('dimensions')">
@@ -117,6 +119,11 @@
             </div>
         </div>
     </div>
+
+    <!-- PDF libs -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/svg2pdf.js@2.2.4/dist/svg2pdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
 
     <!-- Main Application Script -->
     <script src="app.js"></script>
