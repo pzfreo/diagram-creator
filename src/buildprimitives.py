@@ -179,19 +179,35 @@ class Text:
         new_text.rotation_center = (axis.position[0], axis.position[1])
         return new_text
 
-    def to_svg(self, fill_color: Optional[Tuple[int, int, int]] = None) -> str:
+    def to_svg(self, fill_color: Optional[Tuple[int, int, int]] = None, y_flipped: bool = False) -> str:
         """Convert text to SVG element"""
         color = f"rgb({fill_color[0]},{fill_color[1]},{fill_color[2]})" if fill_color else "black"
 
-        transform = ""
-        if self.rotation != 0:
-            # Rotate around the text position
-            transform = f' transform="rotate({self.rotation} {self.rotation_center[0]} {self.rotation_center[1]})"'
+        transforms = []
 
-        return (f'<text x="{self.x}" y="{self.y}" '
-                f'font-family="{self.font}" font-size="{self.font_size}" '
-                f'fill="{color}" text-anchor="middle" dominant-baseline="middle"'
-                f'{transform}>{self.text}</text>')
+        # If the coordinate system is Y-flipped, flip text back to be readable
+        if y_flipped:
+            transforms.append(f"translate({self.x} {self.y})")
+            transforms.append("scale(1 -1)")
+            if self.rotation != 0:
+                transforms.append(f"rotate({self.rotation})")
+            transform_str = f' transform="{" ".join(transforms)}"'
+            # When using transform with translate, position at origin
+            return (f'<text x="0" y="0" '
+                    f'font-family="{self.font}" font-size="{self.font_size}" '
+                    f'fill="{color}" text-anchor="middle" dominant-baseline="middle"'
+                    f'{transform_str}>{self.text}</text>')
+        else:
+            # Original behavior without Y-flip
+            transform = ""
+            if self.rotation != 0:
+                # Rotate around the text position
+                transform = f' transform="rotate({self.rotation} {self.rotation_center[0]} {self.rotation_center[1]})"'
+
+            return (f'<text x="{self.x}" y="{self.y}" '
+                    f'font-family="{self.font}" font-size="{self.font_size}" '
+                    f'fill="{color}" text-anchor="middle" dominant-baseline="middle"'
+                    f'{transform}>{self.text}</text>')
 
 
 class Location:
@@ -312,10 +328,12 @@ class ExportSVG:
         height = max_y - min_y
 
         # Start SVG with viewBox
+        # Note: We flip the Y-axis to match standard mathematical coordinates (Y up)
         svg_parts = [
             f'<svg xmlns="http://www.w3.org/2000/svg" '
-            f'viewBox="{min_x} {min_y} {width} {height}" '
-            f'width="{width}{self.unit.value}" height="{height}{self.unit.value}">'
+            f'viewBox="{min_x} {-max_y} {width} {height}" '
+            f'width="{width}{self.unit.value}" height="{height}{self.unit.value}">',
+            f'<g transform="scale(1,-1)">'
         ]
 
         # Add shapes grouped by layer
@@ -340,10 +358,11 @@ class ExportSVG:
             elif isinstance(shape, Text):
                 if layer_name in self.layers:
                     fill_color = self.layers[layer_name].get('fill_color')
-                    svg_parts.append(shape.to_svg(fill_color))
+                    svg_parts.append(shape.to_svg(fill_color, y_flipped=True))
                 else:
-                    svg_parts.append(shape.to_svg())
+                    svg_parts.append(shape.to_svg(y_flipped=True))
 
+        svg_parts.append('</g>')  # Close the transform group
         svg_parts.append('</svg>')
 
         svg_content = '\n'.join(svg_parts)
