@@ -245,9 +245,10 @@ class ExportSVG:
         """Add a layer with styling"""
         self.layers[name] = {
             'fill_color': fill_color,
-            'line_color': line_color if line_color else (0, 0, 0),
+            'line_color': line_color,
             'line_type': line_type
         }
+        print(f"DEBUG: Layer '{name}' added - fill_color={fill_color}, line_color={line_color}")
 
     def add_shape(self, shape: Any, layer: str = "default"):
         """Add a shape to a specific layer"""
@@ -346,6 +347,8 @@ class ExportSVG:
 
                 # Skip entire shape if layer is invisible (both colors are None)
                 if fill_color is None and line_color is None:
+                    # Debug: print skipped layers
+                    print(f"Skipping shape on invisible layer: {layer_name}")
                     continue
 
             if isinstance(shape, (Edge, Rectangle, Spline, Polygon)):
