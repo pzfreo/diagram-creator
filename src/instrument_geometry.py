@@ -593,11 +593,9 @@ def generate_side_view_svg(params: Dict[str, Any]) -> str:
 
     # Dimension layers - invisible if show_measurements is False
     dim_color = (255,0,0) if show_measurements else None
-    print(f"DEBUG: show_measurements={show_measurements}, dim_color={dim_color}")
     exporter.add_layer("dimensions",fill_color=dim_color, line_color=dim_color,line_type=LineType.DASHED)
     exporter.add_layer("extensions",fill_color=None, line_color=dim_color,line_type=LineType.CONTINUOUS)
     exporter.add_layer("arrows",fill_color=dim_color, line_color=dim_color,line_type=LineType.CONTINUOUS)
-    print(f"DEBUG: Added dimension layers with color {dim_color}")
 
     # Add belly edge thickness rectangle at top
     belly_rect = Rectangle(width=body_length, height=belly_edge_thickness)

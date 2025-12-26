@@ -248,7 +248,6 @@ class ExportSVG:
             'line_color': line_color,
             'line_type': line_type
         }
-        print(f"DEBUG: Layer '{name}' added - fill_color={fill_color}, line_color={line_color}")
 
     def add_shape(self, shape: Any, layer: str = "default"):
         """Add a shape to a specific layer"""
