@@ -433,42 +433,11 @@ input[type="checkbox"] {
 }
 
 .generate-btn {
-    width: 100%;
-    padding: 14px;
-    background: linear-gradient(135deg, #4F46E5 0%, #6366F1 100%);
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-weight: 700;
-    font-size: 1rem;
-    cursor: pointer;
-    transition: all 0.2s;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    box-shadow: 0 4px 6px rgba(79, 70, 229, 0.3);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-}
-
-.generate-btn:hover:not(:disabled) {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 12px rgba(79, 70, 229, 0.4);
-}
-
-.generate-btn:disabled {
-    background: #9ca3af;
-    cursor: not-allowed;
-    box-shadow: none;
+    display: none;
 }
 
 .generate-btn-shortcut {
-    font-size: 0.7rem;
-    opacity: 0.9;
-    text-transform: none;
-    letter-spacing: 0.5px;
-    font-weight: 400;
+    display: none;
 }
 
 .download-buttons {

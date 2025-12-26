@@ -13,6 +13,9 @@ window.state = {
 
 const state = window.state;  // Local reference
 
+// Auto-generate timer
+let generateTimeout = null;
+
 const elements = {
     status: document.getElementById('status'),
     statusText: document.getElementById('status-text'),
@@ -39,6 +42,17 @@ function showErrors(errors) {
 
 function hideErrors() {
     elements.errorPanel.classList.remove('show');
+}
+
+// Auto-generate with debounce
+function debouncedGenerate() {
+    clearTimeout(generateTimeout);
+    generateTimeout = setTimeout(() => {
+        // Only generate if no validation errors
+        if (!elements.errorPanel.classList.contains('show')) {
+            generateNeck();
+        }
+    }, 500);
 }
 
 async function loadPresetsFromDirectory() {
@@ -176,7 +190,9 @@ async function initializePython() {
         // Initial update of derived values
         updateDerivedValues();
 
-        setStatus('ready', '✅ Ready! Adjust parameters and generate your template');
+        // Auto-generate with default parameters
+        generateNeck();
+
         elements.genBtn.disabled = false;
 
     } catch (error) {
@@ -243,6 +259,7 @@ function createParameterControl(name, param) {
         input.step = param.step;
         input.addEventListener('change', hideErrors);
         input.addEventListener('input', debounce(updateDerivedValues, 300));
+        input.addEventListener('input', debouncedGenerate);
         group.appendChild(input);
 
     } else if (param.type === 'enum') {
@@ -271,6 +288,7 @@ function createParameterControl(name, param) {
 
         select.addEventListener('change', hideErrors);
         select.addEventListener('change', updateDerivedValues);
+        select.addEventListener('change', debouncedGenerate);
         group.appendChild(select);
 
     } else if (param.type === 'boolean') {
@@ -284,6 +302,7 @@ function createParameterControl(name, param) {
         input.checked = param.default;
         input.addEventListener('change', hideErrors);
         input.addEventListener('change', updateDerivedValues);
+        input.addEventListener('change', debouncedGenerate);
 
         const label = document.createElement('label');
         label.textContent = param.label;
@@ -311,6 +330,7 @@ function createParameterControl(name, param) {
         input.maxLength = param.max_length || 100;
         input.addEventListener('change', hideErrors);
         input.addEventListener('input', debounce(updateDerivedValues, 300));
+        input.addEventListener('input', debouncedGenerate);
         group.appendChild(input);
     }
 
@@ -356,6 +376,7 @@ function loadPreset() {
 
     hideErrors();
     updateDerivedValues();
+    debouncedGenerate();
 }
 
 function collectParameters() {
@@ -443,7 +464,7 @@ async function generateNeck() {
     state.isGenerating = true;
     elements.genBtn.disabled = true;
 
-    setStatus('generating', '⚙️ Generating neck templates (all views)...');
+    setStatus('generating', '⚙️ Updating preview...');
 
     // Close mobile sidebar when generating (so user can see the preview)
     if (window.innerWidth <= 1024) {
@@ -491,7 +512,7 @@ async function generateNeck() {
             elements.dlPdf.disabled = false;
             elements.preview.classList.add('has-content');
 
-            setStatus('ready', '✅ Templates generated successfully! Use tabs to switch views.');
+            setStatus('ready', '✅ Preview updated');
         } else {
             showErrors(result.errors);
             setStatus('error', '❌ Generation failed - see errors below');
