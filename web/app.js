@@ -109,31 +109,13 @@ async function initializePython() {
         await state.pyodide.runPythonAsync(`
             import micropip
 
-            # Set custom index for OCP.wasm
-            micropip.set_index_urls([
-                "https://yeicor.github.io/OCP.wasm",
-                "https://pypi.org/simple"
-            ])
+            # Install packages from PyPI only (OCP.wasm index appears broken)
+            print("Installing Python packages...")
 
-            # Install cadquery-ocp (provides OCP module, required by build123d)
-            print("Installing cadquery-ocp...")
-            await micropip.install("cadquery-ocp")
-
-            # Install lib3mf and mock package
-            await micropip.install("lib3mf")
-            micropip.add_mock_package(
-                "py-lib3mf",
-                "2.4.1",
-                modules={"py_lib3mf": "from lib3mf import *"}
-            )
-
-            # Install remaining packages
-            # Pin build123d to 0.7.0 for better OCP.wasm compatibility
-            await micropip.install("build123d==0.7.0")
+            # Install base packages
             await micropip.install([
-                "sqlite3",
-                "svgpathtools",
-                "numpy"
+                "numpy",
+                "svgpathtools"
             ])
 
             print("✅ Packages installed")
@@ -143,6 +125,7 @@ async function initializePython() {
 
         // Load Python modules (in dependency order)
         const modules = [
+            'buildprimitives.py',
             'dimension_utils.py',
             'instrument_parameters.py',
             'instrument_geometry.py',
@@ -166,6 +149,7 @@ async function initializePython() {
 
         // Import modules
         await state.pyodide.runPythonAsync(`
+            import buildprimitives
             import dimension_utils
             import instrument_parameters
             import instrument_geometry

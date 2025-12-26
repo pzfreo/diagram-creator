@@ -40,6 +40,7 @@ jobs:
 
           # 3. Copy all Python logic files INTO the public folder
           cp src/logic.py public/logic.py
+          cp src/buildprimitives.py public/buildprimitives.py
           cp src/instrument_parameters.py public/instrument_parameters.py
           cp src/instrument_geometry.py public/instrument_geometry.py
           cp src/instrument_generator.py public/instrument_generator.py

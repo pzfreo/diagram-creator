@@ -5,7 +5,7 @@ This module contains helper functions and constants for creating dimension lines
 arrows, and annotations in technical drawings.
 """
 
-from build123d import Edge, Text, Location, Axis
+from buildprimitives import Edge, Text, Location, Axis
 import math
 
 # ==================== Constants ====================

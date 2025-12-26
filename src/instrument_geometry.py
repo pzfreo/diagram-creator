@@ -4,7 +4,7 @@ Instrument Neck Geometry Generator
 This is where your Build123d geometry expertise goes.
 """
 
-from build123d import *
+from buildprimitives import *
 import math
 from typing import Dict, Any, Tuple
 
