@@ -797,9 +797,20 @@ async function updateDerivedValues() {
             for (const [label, value] of Object.entries(result.values)) {
                 const div = document.createElement('div');
                 div.className = 'metric-card';
+
+                // Format value with appropriate unit
+                let formattedValue;
+                if (label === 'Neck Angle') {
+                    formattedValue = `${value}°`;
+                } else if (label === 'String Length' || label === 'Nut Relative to Ribs') {
+                    formattedValue = `${value} mm`;
+                } else {
+                    formattedValue = value;
+                }
+
                 div.innerHTML = `
                     <span class="metric-label">${label}</span>
-                    <span class="metric-value">${value}</span>
+                    <span class="metric-value">${formattedValue}</span>
                 `;
                 container.appendChild(div);
             }

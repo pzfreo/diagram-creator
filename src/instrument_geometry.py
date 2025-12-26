@@ -140,7 +140,7 @@ def calculate_derived_values(params: Dict[str, Any]) -> Dict[str, Any]:
     opposite_fb = fb_thickness_at_join - fb_thickness_at_nut
     fingerboard_angle = round(  math.atan(opposite_fb / neck_stop) * 180 / math.pi, 1)
     neck_angle = 90-(string_angle_to_ribs-string_angle_to_fb-fingerboard_angle)
-    derived['Neck Angle'] = f"{round(neck_angle, 1)}°"
+    derived['Neck Angle'] = round(neck_angle, 1)
 
     # Calculate neck end position and nut position for string length
     neck_angle_rad = neck_angle * math.pi / 180
@@ -159,11 +159,11 @@ def calculate_derived_values(params: Dict[str, Any]) -> Dict[str, Any]:
 
     # Calculate string length
     string_length = math.sqrt((bridge_top_x - nut_top_x)**2 + (bridge_top_y - nut_top_y)**2)
-    derived['String Length'] = f"{round(string_length, 1)} mm"
+    derived['String Length'] = round(string_length, 1)
 
     # Add nut position relative to ribs if rib reference is enabled
     if show_rib_reference:
-        derived['Nut Relative to Ribs'] = f"{round(nut_top_y, 1)} mm"
+        derived['Nut Relative to Ribs'] = round(nut_top_y, 1)
 
     return derived
     
