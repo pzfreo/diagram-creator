@@ -829,9 +829,16 @@ window.downloadPDF = async function () {
 
     try {
         // Access jsPDF from global object (UMD build)
+        if (!window.jspdf) {
+            throw new Error('jsPDF library not loaded. Please reload the page.');
+        }
         const { jsPDF } = window.jspdf;
         if (!jsPDF) {
             throw new Error('jsPDF library not loaded correctly. Please reload the page.');
+        }
+
+        if (!window.svg2pdf) {
+            throw new Error('svg2pdf library not loaded. Please reload the page.');
         }
 
         let svg2pdf = window.svg2pdf;
