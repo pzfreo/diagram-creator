@@ -370,7 +370,8 @@ def create_diagonal_dimension(feature_line, label, offset_distance=8,
 
     # Calculate rotation angle to align text with dimension line
     # Angle in degrees, with adjustments to keep text readable
-    angle_rad = math.atan2(dy, dx)
+    # Note: Negate dy because SVG Y-axis is inverted (positive Y goes down)
+    angle_rad = math.atan2(-dy, dx)
     angle_deg = angle_rad * 180 / math.pi
 
     # Keep text readable (not upside down) by flipping if needed
