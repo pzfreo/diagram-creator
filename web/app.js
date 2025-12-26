@@ -115,9 +115,9 @@ async function initializePython() {
                 "https://pypi.org/simple"
             ])
 
-            # Install OCP first (required by build123d)
-            print("Installing OCP...")
-            await micropip.install("OCP")
+            # Install cadquery-ocp (provides OCP module, required by build123d)
+            print("Installing cadquery-ocp...")
+            await micropip.install("cadquery-ocp")
 
             # Install lib3mf and mock package
             await micropip.install("lib3mf")
@@ -128,8 +128,9 @@ async function initializePython() {
             )
 
             # Install remaining packages
+            # Pin build123d to 0.7.0 for better OCP.wasm compatibility
+            await micropip.install("build123d==0.7.0")
             await micropip.install([
-                "build123d",
                 "sqlite3",
                 "svgpathtools",
                 "numpy"
