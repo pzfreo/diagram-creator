@@ -107,7 +107,7 @@ h1 {
     position: fixed;
     top: 1rem;
     left: 1rem;
-    z-index: 1001;
+    z-index: 1003;
     background: white;
     border: none;
     border-radius: 8px;
@@ -211,7 +211,7 @@ h1 {
         max-width: 380px;
         transform: translateX(-100%);
         transition: transform 0.3s ease, visibility 0.3s ease;
-        z-index: 1000;
+        z-index: 1002;
         box-shadow: 2px 0 12px rgba(0, 0, 0, 0.2);
         visibility: hidden;
     }

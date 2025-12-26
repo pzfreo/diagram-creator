@@ -849,8 +849,14 @@ document.addEventListener('DOMContentLoaded', function() {
         document.body.style.overflow = ''; // Restore scrolling
     }
 
-    // Open sidebar when hamburger is clicked
-    mobileMenuBtn.addEventListener('click', openSidebar);
+    // Toggle sidebar when hamburger is clicked
+    mobileMenuBtn.addEventListener('click', function() {
+        if (controlsPanel.classList.contains('mobile-open')) {
+            closeSidebar();
+        } else {
+            openSidebar();
+        }
+    });
 
     // Close sidebar when close button is clicked
     mobileCloseBtn.addEventListener('click', closeSidebar);
