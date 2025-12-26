@@ -133,8 +133,13 @@ async function initializePython() {
 
         setStatus('loading', 'Loading instrument neck modules...');
 
-        // Load Python modules
-        const modules = ['instrument_parameters.py', 'instrument_geometry.py', 'instrument_generator.py'];
+        // Load Python modules (in dependency order)
+        const modules = [
+            'dimension_utils.py',
+            'instrument_parameters.py',
+            'instrument_geometry.py',
+            'instrument_generator.py'
+        ];
 
         for (const moduleName of modules) {
             // Add timestamp to prevent caching during development
@@ -153,6 +158,7 @@ async function initializePython() {
 
         // Import modules
         await state.pyodide.runPythonAsync(`
+            import dimension_utils
             import instrument_parameters
             import instrument_geometry
             import instrument_generator
