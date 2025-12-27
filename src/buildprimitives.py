@@ -10,6 +10,22 @@ from enum import Enum
 from typing import Tuple, Optional, List, Dict, Any
 
 
+# ============================================================================
+# Font Configuration
+# ============================================================================
+
+# Points to millimeters conversion factor
+PTS_MM = 0.352778
+
+# Font name - browser will use Roboto if available, fallback to Arial/sans-serif
+FONT_NAME = "Roboto"
+
+# Standard font sizes (in millimeters)
+DIMENSION_FONT_SIZE = 8 * PTS_MM   # ≈ 2.82 mm for dimension annotations
+TITLE_FONT_SIZE = 14 * PTS_MM      # ≈ 4.94 mm for instrument name
+FOOTER_FONT_SIZE = 6 * PTS_MM      # ≈ 2.12 mm for generator URL
+
+
 class Point:
     """Simple 2D point with X, Y properties"""
     def __init__(self, x: float, y: float):
@@ -152,7 +168,7 @@ def make_face(shape):
 class Text:
     """Represents text with position and rotation"""
 
-    def __init__(self, text: str, font_size: float, font: str = "Arial"):
+    def __init__(self, text: str, font_size: float, font: str = FONT_NAME):
         self.text = text
         self.font_size = font_size
         self.font = font
@@ -194,7 +210,7 @@ class Text:
             transform_str = f' transform="{" ".join(transforms)}"'
             # When using transform with translate, position at origin
             return (f'<text x="0" y="0" '
-                    f'font-family="{self.font}" font-size="{self.font_size}" '
+                    f'font-family="{self.font}, Arial, sans-serif" font-size="{self.font_size}" '
                     f'fill="{color}" text-anchor="middle" dominant-baseline="middle"'
                     f'{transform_str}>{self.text}</text>')
         else:
@@ -205,7 +221,7 @@ class Text:
                 transform = f' transform="rotate({self.rotation} {self.rotation_center[0]} {self.rotation_center[1]})"'
 
             return (f'<text x="{self.x}" y="{self.y}" '
-                    f'font-family="{self.font}" font-size="{self.font_size}" '
+                    f'font-family="{self.font}, Arial, sans-serif" font-size="{self.font_size}" '
                     f'fill="{color}" text-anchor="middle" dominant-baseline="middle"'
                     f'{transform}>{self.text}</text>')
 

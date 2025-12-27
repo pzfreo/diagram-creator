@@ -4,7 +4,11 @@ Instrument Neck Geometry Generator
 This is where your Build123d geometry expertise goes.
 """
 
-from buildprimitives import *
+from buildprimitives import (
+    ExportSVG, Line, Circle, Arc, Text, Polyline, Edge,
+    Location, LineType, Axis, Plane,
+    FONT_NAME, TITLE_FONT_SIZE, FOOTER_FONT_SIZE, PTS_MM  # Font constants
+)
 import math
 from typing import Dict, Any, Tuple
 from dimension_helpers import (
@@ -13,54 +17,8 @@ from dimension_helpers import (
     create_horizontal_dimension,
     create_diagonal_dimension,
     create_angle_dimension,
-    dim_font_size
+    DIMENSION_FONT_SIZE
 )
-
-import js
-import os
-
-# Constants
-PTS_MM = 0.352778
-
-# Font configuration
-font_url = "https://raw.githubusercontent.com/pzfreo/diagram-creator/main/src/Roboto.ttf"
-font_file = "Roboto.ttf"
-font_name = "Roboto"
-
-
-def download_font_sync(url, filename):
-    """Downloads a binary file synchronously (blocking), avoiding async/await issues."""
-    try:
-        # Create a browser XMLHttpRequest
-        req = js.XMLHttpRequest.new()
-        req.open("GET", url, False)  # False = Synchronous
-        
-        # TRICK: Tell browser to treat data as user-defined text (preserves byte values)
-        req.overrideMimeType("text/plain; charset=x-user-defined")
-        req.send(None)
-        
-        if req.status == 200:
-            # Convert the "text" back to raw bytes
-            # We take the lower 8 bits of each character code
-            binary_data = bytes(ord(c) & 0xFF for c in req.responseText)
-            
-            with open(filename, "wb") as f:
-                f.write(binary_data)
-            print(f"✓ Downloaded {filename} successfully")
-        else:
-            print(f"✗ Failed to download. Status: {req.status}")
-            
-    except Exception as e:
-        print(f"✗ Error during download: {e}")
-
-# 2. Run the download immediately (No await needed!)
-if not os.path.exists(font_file):
-    print(f"Downloading {font_file}...")
-    download_font_sync(font_url, font_file)
-
-# Font is already available - buildprimitives uses SVG text with font-family
-# No need to register fonts with OCP since we're generating SVG directly
-print(f"✓ Font ready: {font_name}")
 
 class NeckGeometry:
     """
@@ -211,7 +169,7 @@ def generate_neck_svg(params: Dict[str, Any]) -> str:
     neck_length = params.get('neck_length')
     
     exporter = ExportSVG(scale=1.0)
-    exporter.add_shape(Text("Neck view",12*PTS_MM, font=font_name))
+    exporter.add_shape(Text("Neck view",12*PTS_MM, font=FONT_NAME))
     
     return exporter_to_svg(exporter)
 
@@ -432,7 +390,7 @@ def generate_side_view_svg(params: Dict[str, Any]) -> str:
         rib_to_nut_feature_line = Edge.make_line((reference_line_end_x, 0), (reference_line_end_x, nut_top_y))
         for shape, layer in create_vertical_dimension(rib_to_nut_feature_line,
                                                        f"{nut_top_y:.1f}",
-                                                       offset_x=-8, font_size=dim_font_size):
+                                                       offset_x=-8, font_size=DIMENSION_FONT_SIZE):
             exporter.add_shape(shape, layer=layer)
 
     # Calculate string length
@@ -440,7 +398,7 @@ def generate_side_view_svg(params: Dict[str, Any]) -> str:
 
     # Add diagonal dimension for string length
     for shape, layer in create_diagonal_dimension(string_line, f"{string_length:.1f} Calculated",
-                                                   offset_distance=10, font_size=dim_font_size):
+                                                   offset_distance=10, font_size=DIMENSION_FONT_SIZE):
         exporter.add_shape(shape, layer=layer)
 
     # Add dimension from nut to where string crosses a perpendicular to neck at body join
@@ -482,7 +440,7 @@ def generate_side_view_svg(params: Dict[str, Any]) -> str:
         nut_to_perp_line = Edge.make_line((nut_top_x, nut_top_y), (intersect_x, intersect_y))
         for shape, layer in create_diagonal_dimension(nut_to_perp_line,
                                                        f"{nut_to_perp_distance:.1f}",
-                                                       offset_distance=20, font_size=dim_font_size):
+                                                       offset_distance=20, font_size=DIMENSION_FONT_SIZE):
             exporter.add_shape(shape, layer=layer)
 
     # Calculate string height above end of fingerboard (perpendicular to fingerboard surface)
@@ -531,14 +489,14 @@ def generate_side_view_svg(params: Dict[str, Any]) -> str:
     fb_surface_point_y = string_y_at_fb_end - string_height_at_fb_end * perp_dy
 
     # Add dimension annotations using helper functions
-    # (dim_font_size already defined above)
+    # (DIMENSION_FONT_SIZE already defined above)
 
     # Dimension: string height above end of fingerboard (perpendicular)
     string_height_feature_line = Edge.make_line((fb_surface_point_x, fb_surface_point_y),
                                                  (string_x_at_fb_end, string_y_at_fb_end))
     for shape, layer in create_vertical_dimension(string_height_feature_line,
                                                    f"{string_height_at_fb_end:.1f}",
-                                                   offset_x=8, font_size=dim_font_size):
+                                                   offset_x=8, font_size=DIMENSION_FONT_SIZE):
         exporter.add_shape(shape, layer=layer)
 
     # Dimension: horizontal distance from nut to x=0 (neck projection)
@@ -546,26 +504,26 @@ def generate_side_view_svg(params: Dict[str, Any]) -> str:
     nut_x_distance = abs(neck_end_x)  # This equals neck_stop
     nut_feature_line = Edge.make_line((neck_end_x, neck_end_y), (0, neck_end_y))
     for shape, layer in create_horizontal_dimension(nut_feature_line, f"{nut_x_distance:.1f}",
-                                                     offset_y=-10, extension_length=3, font_size=dim_font_size):
+                                                     offset_y=-10, extension_length=3, font_size=DIMENSION_FONT_SIZE):
         exporter.add_shape(shape, layer=layer)
 
     # Dimension: arching_height (vertical, from top of belly to arch peak - includes belly thickness)
     arch_feature_line = Edge.make_line((body_stop, 0), (body_stop, arching_height))
     for shape, layer in create_vertical_dimension(arch_feature_line, f"{arching_height:.1f}",
-                                                   offset_x=8, font_size=dim_font_size):
+                                                   offset_x=8, font_size=DIMENSION_FONT_SIZE):
         exporter.add_shape(shape, layer=layer)
 
     # Dimension: body_stop (horizontal, with extension lines below body)
     bottom_y = belly_edge_thickness - rib_height
     body_stop_feature_line = Edge.make_line((0, bottom_y), (body_stop, bottom_y))
     for shape, layer in create_horizontal_dimension(body_stop_feature_line, f"{body_stop:.1f}",
-                                                     offset_y=-15, extension_length=3, font_size=dim_font_size):
+                                                     offset_y=-15, extension_length=3, font_size=DIMENSION_FONT_SIZE):
         exporter.add_shape(shape, layer=layer)
 
     # Dimension: body_length (horizontal, further below with extension lines)
     body_length_feature_line = Edge.make_line((0, bottom_y), (body_length, bottom_y))
     for shape, layer in create_horizontal_dimension(body_length_feature_line, f"{body_length:.1f}",
-                                                     offset_y=-30, extension_length=3, font_size=dim_font_size):
+                                                     offset_y=-30, extension_length=3, font_size=DIMENSION_FONT_SIZE):
         exporter.add_shape(shape, layer=layer)
 
     # Dimension: rib_height (vertical, on right side)
@@ -576,8 +534,8 @@ def generate_side_view_svg(params: Dict[str, Any]) -> str:
     exporter.add_shape(rib_dim_line, layer="dimensions")
     for arrow in create_dimension_arrows(dim_p1, dim_p2, 3.0):
         exporter.add_shape(arrow, layer="arrows")
-    rib_text = Text(f"{rib_height:.1f}", dim_font_size, font=font_name)
-    rib_text = rib_text.move(Location((rib_dim_x + dim_font_size, belly_edge_thickness - rib_height/2)))
+    rib_text = Text(f"{rib_height:.1f}", DIMENSION_FONT_SIZE, font=FONT_NAME)
+    rib_text = rib_text.move(Location((rib_dim_x + DIMENSION_FONT_SIZE, belly_edge_thickness - rib_height/2)))
     exporter.add_shape(rib_text, layer="extensions")
 
     # Dimension: belly_edge_thickness (vertical, on right side above ribs)
@@ -588,24 +546,23 @@ def generate_side_view_svg(params: Dict[str, Any]) -> str:
     exporter.add_shape(belly_dim_line, layer="dimensions")
     for arrow in create_dimension_arrows(dim_p1, dim_p2, 3.0):
         exporter.add_shape(arrow, layer="arrows")
-    belly_text = Text(f"{belly_edge_thickness:.1f}", dim_font_size, font=font_name)
-    belly_text = belly_text.move(Location((belly_dim_x + dim_font_size, belly_edge_thickness/2)))
+    belly_text = Text(f"{belly_edge_thickness:.1f}", DIMENSION_FONT_SIZE, font=FONT_NAME)
+    belly_text = belly_text.move(Location((belly_dim_x + DIMENSION_FONT_SIZE, belly_edge_thickness/2)))
     exporter.add_shape(belly_text, layer="extensions")
 
     # Dimension: bridge_height (vertical, from arch peak to top of bridge)
     bridge_feature_line = Edge.make_line((body_stop, arching_height), (body_stop, arching_height + bridge_height))
     for shape, layer in create_vertical_dimension(bridge_feature_line, f"{bridge_height:.1f}",
-                                                   offset_x=15, font_size=dim_font_size):
+                                                   offset_x=15, font_size=DIMENSION_FONT_SIZE):
         exporter.add_shape(shape, layer=layer)
 
     # Title text - centered horizontally, 2.5cm above the highest point
     # Highest point is the top of the bridge line (plus some margin for dimension text)
     max_y = arching_height + bridge_height
     title_gap = 25  # 2.5cm gap to account for dimension lines and text
-    title_font_size = 14*PTS_MM
-    title_text = Text(instrument_name, title_font_size, font=font_name)
+    title_text = Text(instrument_name, TITLE_FONT_SIZE, font=FONT_NAME)
     # Center the title (approximate centering based on character width)
-    title_width_approx = len(instrument_name) * title_font_size * 0.6
+    title_width_approx = len(instrument_name) * TITLE_FONT_SIZE * 0.6
     title_text = title_text.move(Location((body_length/2 - title_width_approx/2, max_y + title_gap)))
     exporter.add_shape(title_text, layer="text")
 
@@ -615,8 +572,7 @@ def generate_side_view_svg(params: Dict[str, Any]) -> str:
     min_y = bottom_y - 30 - 15  # Below the body_length dimension line (-30) and gap (-15)
 
     # Footer text - small text with generator URL
-    footer_font_size = 6*PTS_MM
-    footer_text = Text(f"Generated by {generator_url}", footer_font_size, font=font_name)
+    footer_text = Text(f"Generated by {generator_url}", FOOTER_FONT_SIZE, font=FONT_NAME)
     footer_text = footer_text.move(Location((0, min_y)))
     exporter.add_shape(footer_text, layer="text")
 
@@ -627,7 +583,7 @@ def generate_top_view_svg(params: Dict[str, Any]) -> str:
   
 
     exporter = ExportSVG(scale=1.0)
-    text_shape = Text("Top View", 10, font=font_name)
+    text_shape = Text("Top View", 10, font=FONT_NAME)
     exporter.add_shape(text_shape)
     return exporter_to_svg(exporter)
     
@@ -642,7 +598,7 @@ def generate_cross_section_svg(params: Dict[str, Any]) -> str:
         SVG string of cross-section view
     """
     exporter = ExportSVG(scale=1.0)
-    exporter.add_shape(Text("Cross section",10,font=font_name))
+    exporter.add_shape(Text("Cross section",10,font=FONT_NAME))
     return exporter_to_svg(exporter)
     
     

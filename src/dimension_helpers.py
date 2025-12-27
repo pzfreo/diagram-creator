@@ -5,14 +5,13 @@ Provides functions to create dimension lines, arrows, and text annotations
 for horizontal, vertical, diagonal, and angular measurements.
 """
 
-from buildprimitives import *
+from buildprimitives import (
+    ExportSVG, Line, Circle, Arc, Text, Polyline, Edge,
+    Location, LineType, Axis, Plane,
+    FONT_NAME, DIMENSION_FONT_SIZE, PTS_MM  # Font constants
+)
 import math
 from typing import List, Tuple
-
-# Constants
-PTS_MM = 0.352778
-dim_font_size = 8 * PTS_MM
-font_name = "Roboto"
 
 
 def create_dimension_arrows(p1, p2, arrow_size=3.0):
@@ -99,7 +98,7 @@ def create_vertical_dimension(feature_line, label, offset_x=8,
         shapes.append((arrow, "arrows"))
 
     # Dimension text (centered vertically)
-    text = Text(label, font_size, font=font_name)
+    text = Text(label, font_size, font=FONT_NAME)
     text_offset = font_size  # Offset text to the right of dimension line
     text = text.move(Location((ext_x + text_offset, (y_start + y_end) / 2)))
     shapes.append((text, "extensions"))
@@ -190,7 +189,7 @@ def create_diagonal_dimension(feature_line, label, offset_distance=8,
     elif angle_deg < -90:
         angle_deg += 180
 
-    text = Text(label, font_size, font=font_name)
+    text = Text(label, font_size, font=FONT_NAME)
     # Move to position first, then rotate around that point
     text = text.move(Location((text_x, text_y)))
     # Rotate around the Z-axis at the text position
@@ -243,7 +242,7 @@ def create_horizontal_dimension(feature_line, label, offset_y=-10,
         shapes.append((arrow, "arrows"))
 
     # Dimension text (centered horizontally)
-    text = Text(label, font_size, font=font_name)
+    text = Text(label, font_size, font=FONT_NAME)
     text_offset = font_size  # Offset text below dimension line
     text = text.move(Location(((x_start + x_end) / 2 - 10, dim_y - text_offset)))
     shapes.append((text, "extensions"))
@@ -376,7 +375,7 @@ def create_angle_dimension(line1, line2, label=None, arc_radius=15,
     text_x = jx + text_radius * math.cos(mid_angle)
     text_y = jy + text_radius * math.sin(mid_angle)
 
-    text = Text(label, font_size, font=font_name)
+    text = Text(label, font_size, font=FONT_NAME)
     # Center the text approximately (rough centering based on typical character width)
     text_width_approx = len(label) * font_size * 0.6
     text = text.move(Location((text_x - text_width_approx/2, text_y - font_size/2)))
