@@ -6,6 +6,7 @@ This is where your Build123d geometry expertise goes.
 
 from buildprimitives import *
 from buildprimitives import FONT_NAME, TITLE_FONT_SIZE, FOOTER_FONT_SIZE, PTS_MM  # Font constants
+from instrument_parameters import CalculationMode
 import math
 from typing import Dict, Any, Tuple
 from dimension_helpers import (
@@ -17,53 +18,24 @@ from dimension_helpers import (
     DIMENSION_FONT_SIZE
 )
 
-class NeckGeometry:
-    """
-    Generates neck geometry from validated parameters.
+# class NeckGeometry:
+#     """
+#     Generates neck geometry from validated parameters.
     
-    This class contains all the lutherie-specific geometry generation.
-    Each method focuses on one component (neck, scroll, pegbox, etc.)
-    """
+#     This class contains all the lutherie-specific geometry generation.
+#     Each method focuses on one component (neck, scroll, pegbox, etc.)
+#     """
     
-    def __init__(self, params: Dict[str, Any]):
-        """
-        Initialize with validated parameters.
+#     def __init__(self, params: Dict[str, Any]):
+#         """
+#         Initialize with validated parameters.
         
-        Args:
-            params: Dictionary of parameter values from instrument_parameters.py
-        """
-        self.params = params
+#         Args:
+#             params: Dictionary of parameter values from instrument_parameters.py
+#         """
+#         self.params = params
         
-    # ============================================
-    # HELPER METHODS
-    # ============================================
     
-    def interpolate(self, start_key: str, end_key: str, t: float) -> float:
-        """
-        Interpolate between two parameter values with optional curve.
-        
-        Args:
-            start_key: Parameter name for start value (e.g., 'width_at_nut')
-            end_key: Parameter name for end value (e.g., 'width_at_heel')
-            t: Position along length (0.0 = start, 1.0 = end)
-            
-        Returns:
-            Interpolated value
-        """
-        start = self.params[start_key]
-        end = self.params[end_key]
-        curve = self.params.get('taper_curve', 1.0)
-        
-        # Apply taper curve: t^curve for convex, t^(1/curve) for concave
-        t_curved = t ** curve
-        
-        return start + (end - start) * t_curved
-    
-    # def get_width_at(self, position: float) -> float:
-    #     """Get neck width at position (0=nut, 1=heel)"""
-    #     return self.interpolate('width_at_nut', 'width_at_heel', position)
-
-
 def calculate_derived_values(params: Dict[str, Any]) -> Dict[str, Any]:
     """
     Calculate derived values from parameters.
@@ -76,10 +48,11 @@ def calculate_derived_values(params: Dict[str, Any]) -> Dict[str, Any]:
     """
     derived = {}
 
+   
+
     # Extract values safely
     vsl = params.get('vsl') or 0
-    # neck_stop = params.get('neck_stop') or 0
-    body_stop = params.get('body_stop') or 0
+    fret_positions = calculate_fret_positions(vsl, params.get('no_frets') or 24)
     arching_height = params.get('arching_height') or 0
     overstand = params.get('overstand') or 0
     # body_length = params.get('body_length') or 0
@@ -93,29 +66,48 @@ def calculate_derived_values(params: Dict[str, Any]) -> Dict[str, Any]:
     # show_rib_reference = params.get('show_rib_reference', True)
 
     string_height_nut = params.get('string_height_nut') or 0
-    string_height_eof = params.get('string_height_eof') or 0
-
-    string_height_at_join = (string_height_eof - string_height_nut) * ((vsl-body_stop)/fingerboard_length) + string_height_nut #approximate
-
-    bridge_top_x = body_stop
+    
+    calculation_mode = params.get('calculation_mode') or CalculationMode.BODY_STOP_DRIVEN
+    string_height_at_join = 0
+    bridge_top_x = 0 # see below
     bridge_top_y = arching_height + bridge_height
-    bridge_top = (bridge_top_x, bridge_top_y)
+    body_stop = 0 # see below
+    string_angle_to_ribs = 0 # see below
+    string_angle_to_ribs_rad = 0 # see below
+    string_nut_to_join = 0 # see below
+    neck_stop = 0 # see below
+    if (calculation_mode == CalculationMode.BODY_STOP_DRIVEN.name):
+        body_stop = params.get('body_stop') or 0
+        string_height_eof = params.get('string_height_eof') or 0
+        string_height_at_join = (string_height_eof - string_height_nut) * ((vsl-body_stop)/fingerboard_length) + string_height_nut #approximate
+        opposite = arching_height + bridge_height - overstand - fb_thickness_at_join - string_height_at_join
+        string_angle_to_ribs_rad = math.atan(opposite / body_stop)
+        string_angle_to_ribs = string_angle_to_ribs_rad * 180 / math.pi
+        string_to_join = math.sqrt(opposite**2 + body_stop**2)
+        string_nut_to_join = vsl-string_to_join
+        neck_stop = math.cos(string_angle_to_ribs_rad)*string_nut_to_join
+        opposite_string_to_fb = string_height_eof - string_height_nut
+        string_angle_to_fb = math.atan(opposite_string_to_fb / fingerboard_length) * 180 / math.pi
+    elif (calculation_mode == CalculationMode.FRET_JOIN_DRIVEN.name):
+        fret_join = params.get('fret_join') or 12
+        string_height_12th_fret = params.get('string_height_12th_fret') or 0
+        string_height_at_join = ((string_height_12th_fret-string_height_nut)*(fret_positions[fret_join]/fret_positions[12])) + string_height_nut
+        hypotenuse = vsl-fret_positions[fret_join]
+        opposite = arching_height + bridge_height - overstand - fb_thickness_at_join - string_height_at_join
+        string_angle_to_ribs_rad = math.asin(opposite / hypotenuse)
+        string_angle_to_ribs = string_angle_to_ribs_rad * 180 / math.pi
+        string_nut_to_join = fret_positions[fret_join] 
+        neck_stop = math.cos(string_angle_to_ribs_rad)*string_nut_to_join
+        opposite_string_to_join = string_height_at_join - string_height_nut
+        string_angle_to_fb = math.atan(opposite_string_to_join / fret_positions[fret_join]) * 180 / math.pi
+    else:
+        raise ValueError("Invalid calculation mode")
     
-    opposite = arching_height + bridge_height - overstand - fb_thickness_at_join - string_height_at_join
-    string_angle_to_ribs_rad = math.atan(opposite / body_stop)
-    print(f"String angle to ribs rad: {string_angle_to_ribs_rad}")
-    string_angle_to_ribs = string_angle_to_ribs_rad * 180 / math.pi
-    print(f"String angle to ribs: {string_angle_to_ribs}")
-    string_to_join = math.sqrt(opposite**2 + body_stop**2)
-    print(f"String to join: {string_to_join}")
-    string_nut_to_join = vsl-string_to_join
-    print(f"String nut to join: {string_nut_to_join}")
-    neck_stop = math.cos(string_angle_to_ribs_rad)*string_nut_to_join
-    print(f"Neck stop: {neck_stop}")
+    bridge_top_x = body_stop
+    nut_top_x = -neck_stop
+    nut_top_y = bridge_top_y - math.sin(string_angle_to_ribs_rad)*vsl
+    print("nut_top_x, nut_top_y", nut_top_x, nut_top_y)
     
-    
-    opposite_string_to_fb = string_height_eof - string_height_nut
-    string_angle_to_fb = math.atan(opposite_string_to_fb / fingerboard_length) * 180 / math.pi
     opposite_fb = fb_thickness_at_join - fb_thickness_at_nut
     fingerboard_angle = math.atan(opposite_fb / neck_stop) * 180 / math.pi
     neck_angle = 90-(string_angle_to_ribs-string_angle_to_fb-fingerboard_angle)
@@ -123,7 +115,7 @@ def calculate_derived_values(params: Dict[str, Any]) -> Dict[str, Any]:
 
     # Calculate neck end position and nut position for string length
     neck_angle_rad = neck_angle * math.pi / 180
-    neck_end_x = 0 - neck_stop
+    neck_end_x = 0 - neck_stop + math.cos(neck_angle_rad)*fb_thickness_at_nut
     neck_end_y = overstand - neck_stop * math.cos(neck_angle_rad)
     derived['Neck Stop'] = neck_stop
     derived['Neck Angle (rad)'] = neck_angle_rad
@@ -133,8 +125,9 @@ def calculate_derived_values(params: Dict[str, Any]) -> Dict[str, Any]:
     # Calculate nut position (top of nut)
     nut_radius = fb_thickness_at_nut + string_height_nut
     neck_line_angle = math.atan2(neck_end_y - overstand, neck_end_x - 0)
-    nut_top_x = neck_end_x + nut_radius * math.cos(neck_line_angle - math.pi/2)
-    nut_top_y = neck_end_y + nut_radius * math.sin(neck_line_angle - math.pi/2)
+    # nut_top_x = neck_end_x + nut_radius * math.cos(neck_line_angle - math.pi/2)
+    # nut_top_y = neck_end_y + nut_radius * math.sin(neck_line_angle - math.pi/2)
+    print("nut_top_x, nut_top_y", nut_top_x, nut_top_y) 
 
     derived['Nut Radius'] = nut_radius
     derived['Neck Line Angle'] = neck_line_angle
@@ -165,29 +158,18 @@ def calculate_derived_values(params: Dict[str, Any]) -> Dict[str, Any]:
 
     return derived
     
-    
+def calculate_fret_positions(vsl: float, no_frets: int) -> list[float]:
+    fret_positions = []
+    for i in range(no_frets):
+        fret_positions.append(vsl -(vsl / (2 ** (i / 12))))
+    return fret_positions
+
 
 def exporter_to_svg(exp: ExportSVG) -> str:
     """Convert ExportSVG to SVG string without temp files."""
     return exp.write(filename=None)
 
 
-def generate_neck_svg(params: Dict[str, Any]) -> str:
-    """
-    Main entry point for generating neck geometry.
-    
-    Args:
-        params: Validated parameter dictionary
-        
-    Returns:
-        SVG string of the complete neck template
-    """
-    neck_length = params.get('neck_length')
-    
-    exporter = ExportSVG(scale=1.0)
-    exporter.add_shape(Text("Neck view",12*PTS_MM, font=FONT_NAME))
-    
-    return exporter_to_svg(exporter)
 
 
 def generate_side_view_svg(params: Dict[str, Any]) -> str:
