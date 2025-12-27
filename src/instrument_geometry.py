@@ -239,17 +239,13 @@ def generate_side_view_svg(params: Dict[str, Any]) -> str:
     rect = rect.move(Location((body_length/2, belly_edge_thickness - rib_height/2)))
     exporter.add_shape(rect, layer="drawing")
 
-    # Add arched top curve through three points (schematic/approximate):
-    # arching_height is measured from the rib reference line (y=0)
-    # The arch rises from the ribs (y=0) to peak at arching_height
-    # Note: Using dashed line to indicate this is an approximate representation
-    arch_points = [
-        (0, 0),
-        (body_stop, arching_height),
-        (body_length, 0)
-    ]
-    arch_curve = Spline(*arch_points)
-    exporter.add_shape(arch_curve, layer="schematic")
+    # Add arched top as simple line segments (schematic representation):
+    # The arch rises from the top of the belly to peak at arching_height (measured from ribs)
+    # Using straight lines instead of spline to ensure arch actually reaches the peak height
+    arch_left = Edge.make_line((0, belly_edge_thickness), (body_stop, arching_height))
+    arch_right = Edge.make_line((body_stop, arching_height), (body_length, belly_edge_thickness))
+    exporter.add_shape(arch_left, layer="schematic")
+    exporter.add_shape(arch_right, layer="schematic")
 
     # Add vertical line from arch peak extending by bridge_height
     bridge_line = Edge.make_line((body_stop, arching_height), (body_stop, arching_height + bridge_height))
