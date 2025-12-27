@@ -126,6 +126,9 @@ def calculate_derived_values(params: Dict[str, Any]) -> Dict[str, Any]:
     neck_end_x = 0 - neck_stop
     neck_end_y = overstand - neck_stop * math.cos(neck_angle_rad)
     derived['Neck Stop'] = neck_stop
+    derived['Neck Angle (rad)'] = neck_angle_rad
+    derived['Neck End X'] = neck_end_x
+    derived['Neck End Y'] = neck_end_y
 
     # Calculate nut position (top of nut)
     nut_radius = fb_thickness_at_nut + string_height_nut
@@ -133,9 +136,14 @@ def calculate_derived_values(params: Dict[str, Any]) -> Dict[str, Any]:
     nut_top_x = neck_end_x + nut_radius * math.cos(neck_line_angle - math.pi/2)
     nut_top_y = neck_end_y + nut_radius * math.sin(neck_line_angle - math.pi/2)
 
-    # Calculate bridge position
-    bridge_top_x = body_stop
-    bridge_top_y = arching_height + bridge_height
+    derived['Nut Radius'] = nut_radius
+    derived['Neck Line Angle'] = neck_line_angle
+    derived['Nut Top X'] = nut_top_x
+    derived['Nut Top Y'] = nut_top_y
+
+    # Store bridge position (use variables from lines 100-102)
+    derived['Bridge Top X'] = bridge_top_x
+    derived['Bridge Top Y'] = bridge_top_y
 
     # Calculate string length
     string_length = math.sqrt((bridge_top_x - nut_top_x)**2 + (bridge_top_y - nut_top_y)**2)
@@ -143,6 +151,17 @@ def calculate_derived_values(params: Dict[str, Any]) -> Dict[str, Any]:
 
     # Add nut position relative to ribs if rib reference is enabled
     derived['Nut Relative to Ribs'] = nut_top_y
+
+    # Calculate fingerboard geometry
+    fb_direction_angle = neck_line_angle + math.pi
+    fb_bottom_end_x = neck_end_x + fingerboard_length * math.cos(fb_direction_angle)
+    fb_bottom_end_y = neck_end_y + fingerboard_length * math.sin(fb_direction_angle)
+    fb_thickness_at_end = fb_thickness_at_nut + (fb_thickness_at_join - fb_thickness_at_nut) * (fingerboard_length / neck_stop)
+
+    derived['Fingerboard Direction Angle'] = fb_direction_angle
+    derived['Fingerboard Bottom End X'] = fb_bottom_end_x
+    derived['Fingerboard Bottom End Y'] = fb_bottom_end_y
+    derived['Fingerboard Thickness at End'] = fb_thickness_at_end
 
     return derived
     
@@ -199,6 +218,21 @@ def generate_side_view_svg(params: Dict[str, Any]) -> str:
     neck_stop = derived.get('Neck Stop', 0)
     string_length = derived.get('String Length', 0)
     nut_top_y = derived.get('Nut Relative to Ribs', 0)
+
+    # Extract geometry values from derived dictionary
+    neck_angle_rad = derived.get('Neck Angle (rad)', 0)
+    neck_end_x = derived.get('Neck End X', 0)
+    neck_end_y = derived.get('Neck End Y', 0)
+    nut_radius = derived.get('Nut Radius', 0)
+    neck_line_angle = derived.get('Neck Line Angle', 0)
+    nut_top_x = derived.get('Nut Top X', 0)
+    nut_top_y = derived.get('Nut Top Y', 0)
+    bridge_top_x = derived.get('Bridge Top X', 0)
+    bridge_top_y = derived.get('Bridge Top Y', 0)
+    fb_direction_angle = derived.get('Fingerboard Direction Angle', 0)
+    fb_bottom_end_x = derived.get('Fingerboard Bottom End X', 0)
+    fb_bottom_end_y = derived.get('Fingerboard Bottom End Y', 0)
+    fb_thickness_at_end = derived.get('Fingerboard Thickness at End', 0)
 
     # Calculate neck angle precisely (without rounding) for accurate geometry
     # string_height_at_join = (string_height_eof - string_height_nut) * (neck_stop / fingerboard_length) + string_height_nut
@@ -257,21 +291,13 @@ def generate_side_view_svg(params: Dict[str, Any]) -> str:
     exporter.add_shape(neck_vertical_line, layer="drawing")
 
     # Line 2: From (0, overstand) at neck_angle, going down and left for length neck_stop
-    # Convert neck angle from degrees to radians
-    neck_angle_rad = neck_angle_deg * math.pi / 180
-
-    # Calculate endpoint: going down and to the left at neck_angle from vertical
-    neck_end_x = 0 - neck_stop
-    neck_end_y = overstand - neck_stop * math.cos(neck_angle_rad)
+    # Using precomputed values from derived dictionary
     neck_angled_line = Edge.make_line((0, overstand), (neck_end_x, neck_end_y))
     exporter.add_shape(neck_angled_line, layer="drawing")
 
     # Add nut as a quarter circle at the end of the neck
     # The quarter circle is centered at the nut position and extends perpendicular to the neck surface
-    nut_radius = fb_thickness_at_nut + string_height_nut
-
-    # Calculate the angle of the neck line (from horizontal)
-    neck_line_angle = math.atan2(neck_end_y - overstand, neck_end_x - 0)
+    # Using precomputed nut_radius and neck_line_angle from derived dictionary
 
     # The quarter circle extends perpendicular to the neck surface, away from body and above neck
     # Rotated 180 degrees to extend away from body (left) and above the neck
@@ -309,10 +335,7 @@ def generate_side_view_svg(params: Dict[str, Any]) -> str:
 
     # Add fingerboard
     # Fingerboard bottom: runs along the neck surface from nut toward body for length fingerboard_length
-    # Need to reverse direction (add π) since neck_line_angle points from body to nut
-    fb_direction_angle = neck_line_angle + math.pi
-    fb_bottom_end_x = neck_end_x + fingerboard_length * math.cos(fb_direction_angle)
-    fb_bottom_end_y = neck_end_y + fingerboard_length * math.sin(fb_direction_angle)
+    # Using precomputed fingerboard geometry from derived dictionary
     fb_bottom_line = Edge.make_line((neck_end_x, neck_end_y), (fb_bottom_end_x, fb_bottom_end_y))
     exporter.add_shape(fb_bottom_line, layer="drawing")
 
@@ -322,10 +345,7 @@ def generate_side_view_svg(params: Dict[str, Any]) -> str:
     fb_left_edge = Edge.make_line((neck_end_x, neck_end_y), (fb_top_left_x, fb_top_left_y))
     exporter.add_shape(fb_left_edge, layer="drawing")
 
-    # Fingerboard top edge: extrapolate thickness from nut to join, then continue to end
-    # At join (neck_stop distance), thickness = fb_thickness_at_join
-    # At end (fingerboard_length), extrapolate linearly
-    fb_thickness_at_end = fb_thickness_at_nut + (fb_thickness_at_join - fb_thickness_at_nut) * (fingerboard_length / neck_stop)
+    # Fingerboard top edge: using precomputed thickness at end
 
     # Top right corner: offset perpendicular from bottom right corner
     fb_top_right_x = fb_bottom_end_x + fb_thickness_at_end * math.cos(fb_direction_angle + math.pi/2)
@@ -338,20 +358,13 @@ def generate_side_view_svg(params: Dict[str, Any]) -> str:
     exporter.add_shape(fb_right_edge, layer="drawing")
 
     # Add strings from top of nut to top of bridge
-    # Top of nut: the outermost point of the nut quarter circle (perpendicular to neck surface)
-    # Using the same direction as the rotated nut (neck_line_angle - math.pi/2)
-    nut_top_x = neck_end_x + nut_radius * math.cos(neck_line_angle - math.pi/2)
-    nut_top_y = neck_end_y + nut_radius * math.sin(neck_line_angle - math.pi/2)
+    # Using precomputed nut_top and bridge_top positions from derived dictionary
 
     # Add horizontal reference line from top of ribs (0,0) extending 20mm beyond nut
     # This is a dotted reference line (controlled by show_rib_reference parameter)
     reference_line_end_x = nut_top_x - 20
     reference_line = Edge.make_line((0, 0), (reference_line_end_x, 0))
     exporter.add_shape(reference_line, layer="reference")
-
-    # Top of bridge: at (body_stop, arching_height + bridge_height)
-    bridge_top_x = body_stop
-    bridge_top_y = arching_height + bridge_height
 
     # Draw string line
     string_line = Edge.make_line((nut_top_x, nut_top_y), (bridge_top_x, bridge_top_y))
@@ -367,10 +380,7 @@ def generate_side_view_svg(params: Dict[str, Any]) -> str:
                                                        offset_x=-8, font_size=DIMENSION_FONT_SIZE):
             exporter.add_shape(shape, layer=layer)
 
-    # Calculate string length
-    string_length = math.sqrt((bridge_top_x - nut_top_x)**2 + (bridge_top_y - nut_top_y)**2)
-
-    # Add diagonal dimension for string length
+    # Add diagonal dimension for string length (using precomputed value from derived dictionary)
     for shape, layer in create_diagonal_dimension(string_line, f"{string_length:.1f} Calculated",
                                                    offset_distance=10, font_size=DIMENSION_FONT_SIZE):
         exporter.add_shape(shape, layer=layer)
