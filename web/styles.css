@@ -138,24 +138,31 @@ h1 {
 .mobile-close-btn {
     display: none;
     position: absolute;
-    top: 1rem;
-    right: 1rem;
+    top: 0.75rem;
+    right: 0.75rem;
     background: white;
     border: 2px solid #e5e7eb;
     border-radius: 6px;
-    padding: 6px 12px;
-    font-size: 0.85rem;
-    font-weight: 600;
+    padding: 4px 8px;
+    font-size: 1.25rem;
+    font-weight: 400;
     color: #6b7280;
     cursor: pointer;
     z-index: 11;
     opacity: 0;
     transition: opacity 0.3s ease;
+    line-height: 1;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .mobile-close-btn:hover {
     border-color: #4F46E5;
     color: #4F46E5;
+    background: #f9fafb;
 }
 
 /* Overlay for mobile sidebar */
@@ -231,7 +238,11 @@ h1 {
     }
 
     .sticky-generate-section {
-        padding-top: 3.5rem;
+        padding-top: 3rem;
+    }
+
+    .mobile-close-btn {
+        display: flex;
     }
 }
 

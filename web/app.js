@@ -450,7 +450,13 @@ function collectParameters() {
         if (!element) continue;
 
         if (param.type === 'number') {
-            params[name] = parseFloat(element.value);
+            const value = parseFloat(element.value);
+            // Only include valid numbers; use default if NaN or empty
+            if (!isNaN(value)) {
+                params[name] = value;
+            } else if (param.default !== undefined) {
+                params[name] = param.default;
+            }
         } else if (param.type === 'boolean') {
             params[name] = element.checked;
         } else if (param.type === 'string') {
@@ -563,7 +569,12 @@ function generateDimensionsTableHTML(params, derivedValues) {
 
             // Format the value based on type
             if (param.type === 'number') {
-                displayValue = `${value} <span class="param-unit">${param.unit}</span>`;
+                // Check if value is valid
+                if (value == null || isNaN(value)) {
+                    displayValue = '<span class="param-unit">—</span>';
+                } else {
+                    displayValue = `${value} <span class="param-unit">${param.unit}</span>`;
+                }
             } else if (param.type === 'boolean') {
                 displayValue = value ? 'Yes' : 'No';
             } else if (param.type === 'enum') {
@@ -607,7 +618,10 @@ function generateDimensionsTableHTML(params, derivedValues) {
                 const displayName = meta ? meta.display_name : label;
                 let formattedValue;
 
-                if (meta) {
+                // Check if value is valid (not NaN, null, or undefined)
+                if (value == null || isNaN(value)) {
+                    formattedValue = '<span class="param-unit">—</span>';
+                } else if (meta) {
                     formattedValue = `${value.toFixed(meta.decimals)} <span class="param-unit">${meta.unit}</span>`;
                 } else {
                     // Fallback to old formatting
@@ -968,10 +982,16 @@ async function updateDerivedValues() {
             // Update read-only input fields with calculated values
             for (const [name, param] of Object.entries(state.parameterDefinitions.parameters)) {
                 const isOutput = isParameterOutput(param, currentMode);
-                if (isOutput && result.values[param.label]) {
+                if (isOutput && result.values[param.label] != null) {
                     const input = document.getElementById(name);
                     if (input) {
-                        input.value = result.values[param.label];
+                        const value = result.values[param.label];
+                        // Only set value if it's not NaN
+                        if (!isNaN(value)) {
+                            input.value = value;
+                        } else {
+                            input.value = '';
+                        }
                     }
                 }
             }
@@ -990,7 +1010,11 @@ async function updateDerivedValues() {
 
                 // Use pre-formatted value from backend if available
                 let formattedValue;
-                if (result.formatted && result.formatted[label]) {
+
+                // Check if value is valid (not NaN, null, or undefined)
+                if (value == null || isNaN(value)) {
+                    formattedValue = '—';
+                } else if (result.formatted && result.formatted[label]) {
                     formattedValue = result.formatted[label];
                 } else if (meta) {
                     // Format using metadata
