@@ -124,13 +124,13 @@ def calculate_derived_values(params: Dict[str, Any]) -> Dict[str, Any]:
     derived['Neck End Y'] = neck_end_y
 
     # Calculate nut position (top of nut)
-    nut_radius = fb_thickness_at_nut + string_height_nut
+    nut_draw_radius = fb_thickness_at_nut + string_height_nut
     neck_line_angle = math.atan2(neck_end_y - overstand, neck_end_x - 0)
     # nut_top_x = neck_end_x + nut_radius * math.cos(neck_line_angle - math.pi/2)
     # nut_top_y = neck_end_y + nut_radius * math.sin(neck_line_angle - math.pi/2)
     print("nut_top_x, nut_top_y", nut_top_x, nut_top_y) 
 
-    derived['Nut Radius'] = nut_radius
+    derived['Nut Draw Radius'] = nut_draw_radius
     derived['Neck Line Angle'] = neck_line_angle
     derived['Nut Top X'] = nut_top_x
     derived['Nut Top Y'] = nut_top_y
@@ -197,6 +197,7 @@ def generate_side_view_svg(params: Dict[str, Any]) -> str:
     show_rib_reference = params.get('show_rib_reference', True)
 
     derived = calculate_derived_values(params)
+    body_stop = derived.get('Body Stop', body_stop)
     neck_angle_deg = derived.get('Neck Angle', 0)
     neck_stop = derived.get('Neck Stop', 0)
     string_length = derived.get('String Length', 0)
