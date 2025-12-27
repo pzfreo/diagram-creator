@@ -6,6 +6,7 @@
     "generator": "Instrument Neck Geometry Generator"
   },
   "parameters": {
+    "calculation_mode": "BODY_STOP_DRIVEN",
     "instrument_name": "Test Minimal",
     "vsl": 300.0,
     "body_stop": 180.0,
