@@ -154,7 +154,6 @@ h1 {
     line-height: 1;
     width: 32px;
     height: 32px;
-    display: flex;
     align-items: center;
     justify-content: center;
 }
@@ -203,7 +202,7 @@ h1 {
     }
 
     .mobile-close-btn {
-        display: block;
+        display: flex;
     }
 
     .controls-panel.mobile-open .mobile-close-btn {
@@ -239,10 +238,6 @@ h1 {
 
     .sticky-generate-section {
         padding-top: 3rem;
-    }
-
-    .mobile-close-btn {
-        display: flex;
     }
 }
 
