@@ -218,17 +218,7 @@ def generate_side_view_svg(params: Dict[str, Any]) -> str:
     fb_bottom_end_y = derived.get('Fingerboard Bottom End Y', 0)
     fb_thickness_at_end = derived.get('Fingerboard Thickness at End', 0)
 
-    # Calculate neck angle precisely (without rounding) for accurate geometry
-    # string_height_at_join = (string_height_eof - string_height_nut) * (neck_stop / fingerboard_length) + string_height_nut
-    # opposite = arching_height + bridge_height - overstand - fb_thickness_at_join - string_height_at_join
-    # string_angle_to_ribs = math.atan(opposite / body_stop) * 180 / math.pi
-    # opposite_string_to_fb = string_height_eof - string_height_nut
-    # string_angle_to_fb = math.atan(opposite_string_to_fb / fingerboard_length) * 180 / math.pi
-    # opposite_fb = fb_thickness_at_join - fb_thickness_at_nut
-    # fingerboard_angle = math.atan(opposite_fb / neck_stop) * 180 / math.pi
-    # neck_angle_deg = 90 - (string_angle_to_ribs - string_angle_to_fb - fingerboard_angle)
-
-   
+    
 
     # Export to SVG
     exporter = ExportSVG(scale=1.0,unit=Unit.MM, line_weight=0.5)

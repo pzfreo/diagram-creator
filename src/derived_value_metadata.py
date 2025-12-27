@@ -137,9 +137,9 @@ DERIVED_VALUE_METADATA: Dict[str, DerivedValueMetadata] = {
         order=102
     ),
 
-    'Nut Radius': DerivedValueMetadata(
-        key='Nut Radius',
-        display_name='Nut Radius',
+    'Nut Draw Radius': DerivedValueMetadata(
+        key='Nut Draw Radius',
+        display_name='Nut Draw Radius',
         unit='mm',
         decimals=2,
         visible=False,
