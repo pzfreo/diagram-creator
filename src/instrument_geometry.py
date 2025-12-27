@@ -262,16 +262,17 @@ def generate_side_view_svg(params: Dict[str, Any]) -> str:
     leader_line = Edge.make_line(leader_start, leader_end)
     exporter.add_shape(leader_line, layer="extensions")
 
-    # Add leader arrowhead (small filled triangle)
+    # Add leader arrowhead (small filled triangle pointing up)
     arrow_size = 2
+    # Define vertices relative to origin, pointing up
     arrowhead_vertices = [
-        (body_stop, arching_height),
-        (body_stop - arrow_size, arching_height - arrow_size),
-        (body_stop + arrow_size, arching_height - arrow_size)
+        (0, arrow_size/2),           # Top point
+        (-arrow_size, -arrow_size/2), # Bottom left
+        (arrow_size, -arrow_size/2)   # Bottom right
     ]
 
     arrowhead = make_face(Polygon(*arrowhead_vertices))
-    arrowhead = arrowhead.move(Location((body_stop,arching_height-(arrow_size/2))))
+    arrowhead = arrowhead.move(Location((body_stop, arching_height)))
     exporter.add_shape(arrowhead, layer="arrows")
 
     # Add neck angle reference lines
