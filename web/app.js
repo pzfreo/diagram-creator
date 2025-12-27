@@ -543,7 +543,7 @@ function updateParameterVisibility() {
     }
 }
 
-function generateDimensionsTableHTML(params, derivedValues) {
+function generateDimensionsTableHTML(params, derivedValues, derivedFormatted = {}) {
     const categories = state.parameterDefinitions.categories || [];
     const paramDefs = state.parameterDefinitions.parameters || {};
 
@@ -621,7 +621,14 @@ function generateDimensionsTableHTML(params, derivedValues) {
                 // Check if value is valid (not NaN, null, or undefined)
                 if (value == null || isNaN(value)) {
                     formattedValue = '<span class="param-unit">—</span>';
+                } else if (derivedFormatted[label]) {
+                    // Use pre-formatted value from backend (preferred)
+                    const parts = derivedFormatted[label].split(' ');
+                    const numPart = parts[0];
+                    const unitPart = parts.slice(1).join(' ');
+                    formattedValue = `${numPart} <span class="param-unit">${unitPart}</span>`;
                 } else if (meta) {
+                    // Fallback to client-side formatting
                     formattedValue = `${value.toFixed(meta.decimals)} <span class="param-unit">${meta.unit}</span>`;
                 } else {
                     // Fallback to old formatting
@@ -684,9 +691,10 @@ async function generateNeck() {
             `);
             const derivedResult = JSON.parse(derivedResultJson);
             state.derivedValues = derivedResult.success ? derivedResult.values : {};
+            state.derivedFormatted = derivedResult.success ? derivedResult.formatted : {};
 
             // Generate dimensions table view
-            state.views.dimensions = generateDimensionsTableHTML(params, state.derivedValues);
+            state.views.dimensions = generateDimensionsTableHTML(params, state.derivedValues, state.derivedFormatted);
 
             // Display current view
             displayCurrentView();
