@@ -6,7 +6,7 @@ automatically appear in the UI. Focus on encoding your lutherie expertise.
 """
 
 from dataclasses import dataclass, asdict
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from enum import Enum
 import json
 
@@ -34,6 +34,11 @@ class InstrumentType(Enum):
     BASS = "Bass Viol"
     OTHER = "Other"
 
+class CalculationMode(Enum):
+    """Calculation strategy for deriving neck/body dimensions"""
+    BODY_STOP_DRIVEN = "Body Stop Driven (Violin/Viol)"
+    FRET_JOIN_DRIVEN = "Fret Join Driven (Guitar/Mandolin)"
+
 
 # ============================================
 # PARAMETER CLASSES
@@ -51,10 +56,12 @@ class NumericParameter:
     description: str
     category: str
     step: float = 0.1
-    
+    visible_when: Optional[Dict[str, Any]] = None  # Condition for visibility
+    is_output: Optional[Dict[str, bool]] = None    # When this is calculated vs input
+
     def to_dict(self) -> dict:
         """Convert to JSON-serializable dict"""
-        return {
+        result = {
             'type': 'number',
             'name': self.name,
             'label': self.label,
@@ -67,6 +74,14 @@ class NumericParameter:
             'category': self.category
         }
 
+        # Add conditional metadata if present
+        if self.visible_when:
+            result['visible_when'] = self.visible_when
+        if self.is_output:
+            result['is_output'] = self.is_output
+
+        return result
+
 
 @dataclass
 class EnumParameter:
@@ -77,10 +92,12 @@ class EnumParameter:
     default: Enum
     description: str
     category: str
-    
+    visible_when: Optional[Dict[str, Any]] = None  # Condition for visibility
+    is_output: Optional[Dict[str, bool]] = None    # When this is calculated vs input
+
     def to_dict(self) -> dict:
         """Convert to JSON-serializable dict"""
-        return {
+        result = {
             'type': 'enum',
             'name': self.name,
             'label': self.label,
@@ -89,6 +106,14 @@ class EnumParameter:
             'description': self.description,
             'category': self.category
         }
+
+        # Add conditional metadata if present
+        if self.visible_when:
+            result['visible_when'] = self.visible_when
+        if self.is_output:
+            result['is_output'] = self.is_output
+
+        return result
 
 
 @dataclass
@@ -99,9 +124,11 @@ class BooleanParameter:
     default: bool
     description: str
     category: str
+    visible_when: Optional[Dict[str, Any]] = None  # Condition for visibility
+    is_output: Optional[Dict[str, bool]] = None    # When this is calculated vs input
 
     def to_dict(self) -> dict:
-        return {
+        result = {
             'type': 'boolean',
             'name': self.name,
             'label': self.label,
@@ -109,6 +136,14 @@ class BooleanParameter:
             'description': self.description,
             'category': self.category
         }
+
+        # Add conditional metadata if present
+        if self.visible_when:
+            result['visible_when'] = self.visible_when
+        if self.is_output:
+            result['is_output'] = self.is_output
+
+        return result
 
 
 @dataclass
@@ -120,9 +155,11 @@ class StringParameter:
     description: str
     category: str
     max_length: int = 100
+    visible_when: Optional[Dict[str, Any]] = None  # Condition for visibility
+    is_output: Optional[Dict[str, bool]] = None    # When this is calculated vs input
 
     def to_dict(self) -> dict:
-        return {
+        result = {
             'type': 'string',
             'name': self.name,
             'label': self.label,
@@ -131,6 +168,14 @@ class StringParameter:
             'category': self.category,
             'max_length': self.max_length
         }
+
+        # Add conditional metadata if present
+        if self.visible_when:
+            result['visible_when'] = self.visible_when
+        if self.is_output:
+            result['is_output'] = self.is_output
+
+        return result
 
 
 # ============================================
@@ -146,6 +191,16 @@ INSTRUMENT_PARAMETERS = {
         description='Name/label for this instrument (used in filenames)',
         category='General',
         max_length=50
+    ),
+
+    # Calculation Mode
+    'calculation_mode': EnumParameter(
+        name='calculation_mode',
+        label='Calculation Mode',
+        enum_class=CalculationMode,
+        default=CalculationMode.BODY_STOP_DRIVEN,
+        description='How to calculate neck/body dimensions',
+        category='General'
     ),
 
     # # Instrument Type
@@ -170,7 +225,20 @@ INSTRUMENT_PARAMETERS = {
         category='Basic Dimensions',
         step=0.5
     ),
-    
+
+    'fret_join': NumericParameter(
+        name='fret_join',
+        label='Fret at Body Join',
+        unit='fret #',
+        default=12,
+        min_val=1,
+        max_val=24,
+        step=1,
+        description='Which fret is located at the neck/body junction',
+        category='Basic Dimensions',
+        visible_when={'calculation_mode': 'FRET_JOIN_DRIVEN'}
+    ),
+
     'body_stop': NumericParameter(
         name='body_stop',
         label='Body Stop',
@@ -180,9 +248,9 @@ INSTRUMENT_PARAMETERS = {
         max_val=500.0,
         description='Length from where neck meets body to bridge',
         category='Basic Dimensions',
-        step=0.1
+        step=0.1,
+        is_output={'BODY_STOP_DRIVEN': False, 'FRET_JOIN_DRIVEN': True}
     ),
-
 
     'neck_stop': NumericParameter(
         name='neck_stop',
@@ -193,7 +261,9 @@ INSTRUMENT_PARAMETERS = {
         max_val=500.0,
         description='Length from nut to where neck meets body',
         category='Basic Dimensions',
-        step=0.1
+        step=0.1,
+        visible_when={'calculation_mode': 'BODY_STOP_DRIVEN'},
+        is_output={'BODY_STOP_DRIVEN': False, 'FRET_JOIN_DRIVEN': True}
     ),
 
     'body_length': NumericParameter(
