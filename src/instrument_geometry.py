@@ -197,7 +197,7 @@ def generate_side_view_svg(params: Dict[str, Any]) -> str:
     show_rib_reference = params.get('show_rib_reference', True)
 
     derived = calculate_derived_values(params)
-    body_stop = derived.get('Body Stop', body_stop)
+    body_stop = derived.get('Body Stop', body_stop) #calculated body_stop should work for Mandolins
     neck_angle_deg = derived.get('Neck Angle', 0)
     neck_stop = derived.get('Neck Stop', 0)
     string_length = derived.get('String Length', 0)
