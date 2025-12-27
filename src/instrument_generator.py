@@ -7,6 +7,7 @@ You rarely need to modify this - it's the "glue" code.
 
 from typing import Dict, Any, List, Tuple
 import json
+from derived_value_metadata import DERIVED_VALUE_METADATA, get_all_metadata_as_dict
 
 
 def generate_violin_neck(params_json: str) -> str:
@@ -79,23 +80,64 @@ def generate_violin_neck(params_json: str) -> str:
 
 def get_derived_values(params_json: str) -> str:
     """
-    Calculate derived values for the frontend.
-    
+    Calculate derived values for the frontend with metadata.
+
     Args:
         params_json: JSON string of parameter values
-        
+
     Returns:
-        JSON string containing derived values dictionary
+        JSON string containing:
+        {
+            "success": bool,
+            "values": {key: value},           # Raw numeric values (backward compatible)
+            "metadata": {key: metadata_dict}, # Metadata for each value
+            "formatted": {key: formatted_str} # Pre-formatted strings
+        }
     """
     try:
         from instrument_geometry import calculate_derived_values
-        
+
         params = json.loads(params_json)
-        derived = calculate_derived_values(params)
-        
+        derived_raw = calculate_derived_values(params)
+
+        # Build enhanced response with metadata
+        formatted_values = {}
+        metadata_dict = {}
+
+        for key, value in derived_raw.items():
+            metadata = DERIVED_VALUE_METADATA.get(key)
+            if metadata:
+                formatted_values[key] = metadata.format_with_unit(value)
+                metadata_dict[key] = metadata.to_dict()
+
         return json.dumps({
             "success": True,
-            "values": derived
+            "values": derived_raw,           # Backward compatible: raw numbers
+            "metadata": metadata_dict,        # NEW: metadata for each value
+            "formatted": formatted_values     # NEW: pre-formatted strings
+        })
+    except Exception as e:
+        return json.dumps({
+            "success": False,
+            "error": str(e)
+        })
+
+
+def get_derived_value_metadata() -> str:
+    """
+    Get metadata definitions for all derived values.
+
+    Returns:
+        JSON string containing:
+        {
+            "success": bool,
+            "metadata": {key: metadata_dict}
+        }
+    """
+    try:
+        return json.dumps({
+            "success": True,
+            "metadata": get_all_metadata_as_dict()
         })
     except Exception as e:
         return json.dumps({

@@ -8,7 +8,8 @@ window.state = {
     initialViewBox: null,     // Initial viewBox for zoom reset
     parameterDefinitions: null,
     presets: null,
-    derivedValues: null       // Stores calculated derived values
+    derivedValues: null,      // Stores calculated derived values
+    derivedMetadata: null     // Stores metadata for derived values
 };
 
 const state = window.state;  // Local reference
@@ -141,6 +142,7 @@ async function initializePython() {
         const modules = [
             'buildprimitives.py',
             'dimension_helpers.py',
+            'derived_value_metadata.py',
             'instrument_parameters.py',
             'instrument_geometry.py',
             'instrument_generator.py'
@@ -179,6 +181,17 @@ async function initializePython() {
         `);
 
         state.parameterDefinitions = JSON.parse(paramDefsJson);
+
+        // Get derived value metadata
+        const derivedMetaJson = await state.pyodide.runPythonAsync(`
+            from instrument_generator import get_derived_value_metadata
+            get_derived_value_metadata()
+        `);
+
+        const derivedMetaResult = JSON.parse(derivedMetaJson);
+        if (derivedMetaResult.success) {
+            state.derivedMetadata = derivedMetaResult.metadata;
+        }
 
         // Load presets from JSON files in presets directory
         state.presets = await loadPresetsFromDirectory();
@@ -537,14 +550,46 @@ function generateDimensionsTableHTML(params, derivedValues) {
         }
     }
 
-    // Add derived/calculated values section
+    // Add derived/calculated values section with metadata-driven grouping
     if (derivedValues && Object.keys(derivedValues).length > 0) {
-        html += `<tr><td colspan="2" class="category-header">Calculated Values</td></tr>`;
+        const categories = new Map();
+
         for (const [label, value] of Object.entries(derivedValues)) {
-            html += `<tr>`;
-            html += `<td class="param-name">${label}</td>`;
-            html += `<td class="param-value">${value}</td>`;
-            html += `</tr>`;
+            const meta = state.derivedMetadata && state.derivedMetadata[label];
+
+            // Skip invisible values
+            if (meta && !meta.visible) continue;
+
+            const category = meta ? meta.category : 'Calculated Values';
+            if (!categories.has(category)) {
+                categories.set(category, []);
+            }
+            categories.get(category).push({ label, value, meta });
+        }
+
+        // Render each category with sorted values
+        for (const [category, items] of categories) {
+            html += `<tr><td colspan="2" class="category-header">${category}</td></tr>`;
+
+            // Sort by order
+            items.sort((a, b) => (a.meta?.order || 999) - (b.meta?.order || 999));
+
+            for (const { label, value, meta } of items) {
+                const displayName = meta ? meta.display_name : label;
+                let formattedValue;
+
+                if (meta) {
+                    formattedValue = `${value.toFixed(meta.decimals)} <span class="param-unit">${meta.unit}</span>`;
+                } else {
+                    // Fallback to old formatting
+                    formattedValue = `${value} <span class="param-unit">mm</span>`;
+                }
+
+                html += `<tr>`;
+                html += `<td class="param-name">${displayName}</td>`;
+                html += `<td class="param-value">${formattedValue}</td>`;
+                html += `</tr>`;
+            }
         }
     }
 
@@ -902,27 +947,45 @@ async function updateDerivedValues() {
             }
 
             // Display remaining derived values in metric cards
+            const metadata = result.metadata || {};
+
             for (const [label, value] of Object.entries(result.values)) {
                 // Skip if this value is already shown in a parameter field
                 const isShownInParam = Object.values(state.parameterDefinitions.parameters)
                     .some(p => p.label === label && isParameterOutput(p, currentMode));
 
                 if (!isShownInParam) {
+                    const meta = metadata[label];
+
+                    // Skip if metadata says not visible
+                    if (meta && !meta.visible) continue;
+
                     const div = document.createElement('div');
                     div.className = 'metric-card';
 
-                    // Format value with appropriate unit
+                    // Use pre-formatted value from backend if available
                     let formattedValue;
-                    if (label === 'Neck Angle') {
-                        formattedValue = `${value}°`;
-                    } else if (label === 'String Length' || label === 'Nut Relative to Ribs') {
-                        formattedValue = `${value} mm`;
+                    if (result.formatted && result.formatted[label]) {
+                        formattedValue = result.formatted[label];
+                    } else if (meta) {
+                        // Format using metadata
+                        formattedValue = `${value.toFixed(meta.decimals)} ${meta.unit}`.trim();
                     } else {
-                        formattedValue = value;
+                        // FALLBACK: Old hard-coded formatting (for backward compatibility)
+                        if (label === 'Neck Angle') {
+                            formattedValue = `${value}°`;
+                        } else if (label === 'String Length' || label === 'Nut Relative to Ribs') {
+                            formattedValue = `${value} mm`;
+                        } else {
+                            formattedValue = value;
+                        }
                     }
 
+                    const displayName = meta ? meta.display_name : label;
+                    const description = meta ? meta.description : '';
+
                     div.innerHTML = `
-                        <span class="metric-label">${label}</span>
+                        <span class="metric-label" title="${description}">${displayName}</span>
                         <span class="metric-value">${formattedValue}</span>
                     `;
                     container.appendChild(div);
