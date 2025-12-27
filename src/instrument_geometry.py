@@ -210,7 +210,7 @@ def generate_side_view_svg(params: Dict[str, Any]) -> str:
     neck_angle_rad = derived.get('Neck Angle (rad)', 0)
     neck_end_x = derived.get('Neck End X', 0)
     neck_end_y = derived.get('Neck End Y', 0)
-    nut_radius = derived.get('Nut Radius', 0)
+    nut_radius = derived.get('Nut Draw Radius', 0)
     neck_line_angle = derived.get('Neck Line Angle', 0)
     nut_top_x = derived.get('Nut Top X', 0)
     nut_top_y = derived.get('Nut Top Y', 0)
