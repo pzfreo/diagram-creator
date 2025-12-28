@@ -275,14 +275,16 @@ def generate_fret_positions_view(params: Dict[str, Any]) -> Dict[str, Any]:
     # Generate HTML table with scrollable container
     html = '<div class="fret-table-container">'
     html += '<table class="fret-table">'
-    html += '<thead><tr><th>Fret</th><th>Distance from Nut (mm)</th><th>Distance from Bridge (mm)</th></tr></thead>'
+    html += '<thead><tr><th>Fret</th><th>Distance from Nut (mm)</th><th>Distance from Previous Fret (mm)</th></tr></thead>'
     html += '<tbody>'
 
+    prev_pos = 0  # Start from nut
     for i, pos in enumerate(fret_positions):
         fret_num = i + 1
         from_nut = pos
-        from_bridge = vsl - pos
-        html += f'<tr><td>{fret_num}</td><td>{from_nut:.1f}</td><td>{from_bridge:.1f}</td></tr>'
+        from_prev = pos - prev_pos
+        html += f'<tr><td>{fret_num}</td><td>{from_nut:.1f}</td><td>{from_prev:.1f}</td></tr>'
+        prev_pos = pos
 
     html += '</tbody></table></div>'
 
