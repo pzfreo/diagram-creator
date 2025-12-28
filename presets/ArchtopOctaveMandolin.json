@@ -10,6 +10,7 @@
     "instrument_family": "GUITAR_MANDOLIN",
     "vsl": 560,
     "fret_join": 14,
+    "no_frets": 20,
     "body_stop": 195,
     "neck_stop": 310.0132112170475,
     "body_length": 448,

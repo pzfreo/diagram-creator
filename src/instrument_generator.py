@@ -26,6 +26,13 @@ def generate_violin_neck(params_json: str) -> str:
                 "top": str,
                 "cross_section": str
             } | null,
+            "fret_positions": {
+                "available": bool,
+                "html": str,
+                "vsl": float,
+                "no_frets": int
+            } | null,
+            "derived_values": dict | null,
             "errors": List[str]
         }
     """
@@ -35,7 +42,7 @@ def generate_violin_neck(params_json: str) -> str:
 
         # Import here to ensure modules are loaded
         from instrument_parameters import validate_parameters
-        from instrument_geometry import generate_multi_view_svg
+        from instrument_geometry import generate_multi_view_svg, generate_fret_positions_view, calculate_derived_values
 
         # Validate parameters
         is_valid, errors = validate_parameters(params)
@@ -47,13 +54,17 @@ def generate_violin_neck(params_json: str) -> str:
                 "errors": errors
             })
 
-        # Generate geometry (all 3 views)
+        # Generate geometry (all 3 views + fret positions + derived values)
         try:
             views = generate_multi_view_svg(params)
+            fret_positions = generate_fret_positions_view(params)
+            derived_values = calculate_derived_values(params)
 
             return json.dumps({
                 "success": True,
                 "views": views,
+                "fret_positions": fret_positions,
+                "derived_values": derived_values,
                 "errors": []
             })
 

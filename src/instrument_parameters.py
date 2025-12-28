@@ -232,6 +232,20 @@ INSTRUMENT_PARAMETERS = {
         visible_when={'instrument_family': 'GUITAR_MANDOLIN'}
     ),
 
+    'no_frets': NumericParameter(
+        name='no_frets',
+        label='Number of Frets',
+        default=None,
+        min_val=0,
+        max_val=30,
+        step=1,
+        decimals=0,
+        unit='',
+        visible_when={'instrument_family': ['VIOL', 'GUITAR_MANDOLIN']},
+        description='Number of frets to calculate positions for',
+        category='Construction'
+    ),
+
     'body_stop': NumericParameter(
         name='body_stop',
         label='Body Stop',

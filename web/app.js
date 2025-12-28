@@ -203,15 +203,21 @@ async function generateNeck() {
 
         if (result.success) {
             state.views = result.views;
+            state.fretPositions = result.fret_positions || null;
+            state.derivedValues = result.derived_values || {};
+
+            // Get formatted derived values
             const derivedResultJson = await state.pyodide.runPythonAsync(`
                 from instrument_generator import get_derived_values
                 get_derived_values('${paramsJson.replace(/'/g, "\\'")}')
             `);
             const dResult = JSON.parse(derivedResultJson);
-            state.derivedValues = dResult.success ? dResult.values : {};
             state.derivedFormatted = dResult.success ? dResult.formatted : {};
+
             state.views.dimensions = ui.generateDimensionsTableHTML(params, state.derivedValues, state.derivedFormatted);
+            state.views.fret_positions = state.fretPositions;
             ui.displayCurrentView();
+            ui.updateTabStates(params);
             elements.dlPdf.disabled = false;
             elements.preview.classList.add('has-content');
             ui.setStatus('ready', '✅ Preview updated');

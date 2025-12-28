@@ -52,7 +52,19 @@ def calculate_derived_values(params: Dict[str, Any]) -> Dict[str, Any]:
 
     # Extract values safely
     vsl = params.get('vsl') or 0
-    fret_positions = calculate_fret_positions(vsl, params.get('no_frets') or 24)
+    instrument_family = params.get('instrument_family') or InstrumentFamily.VIOLIN.name
+
+    # Get family-specific default for number of frets
+    if params.get('no_frets') is not None:
+        no_frets = params.get('no_frets')
+    elif instrument_family == InstrumentFamily.VIOL.name:
+        no_frets = 7
+    elif instrument_family == InstrumentFamily.GUITAR_MANDOLIN.name:
+        no_frets = 20
+    else:
+        no_frets = 0  # VIOLIN family has no frets
+
+    fret_positions = calculate_fret_positions(vsl, no_frets)
     arching_height = params.get('arching_height') or 0
     overstand = params.get('overstand') or 0
     # body_length = params.get('body_length') or 0
@@ -66,8 +78,7 @@ def calculate_derived_values(params: Dict[str, Any]) -> Dict[str, Any]:
     # show_rib_reference = params.get('show_rib_reference', True)
 
     string_height_nut = params.get('string_height_nut') or 0
-    
-    instrument_family = params.get('instrument_family') or InstrumentFamily.VIOLIN.name
+
     string_height_at_join = 0
     bridge_top_x = 0 # see below
     bridge_top_y = arching_height + bridge_height
@@ -239,6 +250,47 @@ def calculate_fret_positions(vsl: float, no_frets: int) -> list[float]:
     for i in range(no_frets):
         fret_positions.append(vsl -(vsl / (2 ** (i / 12))))
     return fret_positions
+
+
+def generate_fret_positions_view(params: Dict[str, Any]) -> Dict[str, Any]:
+    """Generate fret positions data for display."""
+    vsl = params.get('vsl') or 0
+    instrument_family = params.get('instrument_family') or InstrumentFamily.VIOLIN.name
+
+    # Get number of frets (family-specific default)
+    if params.get('no_frets') is not None:
+        no_frets = params.get('no_frets')
+    elif instrument_family == InstrumentFamily.VIOL.name:
+        no_frets = 7
+    elif instrument_family == InstrumentFamily.GUITAR_MANDOLIN.name:
+        no_frets = 20
+    else:
+        no_frets = 0
+
+    if no_frets == 0:
+        return {'available': False, 'message': 'Fret positions not applicable for violin family'}
+
+    fret_positions = calculate_fret_positions(vsl, no_frets)
+
+    # Generate HTML table
+    html = '<table class="fret-table">'
+    html += '<thead><tr><th>Fret</th><th>Distance from Nut (mm)</th><th>Distance from Bridge (mm)</th></tr></thead>'
+    html += '<tbody>'
+
+    for i, pos in enumerate(fret_positions):
+        fret_num = i + 1
+        from_nut = pos
+        from_bridge = vsl - pos
+        html += f'<tr><td>{fret_num}</td><td>{from_nut:.2f}</td><td>{from_bridge:.2f}</td></tr>'
+
+    html += '</tbody></table>'
+
+    return {
+        'available': True,
+        'html': html,
+        'vsl': vsl,
+        'no_frets': no_frets
+    }
 
 
 def exporter_to_svg(exp: ExportSVG) -> str:

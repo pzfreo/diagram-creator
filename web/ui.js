@@ -213,6 +213,9 @@ export function updateParameterVisibility(currentParams) {
             }
         }
     }
+
+    // Update tab states based on instrument family
+    updateTabStates(currentParams);
 }
 
 export function populatePresets() {
@@ -243,6 +246,19 @@ export function displayCurrentView() {
             btn.style.opacity = '0.3';
         });
         elements.preview.innerHTML = state.views[state.currentView];
+    } else if (state.currentView === 'fret_positions') {
+        // Disable zoom controls for fret positions view
+        document.querySelectorAll('.zoom-btn').forEach(btn => {
+            btn.disabled = true;
+            btn.style.opacity = '0.3';
+        });
+
+        const fretData = state.views.fret_positions;
+        if (fretData && fretData.available) {
+            elements.preview.innerHTML = fretData.html;
+        } else {
+            elements.preview.innerHTML = '<p class="info-message">Fret positions not available for this instrument family</p>';
+        }
     } else {
         document.querySelectorAll('.zoom-btn').forEach(btn => {
             btn.disabled = false;
@@ -271,6 +287,29 @@ export function displayCurrentView() {
     document.querySelectorAll('.view-tab').forEach(tab => {
         tab.classList.toggle('active', tab.dataset.view === state.currentView);
     });
+}
+
+export function updateTabStates(params) {
+    const instrumentFamily = params.instrument_family || 'VIOLIN';
+    const fretTab = document.querySelector('.view-tab[data-view="fret_positions"]');
+
+    if (!fretTab) return;
+
+    // Enable for VIOL and GUITAR_MANDOLIN, disable for VIOLIN
+    if (instrumentFamily === 'VIOL' || instrumentFamily === 'GUITAR_MANDOLIN') {
+        fretTab.disabled = false;
+        fretTab.style.opacity = '1';
+        fretTab.style.cursor = 'pointer';
+    } else {
+        fretTab.disabled = true;
+        fretTab.style.opacity = '0.3';
+        fretTab.style.cursor = 'not-allowed';
+
+        // If currently viewing fret positions, switch to side view
+        if (state.currentView === 'fret_positions') {
+            window.switchView('side');
+        }
+    }
 }
 
 export function generateDimensionsTableHTML(params, derivedValues, derivedFormatted = {}) {

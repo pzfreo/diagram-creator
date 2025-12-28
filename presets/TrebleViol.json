@@ -9,6 +9,7 @@
     "instrument_family": "VIOL",
     "instrument_name": "Treble Viol 385",
     "vsl": 385,
+    "no_frets": 7,
     "body_stop": 205,
     "neck_stop": 180,
     "body_length": 385,
