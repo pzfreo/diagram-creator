@@ -88,7 +88,7 @@ def calculate_derived_values(params: Dict[str, Any]) -> Dict[str, Any]:
         neck_stop = math.cos(string_angle_to_ribs_rad)*string_nut_to_join
         opposite_string_to_fb = string_height_eof - string_height_nut
         string_angle_to_fb = math.atan(opposite_string_to_fb / fingerboard_length) * 180 / math.pi
-    elif instrument_family == InstrumentFamily.FRETTED.name:
+    elif instrument_family == InstrumentFamily.GUITAR_MANDOLIN.name:
         fret_join = params.get('fret_join') or 12
         string_height_12th_fret = params.get('string_height_12th_fret') or 0
         string_height_at_join = ((string_height_12th_fret-string_height_nut)*(fret_positions[fret_join]/fret_positions[12])) + string_height_nut

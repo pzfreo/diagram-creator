@@ -38,7 +38,7 @@ class InstrumentFamily(Enum):
     """Instrument family - determines calculation approach"""
     VIOLIN = "Violin Family (Body Stop Driven)"
     VIOL = "Viol Family (Body Stop Driven)"
-    FRETTED = "Fretted Instruments (Fret Join Driven)"
+    GUITAR_MANDOLIN = "Guitar/Mandolin Family (Fret Join Driven)"
 
 
 # ============================================
@@ -229,7 +229,7 @@ INSTRUMENT_PARAMETERS = {
         step=1,
         description='Which fret is located at the neck/body junction',
         category='Basic Dimensions',
-        visible_when={'instrument_family': 'FRETTED'}
+        visible_when={'instrument_family': 'GUITAR_MANDOLIN'}
     ),
 
     'body_stop': NumericParameter(
@@ -242,7 +242,7 @@ INSTRUMENT_PARAMETERS = {
         description='Length from where neck meets body to bridge',
         category='Basic Dimensions',
         step=0.1,
-        is_output={'VIOLIN': False, 'VIOL': False, 'FRETTED': True}
+        is_output={'VIOLIN': False, 'VIOL': False, 'GUITAR_MANDOLIN': True}
     ),
 
     'neck_stop': NumericParameter(
@@ -256,7 +256,7 @@ INSTRUMENT_PARAMETERS = {
         category='Basic Dimensions',
         step=0.1,
         visible_when={'instrument_family': ['VIOLIN', 'VIOL']},
-        is_output={'VIOLIN': True, 'VIOL': True, 'FRETTED': True}
+        is_output={'VIOLIN': True, 'VIOL': True, 'GUITAR_MANDOLIN': True}
     ),
 
     'body_length': NumericParameter(
@@ -437,7 +437,7 @@ INSTRUMENT_PARAMETERS = {
         description='String height at the 12th fret',
         category='Basic Dimensions',
         step=0.1,
-        visible_when={'instrument_family': 'FRETTED'}
+        visible_when={'instrument_family': 'GUITAR_MANDOLIN'}
     ),
 
     'fingerboard_width_at_nut': NumericParameter(

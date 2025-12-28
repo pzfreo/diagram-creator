@@ -7,7 +7,7 @@
   },
   "parameters": {
     "instrument_name": "Archtop Octave Mandolin",
-    "instrument_family": "FRETTED",
+    "instrument_family": "GUITAR_MANDOLIN",
     "vsl": 560,
     "fret_join": 14,
     "body_stop": 195,
