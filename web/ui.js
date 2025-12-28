@@ -21,7 +21,12 @@ export function checkParameterVisibility(param, currentParams) {
         if (actualValue === undefined && state.parameterDefinitions.parameters[condParam]) {
             actualValue = state.parameterDefinitions.parameters[condParam].default;
         }
-        if (actualValue !== condValue) return false;
+        // Handle array values in visible_when (e.g., ['VIOL', 'GUITAR_MANDOLIN'])
+        if (Array.isArray(condValue)) {
+            if (!condValue.includes(actualValue)) return false;
+        } else {
+            if (actualValue !== condValue) return false;
+        }
     }
     return true;
 }
