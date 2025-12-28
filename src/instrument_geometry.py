@@ -228,7 +228,7 @@ def generate_side_view_svg(params: Dict[str, Any]) -> str:
     exporter.add_layer("text",fill_color=(0,0,255),line_type=LineType.HIDDEN)
     exporter.add_layer("drawing",fill_color=None, line_color=(0,0,0),line_type=LineType.CONTINUOUS)
     exporter.add_layer("schematic",fill_color=None, line_color=(0,0,0),line_type=LineType.DASHED)
-    exporter.add_layer("schematic_dashed",fill_color=None, line_color=(100,100,100),line_type=LineType.DASHED)
+    exporter.add_layer("schematic_dotted",fill_color=None, line_color=(100,100,100),line_type=LineType.DOTTED)
 
     # Reference layer - dotted line, invisible if show_rib_reference is False
     ref_color = (0,0,0) if show_rib_reference else None
@@ -282,26 +282,26 @@ def generate_side_view_svg(params: Dict[str, Any]) -> str:
     start_angle = neck_line_angle - math.pi/2  # Perpendicular outward (rotated 180°)
     end_angle = start_angle + math.pi/2  # Quarter circle (90 degrees)
 
-    # Create the quarter circle as a proper SVG arc on dashed layer
+    # Create the quarter circle as a proper SVG arc on dotted layer
     nut_arc = Arc.make_arc(
         center=(neck_end_x, neck_end_y),
         radius=nut_radius,
         start_angle=start_angle,
         end_angle=end_angle
     )
-    exporter.add_shape(nut_arc, layer="schematic_dashed")
+    exporter.add_shape(nut_arc, layer="schematic_dotted")
 
-    # Add radial lines from center to arc endpoints to complete the pie slice (also dashed)
+    # Add radial lines from center to arc endpoints to complete the pie slice (also dotted)
     arc_start_x = neck_end_x + nut_radius * math.cos(start_angle)
     arc_start_y = neck_end_y + nut_radius * math.sin(start_angle)
     arc_end_x = neck_end_x + nut_radius * math.cos(end_angle)
     arc_end_y = neck_end_y + nut_radius * math.sin(end_angle)
 
     radius_line_1 = Edge.make_line((neck_end_x, neck_end_y), (arc_start_x, arc_start_y))
-    exporter.add_shape(radius_line_1, layer="schematic_dashed")
+    exporter.add_shape(radius_line_1, layer="schematic_dotted")
 
     radius_line_2 = Edge.make_line((neck_end_x, neck_end_y), (arc_end_x, arc_end_y))
-    exporter.add_shape(radius_line_2, layer="schematic_dashed")
+    exporter.add_shape(radius_line_2, layer="schematic_dotted")
 
     # Add angle annotation between the two lines (use rounded value for display)
     for shape, layer in create_angle_dimension(neck_vertical_line, neck_angled_line,

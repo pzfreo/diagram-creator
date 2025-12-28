@@ -351,27 +351,20 @@ def create_angle_dimension(line1, line2, label=None, arc_radius=15,
     if (end_angle - start_angle) > math.pi:
         start_angle, end_angle = end_angle, start_angle + 2*math.pi
 
-    # Create arc using Edge.make_three_point_arc or by approximating with line segments
-    # Build123d can create arcs, but we'll approximate with line segments for simplicity
-    num_segments = 12
-    arc_points = []
-    for i in range(num_segments + 1):
-        t = i / num_segments
-        angle = start_angle + t * (end_angle - start_angle)
-        px = jx + arc_radius * math.cos(angle)
-        py = jy + arc_radius * math.sin(angle)
-        arc_points.append((px, py))
-
-    # Create arc as a series of line segments
-    for i in range(len(arc_points) - 1):
-        arc_segment = Edge.make_line(arc_points[i], arc_points[i+1])
-        shapes.append((arc_segment, "dimensions"))
+    # Create arc using proper SVG arc
+    angle_arc = Arc.make_arc(
+        center=(jx, jy),
+        radius=arc_radius,
+        start_angle=start_angle,
+        end_angle=end_angle
+    )
+    shapes.append((angle_arc, "dimensions"))
 
     # Position text near the middle of the arc
     mid_angle = (start_angle + end_angle) / 2
     if text_inside:
         # Position text inside the arc
-        text_radius = arc_radius * 0.6
+        text_radius = arc_radius * 0.3
     else:
         # Position text outside the arc (default)
         text_radius = arc_radius + font_size * 1.5

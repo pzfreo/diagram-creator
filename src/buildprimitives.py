@@ -37,6 +37,7 @@ class LineType(Enum):
     """SVG line types"""
     CONTINUOUS = "continuous"
     DASHED = "dashed"
+    DOTTED = "dotted"
     HIDDEN = "hidden"
 
 
@@ -341,6 +342,8 @@ class ExportSVG:
         stroke_dasharray = ""
         if layer['line_type'] == LineType.DASHED:
             stroke_dasharray = ' stroke-dasharray="5,3"'
+        elif layer['line_type'] == LineType.DOTTED:
+            stroke_dasharray = ' stroke-dasharray="1,2"'
         elif layer['line_type'] == LineType.HIDDEN:
             stroke_dasharray = ' stroke-dasharray="2,2"'
 
