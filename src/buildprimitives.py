@@ -157,6 +157,31 @@ class Spline:
     def __init__(self, *points: Tuple[float, float]):
         self.points = points
 
+    @staticmethod
+    def interpolate_three_points(p0: Tuple[float, float],
+                                  p1: Tuple[float, float],
+                                  p2: Tuple[float, float]) -> 'Spline':
+        """
+        Create a quadratic Bezier spline that passes through all three points.
+
+        The curve passes through p0 at t=0, p1 at t=0.5, and p2 at t=1.
+        Calculates the control point needed to achieve this.
+
+        Args:
+            p0: Start point
+            p1: Middle point (curve will pass through this)
+            p2: End point
+
+        Returns:
+            Spline with calculated control point
+        """
+        # Calculate control point: Q1 = 2*P1 - 0.5*P0 - 0.5*P2
+        control_x = 2 * p1[0] - 0.5 * p0[0] - 0.5 * p2[0]
+        control_y = 2 * p1[1] - 0.5 * p0[1] - 0.5 * p2[1]
+
+        # Return spline with: start, control, end
+        return Spline(p0, (control_x, control_y), p2)
+
     def to_svg_path(self) -> str:
         """Convert spline to SVG path using quadratic bezier curves"""
         if len(self.points) < 2:
