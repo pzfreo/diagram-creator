@@ -6,7 +6,7 @@ This is where your Build123d geometry expertise goes.
 
 from buildprimitives import *
 from buildprimitives import FONT_NAME, TITLE_FONT_SIZE, FOOTER_FONT_SIZE, PTS_MM  # Font constants
-from instrument_parameters import CalculationMode
+from instrument_parameters import InstrumentFamily
 import math
 from typing import Dict, Any, Tuple
 from dimension_helpers import (
@@ -67,7 +67,7 @@ def calculate_derived_values(params: Dict[str, Any]) -> Dict[str, Any]:
 
     string_height_nut = params.get('string_height_nut') or 0
     
-    calculation_mode = params.get('calculation_mode') or CalculationMode.BODY_STOP_DRIVEN
+    instrument_family = params.get('instrument_family') or InstrumentFamily.VIOLIN.name
     string_height_at_join = 0
     bridge_top_x = 0 # see below
     bridge_top_y = arching_height + bridge_height
@@ -76,7 +76,7 @@ def calculate_derived_values(params: Dict[str, Any]) -> Dict[str, Any]:
     string_angle_to_ribs_rad = 0 # see below
     string_nut_to_join = 0 # see below
     neck_stop = 0 # see below
-    if (calculation_mode == CalculationMode.BODY_STOP_DRIVEN.name):
+    if instrument_family in (InstrumentFamily.VIOLIN.name, InstrumentFamily.VIOL.name):
         body_stop = params.get('body_stop') or 0
         string_height_eof = params.get('string_height_eof') or 0
         string_height_at_join = (string_height_eof - string_height_nut) * ((vsl-body_stop)/fingerboard_length) + string_height_nut #approximate
@@ -88,7 +88,7 @@ def calculate_derived_values(params: Dict[str, Any]) -> Dict[str, Any]:
         neck_stop = math.cos(string_angle_to_ribs_rad)*string_nut_to_join
         opposite_string_to_fb = string_height_eof - string_height_nut
         string_angle_to_fb = math.atan(opposite_string_to_fb / fingerboard_length) * 180 / math.pi
-    elif (calculation_mode == CalculationMode.FRET_JOIN_DRIVEN.name):
+    elif instrument_family == InstrumentFamily.FRETTED.name:
         fret_join = params.get('fret_join') or 12
         string_height_12th_fret = params.get('string_height_12th_fret') or 0
         string_height_at_join = ((string_height_12th_fret-string_height_nut)*(fret_positions[fret_join]/fret_positions[12])) + string_height_nut

@@ -34,7 +34,7 @@ export function isParameterOutput(param, currentMode) {
 export function generateUI(callbacks) {
     const container = elements.parametersContainer;
     const currentParams = callbacks.collectParameters();
-    const currentMode = currentParams.calculation_mode || 'BODY_STOP_DRIVEN';
+    const currentMode = currentParams.instrument_family || 'VIOLIN';
 
     container.innerHTML = '';
     const categories = state.parameterDefinitions.categories;
@@ -133,7 +133,7 @@ export function createParameterControl(name, param, isOutput, callbacks) {
 
         select.addEventListener('change', hideErrors);
         select.addEventListener('change', callbacks.onEnumChange);
-        if (name === 'calculation_mode') {
+        if (name === 'instrument_family') {
             select.addEventListener('change', () => updateParameterVisibility(callbacks.collectParameters()));
         }
         group.appendChild(select);
@@ -188,7 +188,7 @@ export function createParameterControl(name, param, isOutput, callbacks) {
 }
 
 export function updateParameterVisibility(currentParams) {
-    const currentMode = currentParams.calculation_mode;
+    const currentMode = currentParams.instrument_family;
 
     for (const [name, param] of Object.entries(state.parameterDefinitions.parameters)) {
         const group = document.querySelector(`.param-group[data-param-name="${name}"]`);

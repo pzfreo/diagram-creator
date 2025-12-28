@@ -34,10 +34,11 @@ class InstrumentType(Enum):
     BASS = "Bass Viol"
     OTHER = "Other"
 
-class CalculationMode(Enum):
-    """Calculation strategy for deriving neck/body dimensions"""
-    BODY_STOP_DRIVEN = "Body Stop Driven (Violin/Viol)"
-    FRET_JOIN_DRIVEN = "Fret Join Driven (Guitar/Mandolin)"
+class InstrumentFamily(Enum):
+    """Instrument family - determines calculation approach"""
+    VIOLIN = "Violin Family (Body Stop Driven)"
+    VIOL = "Viol Family (Body Stop Driven)"
+    FRETTED = "Fretted Instruments (Fret Join Driven)"
 
 
 # ============================================
@@ -183,6 +184,16 @@ class StringParameter:
 # ============================================
 
 INSTRUMENT_PARAMETERS = {
+    # Instrument Family (first question)
+    'instrument_family': EnumParameter(
+        name='instrument_family',
+        label='Instrument Family',
+        enum_class=InstrumentFamily,
+        default=InstrumentFamily.VIOLIN,
+        description='Select instrument family - determines calculation approach for neck/body dimensions',
+        category='General'
+    ),
+
     # Instrument Name
     'instrument_name': StringParameter(
         name='instrument_name',
@@ -191,16 +202,6 @@ INSTRUMENT_PARAMETERS = {
         description='Name/label for this instrument (used in filenames)',
         category='General',
         max_length=50
-    ),
-
-    # Calculation Mode
-    'calculation_mode': EnumParameter(
-        name='calculation_mode',
-        label='Calculation Mode',
-        enum_class=CalculationMode,
-        default=CalculationMode.BODY_STOP_DRIVEN,
-        description='How to calculate neck/body dimensions',
-        category='General'
     ),
 
 
@@ -228,7 +229,7 @@ INSTRUMENT_PARAMETERS = {
         step=1,
         description='Which fret is located at the neck/body junction',
         category='Basic Dimensions',
-        visible_when={'calculation_mode': 'FRET_JOIN_DRIVEN'}
+        visible_when={'instrument_family': 'FRETTED'}
     ),
 
     'body_stop': NumericParameter(
@@ -241,7 +242,7 @@ INSTRUMENT_PARAMETERS = {
         description='Length from where neck meets body to bridge',
         category='Basic Dimensions',
         step=0.1,
-        is_output={'BODY_STOP_DRIVEN': False, 'FRET_JOIN_DRIVEN': True}
+        is_output={'VIOLIN': False, 'VIOL': False, 'FRETTED': True}
     ),
 
     'neck_stop': NumericParameter(
@@ -254,8 +255,8 @@ INSTRUMENT_PARAMETERS = {
         description='Length from nut to where neck meets body',
         category='Basic Dimensions',
         step=0.1,
-        visible_when={'calculation_mode': 'BODY_STOP_DRIVEN'},
-        is_output={'BODY_STOP_DRIVEN': True, 'FRET_JOIN_DRIVEN': True}
+        visible_when={'instrument_family': ['VIOLIN', 'VIOL']},
+        is_output={'VIOLIN': True, 'VIOL': True, 'FRETTED': True}
     ),
 
     'body_length': NumericParameter(
@@ -421,7 +422,7 @@ INSTRUMENT_PARAMETERS = {
         description='String height at the end of the fingerboard',
         category='Basic Dimensions',
         step=0.1,
-        visible_when={'calculation_mode': 'BODY_STOP_DRIVEN'}
+        visible_when={'instrument_family': ['VIOLIN', 'VIOL']}
     ),
 
 
@@ -436,7 +437,7 @@ INSTRUMENT_PARAMETERS = {
         description='String height at the 12th fret',
         category='Basic Dimensions',
         step=0.1,
-        visible_when={'calculation_mode': 'FRET_JOIN_DRIVEN'}
+        visible_when={'instrument_family': 'FRETTED'}
     ),
 
     'fingerboard_width_at_nut': NumericParameter(

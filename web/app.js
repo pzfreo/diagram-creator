@@ -233,7 +233,7 @@ async function updateDerivedValues() {
     try {
         const params = collectParameters();
         const paramsJson = JSON.stringify(params);
-        const currentMode = params.calculation_mode || 'BODY_STOP_DRIVEN';
+        const currentMode = params.instrument_family || 'VIOLIN';
 
         const resultJson = await state.pyodide.runPythonAsync(`
             from instrument_generator import get_derived_values
