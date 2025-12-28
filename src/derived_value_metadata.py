@@ -257,6 +257,95 @@ DERIVED_VALUE_METADATA: Dict[str, DerivedValueMetadata] = {
         description='Fingerboard thickness at the extended end (for drawing)',
         order=112
     ),
+
+    # Dimension calculation values (added for dimension annotations)
+    'Nut Perpendicular Intersection X': DerivedValueMetadata(
+        key='Nut Perpendicular Intersection X',
+        display_name='Nut Perpendicular Intersection X',
+        unit='mm',
+        decimals=2,
+        visible=False,
+        category=DerivedValueCategory.INTERNAL,
+        description='X coordinate of string intersection with perpendicular to neck (for dimensions)',
+        order=113
+    ),
+
+    'Nut Perpendicular Intersection Y': DerivedValueMetadata(
+        key='Nut Perpendicular Intersection Y',
+        display_name='Nut Perpendicular Intersection Y',
+        unit='mm',
+        decimals=2,
+        visible=False,
+        category=DerivedValueCategory.INTERNAL,
+        description='Y coordinate of string intersection with perpendicular to neck (for dimensions)',
+        order=114
+    ),
+
+    'Nut to Perpendicular Distance': DerivedValueMetadata(
+        key='Nut to Perpendicular Distance',
+        display_name='Nut to Perpendicular Distance',
+        unit='mm',
+        decimals=1,
+        visible=False,
+        category=DerivedValueCategory.INTERNAL,
+        description='Distance from nut to perpendicular intersection (for dimensions)',
+        order=115
+    ),
+
+    'String X at Fingerboard End': DerivedValueMetadata(
+        key='String X at Fingerboard End',
+        display_name='String X at Fingerboard End',
+        unit='mm',
+        decimals=2,
+        visible=False,
+        category=DerivedValueCategory.INTERNAL,
+        description='X coordinate of string at fingerboard end (for dimensions)',
+        order=116
+    ),
+
+    'String Y at Fingerboard End': DerivedValueMetadata(
+        key='String Y at Fingerboard End',
+        display_name='String Y at Fingerboard End',
+        unit='mm',
+        decimals=2,
+        visible=False,
+        category=DerivedValueCategory.INTERNAL,
+        description='Y coordinate of string at fingerboard end (for dimensions)',
+        order=117
+    ),
+
+    'Fingerboard Surface Point X': DerivedValueMetadata(
+        key='Fingerboard Surface Point X',
+        display_name='Fingerboard Surface Point X',
+        unit='mm',
+        decimals=2,
+        visible=False,
+        category=DerivedValueCategory.INTERNAL,
+        description='X coordinate of fingerboard surface point below string (for dimensions)',
+        order=118
+    ),
+
+    'Fingerboard Surface Point Y': DerivedValueMetadata(
+        key='Fingerboard Surface Point Y',
+        display_name='Fingerboard Surface Point Y',
+        unit='mm',
+        decimals=2,
+        visible=False,
+        category=DerivedValueCategory.INTERNAL,
+        description='Y coordinate of fingerboard surface point below string (for dimensions)',
+        order=119
+    ),
+
+    'String Height at Fingerboard End': DerivedValueMetadata(
+        key='String Height at Fingerboard End',
+        display_name='String Height at Fingerboard End',
+        unit='mm',
+        decimals=2,
+        visible=False,
+        category=DerivedValueCategory.INTERNAL,
+        description='Perpendicular string height above fingerboard end (for dimensions)',
+        order=120
+    ),
 }
 
 
