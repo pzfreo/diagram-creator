@@ -440,30 +440,57 @@ def _draw_neck(exporter: ExportSVG, overstand: float, neck_end_x: float, neck_en
 def _draw_fingerboard(exporter: ExportSVG, neck_end_x: float, neck_end_y: float,
                       fb_bottom_end_x: float, fb_bottom_end_y: float,
                       fb_thickness_at_nut: float, fb_thickness_at_end: float,
-                      fb_direction_angle: float) -> Tuple:
-    """Draw fingerboard as 4-sided polygon. Returns top edge endpoints for dimension calculations."""
-    # Bottom edge: from nut to body join along neck surface
-    fb_bottom_line = Edge.make_line((neck_end_x, neck_end_y), (fb_bottom_end_x, fb_bottom_end_y))
-    exporter.add_shape(fb_bottom_line, layer="drawing")
-
+                      fb_direction_angle: float,
+                      fb_visible_height_at_nut: float, fb_visible_height_at_join: float) -> Tuple:
+    """Draw fingerboard with radiused top and hatched visible side. Returns top edge endpoints for dimension calculations."""
     # Calculate perpendicular direction (90° counterclockwise from fingerboard direction)
     perp_angle = fb_direction_angle + math.pi/2
 
-    # Left edge: nut thickness perpendicular to neck surface
+    # Calculate visible side top edge (where hatching ends)
+    visible_top_nut_x = neck_end_x + fb_visible_height_at_nut * math.cos(perp_angle)
+    visible_top_nut_y = neck_end_y + fb_visible_height_at_nut * math.sin(perp_angle)
+
+    visible_top_end_x = fb_bottom_end_x + fb_visible_height_at_join * math.cos(perp_angle)
+    visible_top_end_y = fb_bottom_end_y + fb_visible_height_at_join * math.sin(perp_angle)
+
+    # Calculate total thickness top edge (includes sagitta)
     fb_top_nut_x = neck_end_x + fb_thickness_at_nut * math.cos(perp_angle)
     fb_top_nut_y = neck_end_y + fb_thickness_at_nut * math.sin(perp_angle)
-    fb_left_edge = Edge.make_line((neck_end_x, neck_end_y), (fb_top_nut_x, fb_top_nut_y))
-    exporter.add_shape(fb_left_edge, layer="drawing")
 
-    # Right edge: body join thickness
     fb_top_end_x = fb_bottom_end_x + fb_thickness_at_end * math.cos(perp_angle)
     fb_top_end_y = fb_bottom_end_y + fb_thickness_at_end * math.sin(perp_angle)
-    fb_right_edge = Edge.make_line((fb_bottom_end_x, fb_bottom_end_y), (fb_top_end_x, fb_top_end_y))
-    exporter.add_shape(fb_right_edge, layer="drawing")
 
-    # Top edge: connect nut top to body join top
-    fb_top_edge = Edge.make_line((fb_top_nut_x, fb_top_nut_y), (fb_top_end_x, fb_top_end_y))
-    exporter.add_shape(fb_top_edge, layer="drawing")
+    # PART 1: Draw visible side with diagonal hatching
+    visible_side_points = [
+        (neck_end_x, neck_end_y),                      # Bottom left (nut, bottom)
+        (fb_bottom_end_x, fb_bottom_end_y),           # Bottom right (join, bottom)
+        (visible_top_end_x, visible_top_end_y),       # Top right (join, visible top)
+        (visible_top_nut_x, visible_top_nut_y),       # Top left (nut, visible top)
+    ]
+    visible_side_polygon = Polygon(visible_side_points, filled=True, fill_pattern="diagonalHatch")
+    exporter.add_shape(visible_side_polygon, layer="drawing")
+
+    # PART 2: Draw radiused portion outline
+    # Left edge of radiused portion (at nut)
+    radius_left_edge = Edge.make_line(
+        (visible_top_nut_x, visible_top_nut_y),
+        (fb_top_nut_x, fb_top_nut_y)
+    )
+    exporter.add_shape(radius_left_edge, layer="drawing")
+
+    # Right edge of radiused portion (at join)
+    radius_right_edge = Edge.make_line(
+        (visible_top_end_x, visible_top_end_y),
+        (fb_top_end_x, fb_top_end_y)
+    )
+    exporter.add_shape(radius_right_edge, layer="drawing")
+
+    # Top edge of radiused portion (curved surface in side view)
+    radius_top_edge = Edge.make_line(
+        (fb_top_nut_x, fb_top_nut_y),
+        (fb_top_end_x, fb_top_end_y)
+    )
+    exporter.add_shape(radius_top_edge, layer="drawing")
 
     return fb_top_end_x, fb_top_end_y
 
@@ -677,7 +704,14 @@ def generate_side_view_svg(params: Dict[str, Any]) -> str:
     arching_height = params.get('arching_height')
     bridge_height = params.get('bridge_height')
     overstand = params.get('overstand', 0)
-    fb_thickness_at_nut = params.get('fb_thickness_at_nut', 5.0)
+
+    # Extract fingerboard visible heights and calculate total thickness
+    fb_visible_height_at_nut = params.get('fb_visible_height_at_nut', 3.2)
+    fb_visible_height_at_join = params.get('fb_visible_height_at_join', 1.2)
+
+    # Get total thickness from derived values (includes sagitta)
+    fb_thickness_at_nut = derived.get('Total FB Thickness at Nut', 5.0)
+    fb_thickness_at_join_derived = derived.get('Total FB Thickness at Join', 7.0)
 
     # Setup exporter with layers
     exporter = _setup_exporter(show_measurements)
@@ -693,7 +727,8 @@ def generate_side_view_svg(params: Dict[str, Any]) -> str:
 
     fb_top_right_x, fb_top_right_y = _draw_fingerboard(
         exporter, neck_end_x, neck_end_y, fb_bottom_end_x, fb_bottom_end_y,
-        fb_thickness_at_nut, fb_thickness_at_end, fb_direction_angle
+        fb_thickness_at_nut, fb_thickness_at_end, fb_direction_angle,
+        fb_visible_height_at_nut, fb_visible_height_at_join
     )
 
     reference_line_end_x, string_line = _draw_string_and_references(

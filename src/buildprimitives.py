@@ -208,18 +208,23 @@ class Spline:
 class Polygon:
     """Represents a closed polygon"""
 
-    def __init__(self, *vertices: Tuple[float, float]):
-        self.vertices = vertices
+    def __init__(self, points, filled: bool = False, fill_pattern: str = None):
+        # Support both list of points and varargs for backwards compatibility
+        if isinstance(points, (list, tuple)) and len(points) > 0 and isinstance(points[0], (tuple, list)):
+            self.vertices = points
+        else:
+            # Old style: varargs
+            self.vertices = (points,) if not isinstance(points, (list, tuple)) else points
         self.x = 0
         self.y = 0
-        self.filled = False
+        self.filled = filled
+        self.fill_pattern = fill_pattern
 
     def move(self, location: 'Location') -> 'Polygon':
         """Move polygon to a location"""
-        new_poly = Polygon(*self.vertices)
+        new_poly = Polygon(self.vertices, filled=self.filled, fill_pattern=self.fill_pattern)
         new_poly.x = location.x
         new_poly.y = location.y
-        new_poly.filled = self.filled
         return new_poly
 
     def to_svg_path(self) -> str:
@@ -451,6 +456,14 @@ class ExportSVG:
 
         return min_x, min_y, max_x, max_y
 
+    def _get_pattern_defs(self) -> str:
+        """Generate SVG pattern definitions for hatching."""
+        return '''<defs>
+    <pattern id="diagonalHatch" patternUnits="userSpaceOnUse" width="2" height="2">
+        <path d="M0,2 L2,0" stroke="black" stroke-width="0.3" />
+    </pattern>
+</defs>'''
+
     def write(self, filename: Optional[str] = None) -> str:
         """Generate SVG string"""
         min_x, min_y, max_x, max_y = self._calculate_bounds()
@@ -463,6 +476,7 @@ class ExportSVG:
             f'<svg xmlns="http://www.w3.org/2000/svg" '
             f'viewBox="{min_x} {-max_y} {width} {height}" '
             f'width="{width}{self.unit.value}" height="{height}{self.unit.value}">',
+            self._get_pattern_defs(),
             f'<g transform="scale(1,-1)">'
         ]
 
@@ -484,15 +498,19 @@ class ExportSVG:
                 style = self._get_stroke_style(layer_name)
                 # Check if shape should be filled (Polygon with filled=True)
                 if isinstance(shape, Polygon) and shape.filled:
-                    # Get fill color from layer
-                    if layer_name in self.layers:
-                        layer_fill_color = self.layers[layer_name].get('fill_color')
-                        if layer_fill_color:
-                            fill = f'rgb({layer_fill_color[0]},{layer_fill_color[1]},{layer_fill_color[2]})'
+                    # Check for fill pattern first
+                    if hasattr(shape, 'fill_pattern') and shape.fill_pattern:
+                        fill = f'url(#{shape.fill_pattern})'
+                    else:
+                        # Get fill color from layer
+                        if layer_name in self.layers:
+                            layer_fill_color = self.layers[layer_name].get('fill_color')
+                            if layer_fill_color:
+                                fill = f'rgb({layer_fill_color[0]},{layer_fill_color[1]},{layer_fill_color[2]})'
+                            else:
+                                fill = 'black'
                         else:
                             fill = 'black'
-                    else:
-                        fill = 'black'
                     style = style.replace('fill="none"', f'fill="{fill}"')
                 svg_parts.append(f'<path d="{shape.to_svg_path()}" {style}/>')
 
