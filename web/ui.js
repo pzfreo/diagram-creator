@@ -326,9 +326,21 @@ export function generateDimensionsTableHTML(params, derivedValues, derivedFormat
 
     for (const category of categories) {
         if (category === 'Display Options') continue;
-        html += `<tr><td colspan="2" class="category-header">${category}</td></tr>`;
+
+        // Collect visible parameters for this category
+        const visibleParams = [];
         for (const [name, param] of Object.entries(paramDefs)) {
             if (param.category !== category) continue;
+            // Check if parameter should be visible for current instrument family
+            if (!checkParameterVisibility(param, params)) continue;
+            visibleParams.push([name, param]);
+        }
+
+        // Only show category header if there are visible parameters
+        if (visibleParams.length === 0) continue;
+
+        html += `<tr><td colspan="2" class="category-header">${category}</td></tr>`;
+        for (const [name, param] of visibleParams) {
             const value = params[name];
             let displayValue = value;
             if (param.type === 'number') {
