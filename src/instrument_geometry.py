@@ -29,13 +29,38 @@ from dimension_helpers import (
 #     def __init__(self, params: Dict[str, Any]):
 #         """
 #         Initialize with validated parameters.
-        
+
 #         Args:
 #             params: Dictionary of parameter values from instrument_parameters.py
 #         """
 #         self.params = params
-        
-    
+
+
+def calculate_sagitta(radius: float, width: float) -> float:
+    """
+    Calculate sagitta (height of arc) given radius and chord width.
+
+    Args:
+        radius: Radius of curvature in mm
+        width: Chord width (fingerboard width) in mm
+
+    Returns:
+        Sagitta height in mm
+    """
+    if radius <= 0 or width <= 0:
+        return 0.0
+
+    # Use precise formula: sagitta = r - sqrt(r² - (w/2)²)
+    half_width = width / 2.0
+
+    # Avoid domain error if width > 2*radius
+    if half_width >= radius:
+        # Arc is more than semicircle, use approximation
+        return width ** 2 / (8.0 * radius)
+
+    return radius - math.sqrt(radius ** 2 - half_width ** 2)
+
+
 def calculate_derived_values(params: Dict[str, Any]) -> Dict[str, Any]:
     """
     Calculate derived values from parameters.
@@ -70,8 +95,30 @@ def calculate_derived_values(params: Dict[str, Any]) -> Dict[str, Any]:
     # body_length = params.get('body_length') or 0
     # rib_height = params.get('rib_height') or 0
     fingerboard_length = params.get('fingerboard_length') or 0
-    fb_thickness_at_join = params.get('fb_thickness_at_join') or 0
-    fb_thickness_at_nut = params.get('fb_thickness_at_nut') or 0
+
+    # Extract new radius-based parameters
+    fingerboard_radius = params.get('fingerboard_radius') or 41.0  # Typical violin
+    fb_visible_height_at_nut = params.get('fb_visible_height_at_nut') or 3.2
+    fb_visible_height_at_join = params.get('fb_visible_height_at_join') or 1.2
+
+    # Get fingerboard widths (needed for sagitta calculation)
+    fb_width_at_nut = params.get('fingerboard_width_at_nut') or 24.0  # Default violin nut width
+    fb_width_at_join = params.get('fingerboard_width_at_end') or 42.0  # Default violin end width
+
+    # Calculate sagitta at nut and join
+    sagitta_at_nut = calculate_sagitta(fingerboard_radius, fb_width_at_nut)
+    sagitta_at_join = calculate_sagitta(fingerboard_radius, fb_width_at_join)
+
+    # Calculate total thickness (visible height + sagitta)
+    fb_thickness_at_nut = fb_visible_height_at_nut + sagitta_at_nut
+    fb_thickness_at_join = fb_visible_height_at_join + sagitta_at_join
+
+    # Add sagitta values to derived values for display
+    derived['Sagitta at Nut'] = sagitta_at_nut
+    derived['Sagitta at Join'] = sagitta_at_join
+    derived['Total FB Thickness at Nut'] = fb_thickness_at_nut
+    derived['Total FB Thickness at Join'] = fb_thickness_at_join
+
     # neck_thickness_at_first = params.get('neck_thickness_at_first') or 0
     # neck_thickness_at_seventh = params.get('neck_thickness_at_seventh') or 0
     bridge_height = params.get('bridge_height') or 0

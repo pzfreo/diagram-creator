@@ -385,28 +385,41 @@ INSTRUMENT_PARAMETERS = {
         step=0.1
     ),
 
-    # fb thickness at nut
-    'fb_thickness_at_nut': NumericParameter(
-        name='fb_thickness_at_nut',
-        label='Fingerboard thickness at nut',
+    # Fingerboard radius
+    'fingerboard_radius': NumericParameter(
+        name='fingerboard_radius',
+        label='Fingerboard Radius',
         unit='mm',
-        default=5.0,
+        default=41.0,
+        min_val=20.0,
+        max_val=1000.0,
+        description='Radius of fingerboard curvature (larger = flatter). Typical: Violin 41mm, Viol 60-80mm, Guitar 300mm',
+        category='Basic Dimensions',
+        step=1.0
+    ),
+
+    # Fingerboard visible height at nut
+    'fb_visible_height_at_nut': NumericParameter(
+        name='fb_visible_height_at_nut',
+        label='Fingerboard visible height at nut',
+        unit='mm',
+        default=4.0,
         min_val=0.0,
         max_val=100.0,
-        description='Max thickness of the fingerboard just next to the nut',
+        description='Height of the flat visible side of fingerboard at nut',
         category='Basic Dimensions',
         step=0.1
     ),
 
-    # fb thickness at body join
-    'fb_thickness_at_join': NumericParameter(
-        name='fb_thickness_at_join',
-        label='Fingerboard thickness at body join',
+    # Fingerboard visible height at body join
+    'fb_visible_height_at_join': NumericParameter(
+        name='fb_visible_height_at_join',
+        label='Fingerboard visible height at body join',
         unit='mm',
-        default=7.0,
+        default=6.0,
         min_val=0.0,
         max_val=100.0,
-        description='Max thickness of the fingerboard at the body join',
+        description='Height of the flat visible side of fingerboard at body join',
         category='Basic Dimensions',
         step=0.1
     ),

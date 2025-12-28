@@ -20,13 +20,14 @@
     "belly_edge_thickness": 3.5,
     "bridge_height": 20,
     "overstand": 14,
-    "fb_thickness_at_nut": 6.1,
-    "fb_thickness_at_join": 6.1,
+    "fingerboard_radius": 300.0,
+    "fb_visible_height_at_nut": 5.6,
+    "fb_visible_height_at_join": 5.3,
     "string_height_nut": 0.6,
     "string_height_eof": 4,
     "string_height_12th_fret": 3,
-    "fingerboard_width_at_nut": null,
-    "fingerboard_width_at_end": null,
+    "fingerboard_width_at_nut": 36.0,
+    "fingerboard_width_at_end": 44.0,
     "show_measurements": true,
     "show_rib_reference": true
   }

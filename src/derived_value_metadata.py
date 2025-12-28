@@ -114,6 +114,50 @@ DERIVED_VALUE_METADATA: Dict[str, DerivedValueMetadata] = {
         order=5
     ),
 
+    'Sagitta at Nut': DerivedValueMetadata(
+        key='Sagitta at Nut',
+        display_name='Sagitta at Nut',
+        unit='mm',
+        decimals=2,
+        visible=True,
+        category=DerivedValueCategory.GEOMETRY,
+        description='Height of fingerboard arc at nut due to radius',
+        order=20
+    ),
+
+    'Sagitta at Join': DerivedValueMetadata(
+        key='Sagitta at Join',
+        display_name='Sagitta at Join',
+        unit='mm',
+        decimals=2,
+        visible=True,
+        category=DerivedValueCategory.GEOMETRY,
+        description='Height of fingerboard arc at body join due to radius',
+        order=21
+    ),
+
+    'Total FB Thickness at Nut': DerivedValueMetadata(
+        key='Total FB Thickness at Nut',
+        display_name='Total FB Thickness at Nut',
+        unit='mm',
+        decimals=1,
+        visible=True,
+        category=DerivedValueCategory.GEOMETRY,
+        description='Total fingerboard thickness at nut (visible height + sagitta)',
+        order=22
+    ),
+
+    'Total FB Thickness at Join': DerivedValueMetadata(
+        key='Total FB Thickness at Join',
+        display_name='Total FB Thickness at Join',
+        unit='mm',
+        decimals=1,
+        visible=True,
+        category=DerivedValueCategory.GEOMETRY,
+        description='Total fingerboard thickness at body join (visible height + sagitta)',
+        order=23
+    ),
+
     # Internal calculation values (visible=False)
     'Neck Angle (rad)': DerivedValueMetadata(
         key='Neck Angle (rad)',
