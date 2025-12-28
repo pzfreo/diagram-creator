@@ -272,8 +272,9 @@ def generate_fret_positions_view(params: Dict[str, Any]) -> Dict[str, Any]:
 
     fret_positions = calculate_fret_positions(vsl, no_frets)
 
-    # Generate HTML table
-    html = '<table class="fret-table">'
+    # Generate HTML table with scrollable container
+    html = '<div class="fret-table-container">'
+    html += '<table class="fret-table">'
     html += '<thead><tr><th>Fret</th><th>Distance from Nut (mm)</th><th>Distance from Bridge (mm)</th></tr></thead>'
     html += '<tbody>'
 
@@ -281,9 +282,9 @@ def generate_fret_positions_view(params: Dict[str, Any]) -> Dict[str, Any]:
         fret_num = i + 1
         from_nut = pos
         from_bridge = vsl - pos
-        html += f'<tr><td>{fret_num}</td><td>{from_nut:.2f}</td><td>{from_bridge:.2f}</td></tr>'
+        html += f'<tr><td>{fret_num}</td><td>{from_nut:.1f}</td><td>{from_bridge:.1f}</td></tr>'
 
-    html += '</tbody></table>'
+    html += '</tbody></table></div>'
 
     return {
         'available': True,
