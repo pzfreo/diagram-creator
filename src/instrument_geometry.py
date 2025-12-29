@@ -843,28 +843,37 @@ def generate_radius_template_svg(params: Dict[str, Any]) -> str:
     points.append(bottom_right)
     points.append(top_right)
 
-    # Arc along top edge (from right to left)
-    num_arc_points = 30  # More points for smoother arc
-    arc_center_y = template_height - fingerboard_radius + arc_depth
+    # Arc along top edge - CONCAVE (cutting into rectangle)
+    # For a concave arc, the center must be ABOVE the rectangle
+    # Arc center positioned so it passes through the top corners
+    arc_center_y = template_height + math.sqrt(fingerboard_radius**2 - half_template_width**2)
+
+    num_arc_points = 50  # More points for smoother arc
 
     for i in range(num_arc_points + 1):
         t = i / num_arc_points
-        # Calculate angle: arc goes from right to left
-        angle_span = 2 * math.asin(half_template_width / fingerboard_radius)
-        angle = -angle_span/2 + t * angle_span
+        # Calculate angle from arc center
+        # Right corner angle
+        angle_right = math.atan2(template_height - arc_center_y, half_template_width)
+        # Left corner angle
+        angle_left = math.atan2(template_height - arc_center_y, -half_template_width)
 
-        x = fingerboard_radius * math.sin(angle)
-        y = arc_center_y + fingerboard_radius * math.cos(angle)
+        # Interpolate angle (sweeping counter-clockwise from right to left)
+        angle = angle_right + t * (angle_left - angle_right)
+
+        x = fingerboard_radius * math.cos(angle)
+        y = arc_center_y + fingerboard_radius * math.sin(angle)
         points.append((x, y))
 
-    points.append(top_left)
+    # Close back to start
+    points.append(bottom_left)
 
     # Create polygon outline
     template_polygon = Polygon(points, filled=False)
     exporter.add_shape(template_polygon, layer="drawing")
 
-    # Add radius label centered near bottom
-    radius_text = Text(f"{fingerboard_radius:.0f}mm", font_size=8.0, font=FONT_NAME)
+    # Add radius label centered near bottom (smaller text)
+    radius_text = Text(f"{fingerboard_radius:.0f}mm", font_size=6.0, font=FONT_NAME)
     radius_text = radius_text.move(Location((0, 5)))
     exporter.add_shape(radius_text, layer="text")
 

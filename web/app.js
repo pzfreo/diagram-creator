@@ -295,7 +295,12 @@ function getInstrumentFilename() { return sanitizeFilename(collectParameters().i
 
 function downloadSVG() {
     if (!state.views || !state.views[state.currentView]) return;
-    const viewNames = { 'side': 'side-view', 'top': 'top-view', 'cross_section': 'cross-section' };
+    const viewNames = {
+        'side': 'side-view',
+        'top': 'top-view',
+        'cross_section': 'cross-section',
+        'radius_template': 'radius-template'
+    };
     const blob = new Blob([state.views[state.currentView]], { type: 'image/svg+xml' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');

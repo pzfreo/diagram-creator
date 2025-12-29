@@ -292,6 +292,35 @@ export function displayCurrentView() {
     document.querySelectorAll('.view-tab').forEach(tab => {
         tab.classList.toggle('active', tab.dataset.view === state.currentView);
     });
+
+    // Manage download button visibility based on view
+    const svgBtn = document.getElementById('dl-svg');
+    const pdfBtn = document.getElementById('dl-pdf');
+
+    if (state.currentView === 'radius_template') {
+        // For radius template, show only SVG download
+        if (svgBtn) {
+            svgBtn.style.display = 'block';
+            svgBtn.disabled = false;
+        }
+        if (pdfBtn) {
+            pdfBtn.style.display = 'none';
+        }
+    } else if (state.currentView === 'dimensions' || state.currentView === 'fret_positions') {
+        // For table views, hide both buttons
+        if (svgBtn) svgBtn.style.display = 'none';
+        if (pdfBtn) pdfBtn.style.display = 'none';
+    } else {
+        // For other SVG views, show both buttons
+        if (svgBtn) {
+            svgBtn.style.display = 'block';
+            svgBtn.disabled = false;
+        }
+        if (pdfBtn) {
+            pdfBtn.style.display = 'block';
+            pdfBtn.disabled = false;
+        }
+    }
 }
 
 export function updateTabStates(params) {
