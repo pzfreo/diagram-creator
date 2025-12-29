@@ -865,7 +865,7 @@ def generate_radius_template_svg(params: Dict[str, Any]) -> str:
 
     # Add radius label centered near bottom
     radius_text = Text(f"{fingerboard_radius:.0f}mm", font_size=8.0, font=FONT_NAME)
-    radius_text = radius_text.move(Location(0, 5))
+    radius_text = radius_text.move(Location((0, 5)))
     exporter.add_shape(radius_text, layer="text")
 
     return exporter_to_svg(exporter)
