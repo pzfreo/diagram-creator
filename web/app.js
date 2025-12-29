@@ -311,6 +311,18 @@ function zoomReset() {
 function sanitizeFilename(name) { return name.replace(/[<>:"/\\|?*]/g, '_').replace(/\s+/g, '_'); }
 function getInstrumentFilename() { return sanitizeFilename(collectParameters().instrument_name || 'instrument'); }
 
+function downloadFile(content, filename, mimeType) {
+    const blob = new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
 function downloadSVG() {
     if (!state.views || !state.views[state.currentView]) return;
     const viewNames = {
