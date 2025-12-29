@@ -114,6 +114,28 @@ DERIVED_VALUE_METADATA: Dict[str, DerivedValueMetadata] = {
         order=5
     ),
 
+    'String Angle to Ribs': DerivedValueMetadata(
+        key='String Angle to Ribs',
+        display_name='String Angle to Ribs',
+        unit='°',
+        decimals=2,
+        visible=True,
+        category=DerivedValueCategory.GEOMETRY,
+        description='Angle of the string relative to the rib plane',
+        order=6
+    ),
+
+    'String Angle to Fingerboard': DerivedValueMetadata(
+        key='String Angle to Fingerboard',
+        display_name='String Angle to Fingerboard',
+        unit='°',
+        decimals=2,
+        visible=True,
+        category=DerivedValueCategory.GEOMETRY,
+        description='Angle of the string relative to the fingerboard surface',
+        order=7
+    ),
+
     'Sagitta at Nut': DerivedValueMetadata(
         key='Sagitta at Nut',
         display_name='Sagitta at Nut',
