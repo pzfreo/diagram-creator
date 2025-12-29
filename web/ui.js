@@ -298,11 +298,19 @@ export function displayCurrentView() {
     const pdfBtn = document.getElementById('dl-pdf');
 
     if (state.currentView === 'dimensions' || state.currentView === 'fret_positions') {
-        // For table views, hide both buttons
-        if (svgBtn) svgBtn.style.display = 'none';
-        if (pdfBtn) pdfBtn.style.display = 'none';
+        // For table views, disable SVG but enable PDF
+        if (svgBtn) {
+            svgBtn.style.display = 'block';
+            svgBtn.disabled = true;
+            svgBtn.style.opacity = '0.3';
+        }
+        if (pdfBtn) {
+            pdfBtn.style.display = 'block';
+            pdfBtn.disabled = false;
+            pdfBtn.style.opacity = '1';
+        }
     } else {
-        // For all SVG views (including radius_template), show both buttons
+        // For all SVG views (including radius_template), show both buttons enabled
         if (svgBtn) {
             svgBtn.style.display = 'block';
             svgBtn.disabled = false;
