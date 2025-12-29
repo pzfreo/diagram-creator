@@ -1001,15 +1001,9 @@ def generate_radius_template_svg(params: Dict[str, Any]) -> str:
     rotated_cutouts = []
     for rect in text_cutouts:
         rotated_rect = [(-x, template_height - y) for x, y in rect]
-        rotated_cutouts.append(rotated_rect)
-
-    # Build compound SVG path with holes using fill-rule="evenodd"
-    # Main outer path + inner cutout paths = holes
-    path_data = "M " + " L ".join([f"{x},{y}" for x, y in rotated_points]) + " Z"
-
-    # Add each cutout as a subpath
-    for cutout in rotated_cutouts:
-        path_data += " M " + " L ".join([f"{x},{y}" for x, y in cutout]) + " Z"
+        # REVERSE winding order for holes (counter-clockwise)
+        # This signals to slicers that these should be subtracted/holes
+        rotated_cutouts.append(list(reversed(rotated_rect)))
 
     # Calculate bounds for SVG viewBox
     all_x = [p[0] for p in rotated_points] + [p[0] for rect in rotated_cutouts for p in rect]
@@ -1020,11 +1014,32 @@ def generate_radius_template_svg(params: Dict[str, Any]) -> str:
     margin = 2
     viewBox = f"{min_x - margin} {min_y - margin} {max_x - min_x + 2*margin} {max_y - min_y + 2*margin}"
 
-    # Create manual SVG with compound path and white background for visibility
+    # Build separate path elements for better slicer compatibility
+    # Outer boundary - black fill
+    outer_path = (
+        '<path d="M ' +
+        ' L '.join([f"{x},{y}" for x, y in rotated_points]) +
+        ' Z" fill="black" stroke="black" stroke-width="0.5"/>'
+    )
+
+    # Text cutout holes - white fill, painted on top
+    cutout_paths = []
+    for cutout in rotated_cutouts:
+        cutout_path = (
+            '<path d="M ' +
+            ' L '.join([f"{x},{y}" for x, y in cutout]) +
+            ' Z" fill="white" stroke="white" stroke-width="0.5"/>'
+        )
+        cutout_paths.append(cutout_path)
+
+    # Assemble SVG with separate paths (paint order matters)
+    # 1. White background for visibility
+    # 2. Black outer boundary
+    # 3. White cutouts on top (creates visual and geometric holes)
     svg = f'''<svg xmlns="http://www.w3.org/2000/svg" viewBox="{viewBox}">
   <rect x="{min_x - margin}" y="{min_y - margin}" width="{max_x - min_x + 2*margin}" height="{max_y - min_y + 2*margin}" fill="white"/>
-  <path d="{path_data}" fill="black" fill-rule="evenodd" stroke="none"/>
-  <path d="M {' L '.join([f'{x},{y}' for x, y in rotated_points])} Z" fill="none" stroke="black" stroke-width="0.5"/>
+  {outer_path}
+  {chr(10).join("  " + path for path in cutout_paths)}
 </svg>'''
 
     return svg
