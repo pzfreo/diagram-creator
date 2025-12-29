@@ -319,15 +319,8 @@ function downloadSVG() {
         'cross_section': 'cross-section',
         'radius_template': 'radius-template'
     };
-    const blob = new Blob([state.views[state.currentView]], { type: 'image/svg+xml' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${getInstrumentFilename()}_${viewNames[state.currentView]}.svg`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    const filename = `${getInstrumentFilename()}_${viewNames[state.currentView]}.svg`;
+    downloadFile(state.views[state.currentView], filename, 'image/svg+xml');
 }
 
 function saveParameters() {
@@ -335,15 +328,8 @@ function saveParameters() {
         metadata: { version: '1.0', timestamp: new Date().toISOString(), description: 'Instrument Neck Parameters', generator: 'Instrument Neck Geometry Generator' },
         parameters: collectParameters()
     };
-    const blob = new Blob([JSON.stringify(saveData, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${getInstrumentFilename()}_params_${new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5)}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    const filename = `${getInstrumentFilename()}_params_${new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5)}.json`;
+    downloadFile(JSON.stringify(saveData, null, 2), filename, 'application/json');
 }
 
 // Global exposure for the input in index.html

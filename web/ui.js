@@ -271,6 +271,13 @@ export function populatePresets() {
     }
 }
 
+function setZoomButtonsState(enabled) {
+    document.querySelectorAll('.zoom-btn').forEach(btn => {
+        btn.disabled = !enabled;
+        btn.style.opacity = enabled ? '1' : '0.3';
+    });
+}
+
 export function displayCurrentView() {
     if (!state.views || !state.views[state.currentView]) return;
 
@@ -283,17 +290,11 @@ export function displayCurrentView() {
     elements.preview.innerHTML = '';
 
     if (state.currentView === 'dimensions') {
-        document.querySelectorAll('.zoom-btn').forEach(btn => {
-            btn.disabled = true;
-            btn.style.opacity = '0.3';
-        });
+        setZoomButtonsState(false);
         elements.preview.innerHTML = state.views[state.currentView];
     } else if (state.currentView === 'fret_positions') {
         // Disable zoom controls for fret positions view
-        document.querySelectorAll('.zoom-btn').forEach(btn => {
-            btn.disabled = true;
-            btn.style.opacity = '0.3';
-        });
+        setZoomButtonsState(false);
 
         const fretData = state.views.fret_positions;
         if (fretData && fretData.available) {
@@ -302,10 +303,7 @@ export function displayCurrentView() {
             elements.preview.innerHTML = '<p class="info-message">Fret positions not available for this instrument family</p>';
         }
     } else {
-        document.querySelectorAll('.zoom-btn').forEach(btn => {
-            btn.disabled = false;
-            btn.style.opacity = '1';
-        });
+        setZoomButtonsState(true);
 
         state.svgCanvas = SVG().addTo('#preview-container');
         state.svgCanvas.svg(state.views[state.currentView]);
