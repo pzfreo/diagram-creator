@@ -172,9 +172,11 @@ def generate_radius_template_svg(params: Dict[str, Any]) -> str:
     # Estimate text width for centering (approximate)
     text_width = len(radius_str) * char_height * 0.6
     text_x = -text_width / 2
-    # Position text with consistent margin from top edge (half of text height)
-    text_margin = char_height / 2
-    text_y = template_height - text_margin
+    # Position text baseline so text top is at consistent margin from edge
+    # text_y is the baseline, text extends UPWARD by char_height
+    # So: text_y + char_height = template_height - margin
+    text_margin = char_height * 0.3  # Small margin from top
+    text_y = template_height - char_height - text_margin
 
     # Get text as bezier curve paths
     text_path_d = _text_to_svg_path_with_textpath(radius_str, text_x, text_y, char_height)
