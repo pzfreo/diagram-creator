@@ -433,8 +433,13 @@ export function generateDimensionsTableHTML(params, derivedValues, derivedFormat
     if (derivedValues && Object.keys(derivedValues).length > 0) {
         const dCategories = new Map();
         for (const [label, value] of Object.entries(derivedValues)) {
+            // Skip internal variables (those with underscores)
+            if (label.includes('_')) continue;
+
             const meta = state.derivedMetadata && state.derivedMetadata[label];
-            if (meta && !meta.visible) continue;
+            // Skip if no metadata or if metadata says not visible
+            if (!meta || !meta.visible) continue;
+
             const category = meta ? meta.category : 'Calculated Values';
             if (!dCategories.has(category)) dCategories.set(category, []);
             dCategories.get(category).push({ label, value, meta });

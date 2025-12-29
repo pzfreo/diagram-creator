@@ -280,8 +280,12 @@ async function updateDerivedValues() {
             }
 
             for (const [label, value] of Object.entries(result.values)) {
+                // Skip internal variables (those with underscores)
+                if (label.includes('_')) continue;
+
                 const meta = (result.metadata || {})[label];
-                if (meta && !meta.visible) continue;
+                // Skip if no metadata or if metadata says not visible
+                if (!meta || !meta.visible) continue;
 
                 const div = document.createElement('div');
                 div.className = 'metric-card';
