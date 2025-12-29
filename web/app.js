@@ -104,7 +104,7 @@ async function initializePython() {
 
         ui.setStatus('loading', 'Loading instrument neck modules...');
         const modules = [
-            'buildprimitives.py', 'dimension_helpers.py', 'derived_value_metadata.py',
+            'constants.py', 'buildprimitives.py', 'dimension_helpers.py', 'derived_value_metadata.py',
             'instrument_parameters.py', 'radius_template.py', 'instrument_geometry.py', 'instrument_generator.py'
         ];
 
