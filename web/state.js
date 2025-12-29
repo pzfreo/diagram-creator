@@ -27,6 +27,7 @@ export const elements = {
     presetSelect: document.getElementById('preset'),
     viewTabs: document.getElementById('view-tabs'),
     zoomControls: document.getElementById('zoom-controls'),
+    dlSvg: document.getElementById('dl-svg'),
     dlPdf: document.getElementById('dl-pdf'),
     calculatedFields: document.getElementById('calculated-fields')
 };
