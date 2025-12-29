@@ -827,7 +827,8 @@ def generate_radius_template_svg(params: Dict[str, Any]) -> str:
     # Setup SVG exporter
     exporter = ExportSVG(scale=1.0, unit=Unit.MM, line_weight=0.5)
     exporter.add_layer("drawing", fill_color=None, line_color=(0, 0, 0))
-    exporter.add_layer("text", fill_color=(0, 0, 0), line_color=None)
+    # Text layer with white fill to create cutout/hole effect in 3D print
+    exporter.add_layer("text", fill_color=(255, 255, 255), line_color=None)
 
     # Generate points for the template outline
     points = []
