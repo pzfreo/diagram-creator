@@ -116,8 +116,10 @@ def generate_radius_template_svg(params: Dict[str, Any]) -> str:
         arc_depth = fingerboard_radius - math.sqrt(
             fingerboard_radius**2 - half_template_width**2
         )
-        # Ensure minimum 20mm height
-        template_height = max(20.0, arc_depth + 5.0)
+        # Ensure minimum 20mm FLAT AREA (height - sagitta) for text
+        # So template_height - arc_depth >= 20
+        min_flat_area = 20.0
+        template_height = arc_depth + min_flat_area
 
     # Generate points for the template outline
     # Arc at BOTTOM, flat edge at TOP (readable when printed)
@@ -166,8 +168,9 @@ def generate_radius_template_svg(params: Dict[str, Any]) -> str:
     # Generate text cutouts using matplotlib TextPath
     # Text positioned at TOP (flat edge), readable orientation
     radius_str = f"{fingerboard_radius:.0f}mm"
-    # Text height scales with template: 1/3 of template height
-    char_height = template_height / 3.0
+    # Text height is 1/3 of the FLAT AREA (height - sagitta), not total height
+    flat_area = template_height - arc_depth
+    char_height = flat_area / 3.0
 
     # Estimate text width for centering (approximate)
     text_width = len(radius_str) * char_height * 0.6
