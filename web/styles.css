@@ -748,16 +748,30 @@ input[type="checkbox"] {
 
 /* Mobile devices - wrap tabs to multiple rows */
 @media (max-width: 768px) {
+    .preview-panel {
+        padding: 1rem;  /* Reduce padding to maximize preview space */
+    }
+
+    .view-controls-header {
+        margin-bottom: 0.5rem;  /* Reduce margin below tabs */
+    }
+
     .view-tabs {
         flex-wrap: wrap;
-        gap: 8px;
+        gap: 6px;  /* Smaller gap between tabs */
     }
 
     .view-tab {
-        flex: 1 1 calc(50% - 4px);  /* 2 tabs per row */
-        min-width: 120px;
-        padding: 8px 12px;
-        font-size: 0.85rem;
+        flex: 1 1 calc(50% - 3px);  /* 2 tabs per row */
+        min-width: 100px;
+        padding: 6px 10px;  /* Smaller padding */
+        font-size: 0.8rem;  /* Smaller font */
+    }
+
+    .zoom-controls button,
+    .download-buttons button {
+        padding: 6px 10px;  /* Smaller buttons too */
+        font-size: 0.8rem;
     }
 }
 
@@ -765,7 +779,8 @@ input[type="checkbox"] {
 @media (max-width: 480px) {
     .view-tab {
         flex: 1 1 100%;  /* Full width, stack vertically */
-        font-size: 0.9rem;
+        font-size: 0.85rem;
+        padding: 8px 12px;
     }
 }
 
