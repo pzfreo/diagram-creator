@@ -68,120 +68,157 @@ export function generateUI(callbacks) {
     }
 }
 
-export function createParameterControl(name, param, isOutput, callbacks) {
+function createLabelDiv(name, param, isOutput) {
+    const labelDiv = document.createElement('div');
+    labelDiv.className = 'param-label';
+    const label = document.createElement('label');
+    label.textContent = param.label;
+    label.htmlFor = name;
+
+    if (isOutput) {
+        const indicator = document.createElement('span');
+        indicator.className = 'output-indicator';
+        indicator.textContent = ' (calculated)';
+        label.appendChild(indicator);
+    }
+
+    labelDiv.appendChild(label);
+    return labelDiv;
+}
+
+function createNumberControl(name, param, isOutput, callbacks) {
+    const group = document.createElement('div');
+    group.className = 'param-group';
+    group.dataset.paramName = name;
+    if (isOutput) group.classList.add('param-output');
+
+    const labelDiv = createLabelDiv(name, param, isOutput);
+
+    const unit = document.createElement('span');
+    unit.className = 'param-unit';
+    unit.textContent = param.unit;
+    labelDiv.appendChild(unit);
+    group.appendChild(labelDiv);
+
+    const input = document.createElement('input');
+    input.type = 'number';
+    input.id = name;
+    input.name = name;
+    input.value = param.default;
+    input.min = param.min;
+    input.max = param.max;
+    input.step = param.step;
+
+    if (isOutput) {
+        input.readOnly = true;
+        input.classList.add('readonly-output');
+    } else {
+        input.addEventListener('change', hideErrors);
+        input.addEventListener('input', callbacks.onInputChange);
+    }
+    group.appendChild(input);
+
+    return group;
+}
+
+function createEnumControl(name, param, callbacks) {
     const group = document.createElement('div');
     group.className = 'param-group';
     group.dataset.paramName = name;
 
-    if (isOutput) group.classList.add('param-output');
+    const labelDiv = createLabelDiv(name, param, false);
+    group.appendChild(labelDiv);
 
-    if (param.type === 'number') {
-        const labelDiv = document.createElement('div');
-        labelDiv.className = 'param-label';
-        const label = document.createElement('label');
-        label.textContent = param.label;
-        label.htmlFor = name;
+    const select = document.createElement('select');
+    select.id = name;
+    select.name = name;
 
-        if (isOutput) {
-            const indicator = document.createElement('span');
-            indicator.className = 'output-indicator';
-            indicator.textContent = ' (calculated)';
-            label.appendChild(indicator);
-        }
-
-        const unit = document.createElement('span');
-        unit.className = 'param-unit';
-        unit.textContent = param.unit;
-
-        labelDiv.appendChild(label);
-        labelDiv.appendChild(unit);
-        group.appendChild(labelDiv);
-
-        const input = document.createElement('input');
-        input.type = 'number';
-        input.id = name;
-        input.name = name;
-        input.value = param.default;
-        input.min = param.min;
-        input.max = param.max;
-        input.step = param.step;
-
-        if (isOutput) {
-            input.readOnly = true;
-            input.classList.add('readonly-output');
-        } else {
-            input.addEventListener('change', hideErrors);
-            input.addEventListener('input', callbacks.onInputChange);
-        }
-        group.appendChild(input);
-
-    } else if (param.type === 'enum') {
-        const labelDiv = document.createElement('div');
-        labelDiv.className = 'param-label';
-        const label = document.createElement('label');
-        label.textContent = param.label;
-        label.htmlFor = name;
-        labelDiv.appendChild(label);
-        group.appendChild(labelDiv);
-
-        const select = document.createElement('select');
-        select.id = name;
-        select.name = name;
-
-        for (const option of param.options) {
-            const opt = document.createElement('option');
-            opt.value = option.value;
-            opt.textContent = option.label;
-            if (option.value === param.default) opt.selected = true;
-            select.appendChild(opt);
-        }
-
-        select.addEventListener('change', hideErrors);
-        select.addEventListener('change', callbacks.onEnumChange);
-        if (name === 'instrument_family') {
-            select.addEventListener('change', () => updateParameterVisibility(callbacks.collectParameters()));
-        }
-        group.appendChild(select);
-
-    } else if (param.type === 'boolean') {
-        const checkboxDiv = document.createElement('div');
-        checkboxDiv.className = 'checkbox-group';
-        const input = document.createElement('input');
-        input.type = 'checkbox';
-        input.id = name;
-        input.name = name;
-        input.checked = param.default;
-        input.addEventListener('change', hideErrors);
-        input.addEventListener('change', callbacks.onEnumChange);
-
-        const label = document.createElement('label');
-        label.textContent = param.label;
-        label.htmlFor = name;
-
-        checkboxDiv.appendChild(input);
-        checkboxDiv.appendChild(label);
-        group.appendChild(checkboxDiv);
-
-    } else if (param.type === 'string') {
-        const labelDiv = document.createElement('div');
-        labelDiv.className = 'param-label';
-        const label = document.createElement('label');
-        label.textContent = param.label;
-        label.htmlFor = name;
-        labelDiv.appendChild(label);
-        group.appendChild(labelDiv);
-
-        const input = document.createElement('input');
-        input.type = 'text';
-        input.id = name;
-        input.name = name;
-        input.value = param.default;
-        input.maxLength = param.max_length || 100;
-        input.addEventListener('change', hideErrors);
-        input.addEventListener('input', callbacks.onInputChange);
-        group.appendChild(input);
+    for (const option of param.options) {
+        const opt = document.createElement('option');
+        opt.value = option.value;
+        opt.textContent = option.label;
+        if (option.value === param.default) opt.selected = true;
+        select.appendChild(opt);
     }
 
+    select.addEventListener('change', hideErrors);
+    select.addEventListener('change', callbacks.onEnumChange);
+    if (name === 'instrument_family') {
+        select.addEventListener('change', () => updateParameterVisibility(callbacks.collectParameters()));
+    }
+    group.appendChild(select);
+
+    return group;
+}
+
+function createBooleanControl(name, param, callbacks) {
+    const group = document.createElement('div');
+    group.className = 'param-group';
+    group.dataset.paramName = name;
+
+    const checkboxDiv = document.createElement('div');
+    checkboxDiv.className = 'checkbox-group';
+
+    const input = document.createElement('input');
+    input.type = 'checkbox';
+    input.id = name;
+    input.name = name;
+    input.checked = param.default;
+    input.addEventListener('change', hideErrors);
+    input.addEventListener('change', callbacks.onEnumChange);
+
+    const label = document.createElement('label');
+    label.textContent = param.label;
+    label.htmlFor = name;
+
+    checkboxDiv.appendChild(input);
+    checkboxDiv.appendChild(label);
+    group.appendChild(checkboxDiv);
+
+    return group;
+}
+
+function createStringControl(name, param, callbacks) {
+    const group = document.createElement('div');
+    group.className = 'param-group';
+    group.dataset.paramName = name;
+
+    const labelDiv = createLabelDiv(name, param, false);
+    group.appendChild(labelDiv);
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.id = name;
+    input.name = name;
+    input.value = param.default;
+    input.maxLength = param.max_length || 100;
+    input.addEventListener('change', hideErrors);
+    input.addEventListener('input', callbacks.onInputChange);
+    group.appendChild(input);
+
+    return group;
+}
+
+export function createParameterControl(name, param, isOutput, callbacks) {
+    // Delegate to type-specific control creation functions
+    let group;
+
+    if (param.type === 'number') {
+        group = createNumberControl(name, param, isOutput, callbacks);
+    } else if (param.type === 'enum') {
+        group = createEnumControl(name, param, callbacks);
+    } else if (param.type === 'boolean') {
+        group = createBooleanControl(name, param, callbacks);
+    } else if (param.type === 'string') {
+        group = createStringControl(name, param, callbacks);
+    } else {
+        // Fallback for unknown types
+        group = document.createElement('div');
+        group.className = 'param-group';
+        group.dataset.paramName = name;
+    }
+
+    // Add description if present (common to all types)
     if (param.description) {
         const desc = document.createElement('div');
         desc.className = 'param-description';

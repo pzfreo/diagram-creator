@@ -8,6 +8,17 @@ from buildprimitives import *
 from buildprimitives import FONT_NAME, TITLE_FONT_SIZE, FOOTER_FONT_SIZE, PTS_MM  # Font constants
 from instrument_parameters import InstrumentFamily
 from radius_template import generate_radius_template_svg
+from constants import (
+    DEFAULT_FINGERBOARD_RADIUS,
+    DEFAULT_FB_VISIBLE_HEIGHT_AT_NUT,
+    DEFAULT_FB_VISIBLE_HEIGHT_AT_JOIN,
+    DEFAULT_FB_WIDTH_AT_NUT,
+    DEFAULT_FB_WIDTH_AT_END,
+    DEFAULT_FRETS_VIOL,
+    DEFAULT_FRETS_GUITAR,
+    DEFAULT_FRETS_VIOLIN,
+    EPSILON
+)
 import math
 from typing import Dict, Any, Tuple, List
 from dimension_helpers import (
@@ -62,49 +73,23 @@ def calculate_sagitta(radius: float, width: float) -> float:
     return radius - math.sqrt(radius ** 2 - half_width ** 2)
 
 
-def calculate_derived_values(params: Dict[str, Any]) -> Dict[str, Any]:
+def _calculate_fingerboard_thickness(params: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Calculate derived values from parameters.
+    Calculate fingerboard thickness including sagitta for radiused fingerboard.
 
     Args:
         params: Dictionary of parameter values
 
     Returns:
-        Dictionary of derived values (label -> value)
+        Dictionary with sagitta values and total thickness at nut and join
     """
-    derived = {}
+    result = {}
 
-   
-
-    # Extract values safely
-    vsl = params.get('vsl') or 0
-    instrument_family = params.get('instrument_family') or InstrumentFamily.VIOLIN.name
-
-    # Get family-specific default for number of frets
-    if params.get('no_frets') is not None:
-        no_frets = params.get('no_frets')
-    elif instrument_family == InstrumentFamily.VIOL.name:
-        no_frets = 7
-    elif instrument_family == InstrumentFamily.GUITAR_MANDOLIN.name:
-        no_frets = 20
-    else:
-        no_frets = 0  # VIOLIN family has no frets
-
-    fret_positions = calculate_fret_positions(vsl, no_frets)
-    arching_height = params.get('arching_height') or 0
-    overstand = params.get('overstand') or 0
-    # body_length = params.get('body_length') or 0
-    # rib_height = params.get('rib_height') or 0
-    fingerboard_length = params.get('fingerboard_length') or 0
-
-    # Extract new radius-based parameters
-    fingerboard_radius = params.get('fingerboard_radius') or 41.0  # Typical violin
-    fb_visible_height_at_nut = params.get('fb_visible_height_at_nut') or 3.2
-    fb_visible_height_at_join = params.get('fb_visible_height_at_join') or 1.2
-
-    # Get fingerboard widths (needed for sagitta calculation)
-    fb_width_at_nut = params.get('fingerboard_width_at_nut') or 24.0  # Default violin nut width
-    fb_width_at_join = params.get('fingerboard_width_at_end') or 42.0  # Default violin end width
+    fingerboard_radius = params.get('fingerboard_radius') or DEFAULT_FINGERBOARD_RADIUS
+    fb_visible_height_at_nut = params.get('fb_visible_height_at_nut') or DEFAULT_FB_VISIBLE_HEIGHT_AT_NUT
+    fb_visible_height_at_join = params.get('fb_visible_height_at_join') or DEFAULT_FB_VISIBLE_HEIGHT_AT_JOIN
+    fb_width_at_nut = params.get('fingerboard_width_at_nut') or DEFAULT_FB_WIDTH_AT_NUT
+    fb_width_at_join = params.get('fingerboard_width_at_end') or DEFAULT_FB_WIDTH_AT_END
 
     # Calculate sagitta at nut and join
     sagitta_at_nut = calculate_sagitta(fingerboard_radius, fb_width_at_nut)
@@ -114,150 +99,265 @@ def calculate_derived_values(params: Dict[str, Any]) -> Dict[str, Any]:
     fb_thickness_at_nut = fb_visible_height_at_nut + sagitta_at_nut
     fb_thickness_at_join = fb_visible_height_at_join + sagitta_at_join
 
-    # Add sagitta values to derived values for display
-    derived['Sagitta at Nut'] = sagitta_at_nut
-    derived['Sagitta at Join'] = sagitta_at_join
-    derived['Total FB Thickness at Nut'] = fb_thickness_at_nut
-    derived['Total FB Thickness at Join'] = fb_thickness_at_join
+    result['sagitta_at_nut'] = sagitta_at_nut
+    result['sagitta_at_join'] = sagitta_at_join
+    result['fb_thickness_at_nut'] = fb_thickness_at_nut
+    result['fb_thickness_at_join'] = fb_thickness_at_join
+    result['Sagitta at Nut'] = sagitta_at_nut
+    result['Sagitta at Join'] = sagitta_at_join
+    result['Total FB Thickness at Nut'] = fb_thickness_at_nut
+    result['Total FB Thickness at Join'] = fb_thickness_at_join
 
-    # neck_thickness_at_first = params.get('neck_thickness_at_first') or 0
-    # neck_thickness_at_seventh = params.get('neck_thickness_at_seventh') or 0
+    return result
+
+
+def _calculate_string_angles_violin(params: Dict[str, Any], vsl: float, fb_thickness_at_join: float) -> Dict[str, Any]:
+    """
+    Calculate string angles for violin/viol family instruments.
+
+    Args:
+        params: Dictionary of parameter values
+        vsl: Vibrating string length
+        fb_thickness_at_join: Fingerboard thickness at body join
+
+    Returns:
+        Dictionary with string angles and positions
+    """
+    result = {}
+
+    body_stop = params.get('body_stop') or 0
+    arching_height = params.get('arching_height') or 0
     bridge_height = params.get('bridge_height') or 0
-    # show_rib_reference = params.get('show_rib_reference', True)
-
+    overstand = params.get('overstand') or 0
     string_height_nut = params.get('string_height_nut') or 0
+    string_height_eof = params.get('string_height_eof') or 0
+    fingerboard_length = params.get('fingerboard_length') or 0
 
-    string_height_at_join = 0
-    bridge_top_x = 0 # see below
-    bridge_top_y = arching_height + bridge_height
-    body_stop = 0 # see below
-    string_angle_to_ribs = 0 # see below
-    string_angle_to_ribs_rad = 0 # see below
-    string_nut_to_join = 0 # see below
-    neck_stop = 0 # see below
-    if instrument_family in (InstrumentFamily.VIOLIN.name, InstrumentFamily.VIOL.name):
-        body_stop = params.get('body_stop') or 0
-        string_height_eof = params.get('string_height_eof') or 0
-        string_height_at_join = (string_height_eof - string_height_nut) * ((vsl-body_stop)/fingerboard_length) + string_height_nut #approximate
-        opposite = arching_height + bridge_height - overstand - fb_thickness_at_join - string_height_at_join
-        string_angle_to_ribs_rad = math.atan(opposite / body_stop)
-        string_angle_to_ribs = string_angle_to_ribs_rad * 180 / math.pi
-        string_to_join = math.sqrt(opposite**2 + body_stop**2)
-        string_nut_to_join = vsl-string_to_join
-        neck_stop = math.cos(string_angle_to_ribs_rad)*string_nut_to_join
-        opposite_string_to_fb = string_height_eof - string_height_nut
-        string_angle_to_fb = math.atan(opposite_string_to_fb / fingerboard_length) * 180 / math.pi
-    elif instrument_family == InstrumentFamily.GUITAR_MANDOLIN.name:
-        fret_join = params.get('fret_join') or 12
-        string_height_12th_fret = params.get('string_height_12th_fret') or 0
-        string_height_at_join = ((string_height_12th_fret-string_height_nut)*(fret_positions[fret_join]/fret_positions[12])) + string_height_nut
-        hypotenuse = vsl-fret_positions[fret_join]
-        opposite = arching_height + bridge_height - overstand - fb_thickness_at_join - string_height_at_join
-        string_angle_to_ribs_rad = math.asin(opposite / hypotenuse)
-        string_angle_to_ribs = string_angle_to_ribs_rad * 180 / math.pi
-        string_nut_to_join = fret_positions[fret_join] 
-        neck_stop = math.cos(string_angle_to_ribs_rad)*string_nut_to_join
-        body_stop = math.cos(string_angle_to_ribs_rad)*hypotenuse
-        opposite_string_to_join = string_height_at_join - string_height_nut
-        string_angle_to_fb = math.atan(opposite_string_to_join / fret_positions[fret_join]) * 180 / math.pi
-    else:
-        raise ValueError("Invalid calculation mode")
-    
+    string_height_at_join = (string_height_eof - string_height_nut) * ((vsl - body_stop) / fingerboard_length) + string_height_nut
+    opposite = arching_height + bridge_height - overstand - fb_thickness_at_join - string_height_at_join
+    string_angle_to_ribs_rad = math.atan(opposite / body_stop)
+    string_angle_to_ribs = string_angle_to_ribs_rad * 180 / math.pi
+    string_to_join = math.sqrt(opposite**2 + body_stop**2)
+    string_nut_to_join = vsl - string_to_join
+    neck_stop = math.cos(string_angle_to_ribs_rad) * string_nut_to_join
+    opposite_string_to_fb = string_height_eof - string_height_nut
+    string_angle_to_fb = math.atan(opposite_string_to_fb / fingerboard_length) * 180 / math.pi
+
+    result['body_stop'] = body_stop
+    result['neck_stop'] = neck_stop
+    result['string_angle_to_ribs_rad'] = string_angle_to_ribs_rad
+    result['string_angle_to_fb'] = string_angle_to_fb
+    result['String Angle to Ribs'] = string_angle_to_ribs
+    result['String Angle to Fingerboard'] = string_angle_to_fb
+
+    return result
+
+
+def _calculate_string_angles_guitar(params: Dict[str, Any], vsl: float, fret_positions: list, fb_thickness_at_join: float) -> Dict[str, Any]:
+    """
+    Calculate string angles for guitar/mandolin family instruments.
+
+    Args:
+        params: Dictionary of parameter values
+        vsl: Vibrating string length
+        fret_positions: List of fret positions
+        fb_thickness_at_join: Fingerboard thickness at body join
+
+    Returns:
+        Dictionary with string angles and positions
+    """
+    result = {}
+
+    fret_join = params.get('fret_join') or 12
+    string_height_nut = params.get('string_height_nut') or 0
+    string_height_12th_fret = params.get('string_height_12th_fret') or 0
+    arching_height = params.get('arching_height') or 0
+    bridge_height = params.get('bridge_height') or 0
+    overstand = params.get('overstand') or 0
+
+    string_height_at_join = ((string_height_12th_fret - string_height_nut) * (fret_positions[fret_join] / fret_positions[12])) + string_height_nut
+    hypotenuse = vsl - fret_positions[fret_join]
+    opposite = arching_height + bridge_height - overstand - fb_thickness_at_join - string_height_at_join
+    string_angle_to_ribs_rad = math.asin(opposite / hypotenuse)
+    string_angle_to_ribs = string_angle_to_ribs_rad * 180 / math.pi
+    string_nut_to_join = fret_positions[fret_join]
+    neck_stop = math.cos(string_angle_to_ribs_rad) * string_nut_to_join
+    body_stop = math.cos(string_angle_to_ribs_rad) * hypotenuse
+    opposite_string_to_join = string_height_at_join - string_height_nut
+    string_angle_to_fb = math.atan(opposite_string_to_join / fret_positions[fret_join]) * 180 / math.pi
+
+    result['body_stop'] = body_stop
+    result['neck_stop'] = neck_stop
+    result['string_angle_to_ribs_rad'] = string_angle_to_ribs_rad
+    result['string_angle_to_fb'] = string_angle_to_fb
+    result['String Angle to Ribs'] = string_angle_to_ribs
+    result['String Angle to Fingerboard'] = string_angle_to_fb
+
+    return result
+
+
+def _calculate_neck_geometry(params: Dict[str, Any], vsl: float, neck_stop: float, string_angle_to_ribs_rad: float,
+                              string_angle_to_fb: float, fb_thickness_at_nut: float, fb_thickness_at_join: float) -> Dict[str, Any]:
+    """
+    Calculate neck angle and nut position.
+
+    Args:
+        params: Dictionary of parameter values
+        vsl: Vibrating string length
+        neck_stop: Distance from bridge to neck-body join
+        string_angle_to_ribs_rad: String angle to ribs in radians
+        string_angle_to_fb: String angle to fingerboard in degrees
+        fb_thickness_at_nut: Fingerboard thickness at nut
+        fb_thickness_at_join: Fingerboard thickness at body join
+
+    Returns:
+        Dictionary with neck geometry values
+    """
+    result = {}
+
+    arching_height = params.get('arching_height') or 0
+    bridge_height = params.get('bridge_height') or 0
+    overstand = params.get('overstand') or 0
+    string_height_nut = params.get('string_height_nut') or 0
+    body_stop = result.get('body_stop', params.get('body_stop') or 0)
+
     bridge_top_x = body_stop
+    bridge_top_y = arching_height + bridge_height
     nut_top_x = -neck_stop
-    nut_top_y = bridge_top_y - math.sin(string_angle_to_ribs_rad)*vsl
+    nut_top_y = bridge_top_y - math.sin(string_angle_to_ribs_rad) * vsl
 
     opposite_fb = fb_thickness_at_join - fb_thickness_at_nut
     fingerboard_angle = math.atan(opposite_fb / neck_stop) * 180 / math.pi
-    neck_angle = 90-(string_angle_to_ribs-string_angle_to_fb-fingerboard_angle)
-    derived['Neck Angle'] = neck_angle
-
-    # Calculate neck end position and nut position for string length
+    neck_angle = 90 - (string_angle_to_ribs_rad * 180 / math.pi - string_angle_to_fb - fingerboard_angle)
     neck_angle_rad = neck_angle * math.pi / 180
-    neck_end_x = 0 - neck_stop + math.cos(neck_angle_rad)*fb_thickness_at_nut
-    neck_end_y = overstand - neck_stop * math.cos(neck_angle_rad)
-    derived['Body Stop'] = body_stop
-    derived['Neck Stop'] = neck_stop
-    derived['Neck Angle (rad)'] = neck_angle_rad
-    derived['Neck End X'] = neck_end_x
-    derived['Neck End Y'] = neck_end_y
 
-    # Calculate nut position (top of nut)
+    neck_end_x = 0 - neck_stop + math.cos(neck_angle_rad) * fb_thickness_at_nut
+    neck_end_y = overstand - neck_stop * math.cos(neck_angle_rad)
     nut_draw_radius = fb_thickness_at_nut + string_height_nut
     neck_line_angle = math.atan2(neck_end_y - overstand, neck_end_x - 0)
-    # nut_top_x = neck_end_x + nut_radius * math.cos(neck_line_angle - math.pi/2)
-    # nut_top_y = neck_end_y + nut_radius * math.sin(neck_line_angle - math.pi/2)
 
-    derived['Nut Draw Radius'] = nut_draw_radius
-    derived['Neck Line Angle'] = neck_line_angle
-    derived['Nut Top X'] = nut_top_x
-    derived['Nut Top Y'] = nut_top_y
-
-    # Store bridge position (use variables from lines 100-102)
-    derived['Bridge Top X'] = bridge_top_x
-    derived['Bridge Top Y'] = bridge_top_y
+    result['Neck Angle'] = neck_angle
+    result['Body Stop'] = body_stop
+    result['Neck Stop'] = neck_stop
+    result['Neck Angle (rad)'] = neck_angle_rad
+    result['Neck End X'] = neck_end_x
+    result['Neck End Y'] = neck_end_y
+    result['Nut Draw Radius'] = nut_draw_radius
+    result['Neck Line Angle'] = neck_line_angle
+    result['Nut Top X'] = nut_top_x
+    result['Nut Top Y'] = nut_top_y
+    result['Bridge Top X'] = bridge_top_x
+    result['Bridge Top Y'] = bridge_top_y
+    result['neck_end_x'] = neck_end_x
+    result['neck_end_y'] = neck_end_y
+    result['neck_line_angle'] = neck_line_angle
+    result['nut_top_x'] = nut_top_x
+    result['nut_top_y'] = nut_top_y
+    result['bridge_top_x'] = bridge_top_x
+    result['bridge_top_y'] = bridge_top_y
 
     # Calculate string length
     string_length = math.sqrt((bridge_top_x - nut_top_x)**2 + (bridge_top_y - nut_top_y)**2)
-    derived['String Length'] = string_length
+    result['String Length'] = string_length
+    result['Nut Relative to Ribs'] = nut_top_y
 
-    # Add nut position relative to ribs if rib reference is enabled
-    derived['Nut Relative to Ribs'] = nut_top_y
+    return result
 
-    # Calculate fingerboard geometry
+
+def _calculate_fingerboard_geometry(params: Dict[str, Any], neck_stop: float, neck_end_x: float, neck_end_y: float,
+                                     neck_line_angle: float, fb_thickness_at_nut: float, fb_thickness_at_join: float) -> Dict[str, Any]:
+    """
+    Calculate fingerboard geometry including direction angle and end position.
+
+    Args:
+        params: Dictionary of parameter values
+        neck_stop: Distance from bridge to neck-body join
+        neck_end_x, neck_end_y: Neck end position
+        neck_line_angle: Angle of neck centerline
+        fb_thickness_at_nut: Fingerboard thickness at nut
+        fb_thickness_at_join: Fingerboard thickness at body join
+
+    Returns:
+        Dictionary with fingerboard geometry values
+    """
+    result = {}
+
+    fingerboard_length = params.get('fingerboard_length') or 0
+
     fb_direction_angle = neck_line_angle + math.pi
     fb_bottom_end_x = neck_end_x + fingerboard_length * math.cos(fb_direction_angle)
     fb_bottom_end_y = neck_end_y + fingerboard_length * math.sin(fb_direction_angle)
     fb_thickness_at_end = fb_thickness_at_nut + (fb_thickness_at_join - fb_thickness_at_nut) * (fingerboard_length / neck_stop)
 
-    derived['Fingerboard Direction Angle'] = fb_direction_angle
-    derived['Fingerboard Bottom End X'] = fb_bottom_end_x
-    derived['Fingerboard Bottom End Y'] = fb_bottom_end_y
-    derived['Fingerboard Thickness at End'] = fb_thickness_at_end
+    result['Fingerboard Direction Angle'] = fb_direction_angle
+    result['Fingerboard Bottom End X'] = fb_bottom_end_x
+    result['Fingerboard Bottom End Y'] = fb_bottom_end_y
+    result['Fingerboard Thickness at End'] = fb_thickness_at_end
+    result['fb_direction_angle'] = fb_direction_angle
+    result['fb_bottom_end_x'] = fb_bottom_end_x
+    result['fb_bottom_end_y'] = fb_bottom_end_y
+    result['fb_thickness_at_end'] = fb_thickness_at_end
 
-    # Calculate fingerboard top right corner for string height calculation
-    perp_angle = fb_direction_angle + math.pi/2
+    return result
+
+
+def _calculate_string_height_and_dimensions(params: Dict[str, Any], neck_end_x: float, neck_end_y: float,
+                                             nut_top_x: float, nut_top_y: float, bridge_top_x: float, bridge_top_y: float,
+                                             fb_bottom_end_x: float, fb_bottom_end_y: float, fb_direction_angle: float,
+                                             fb_thickness_at_end: float) -> Dict[str, Any]:
+    """
+    Calculate string height at fingerboard end and dimension points.
+
+    Args:
+        params: Dictionary of parameter values
+        neck_end_x, neck_end_y: Neck end position
+        nut_top_x, nut_top_y: Nut top position
+        bridge_top_x, bridge_top_y: Bridge top position
+        fb_bottom_end_x, fb_bottom_end_y: Fingerboard bottom end position
+        fb_direction_angle: Fingerboard direction angle
+        fb_thickness_at_end: Fingerboard thickness at end
+
+    Returns:
+        Dictionary with string height and dimension values
+    """
+    result = {}
+
+    overstand = params.get('overstand') or 0
+
+    # Calculate fingerboard top right corner
+    perp_angle = fb_direction_angle + math.pi / 2
     fb_top_right_x = fb_bottom_end_x + fb_thickness_at_end * math.cos(perp_angle)
     fb_top_right_y = fb_bottom_end_y + fb_thickness_at_end * math.sin(perp_angle)
 
-    # Calculate nut perpendicular distance (for dimension annotation)
-    # Neck direction vector
+    # Calculate nut perpendicular distance
     neck_dx = neck_end_x - 0
     neck_dy = neck_end_y - overstand
-
-    # Perpendicular to neck (rotated 90 degrees counterclockwise)
     perp_neck_dx = -neck_dy
     perp_neck_dy = neck_dx
 
-    # String direction vector
     string_dx = bridge_top_x - nut_top_x
     string_dy = bridge_top_y - nut_top_y
 
-    # Find intersection of string line with perpendicular line at body join
     det = string_dx * perp_neck_dy - string_dy * perp_neck_dx
 
-    if abs(det) > 1e-10:  # Lines are not parallel
+    if abs(det) > EPSILON:
         t = ((0 - nut_top_x) * perp_neck_dy - (overstand - nut_top_y) * perp_neck_dx) / det
         intersect_x = nut_top_x + t * string_dx
         intersect_y = nut_top_y + t * string_dy
-        nut_to_perp_distance = math.sqrt(
-            (intersect_x - nut_top_x)**2 + (intersect_y - nut_top_y)**2
-        )
+        nut_to_perp_distance = math.sqrt((intersect_x - nut_top_x)**2 + (intersect_y - nut_top_y)**2)
     else:
         intersect_x = 0.0
         intersect_y = 0.0
         nut_to_perp_distance = 0.0
 
-    derived['Nut Perpendicular Intersection X'] = intersect_x
-    derived['Nut Perpendicular Intersection Y'] = intersect_y
-    derived['Nut to Perpendicular Distance'] = nut_to_perp_distance
+    result['Nut Perpendicular Intersection X'] = intersect_x
+    result['Nut Perpendicular Intersection Y'] = intersect_y
+    result['Nut to Perpendicular Distance'] = nut_to_perp_distance
 
-    # Calculate string height above end of fingerboard
-    # Vector from nut to fingerboard end
+    # Calculate string height at fingerboard end
     fb_dx = fb_bottom_end_x - neck_end_x
     fb_dy = fb_bottom_end_y - neck_end_y
 
-    # Find parameter t along string line for position above fingerboard end
     if string_dx != 0:
         t = fb_dx / string_dx
     else:
@@ -266,26 +366,106 @@ def calculate_derived_values(params: Dict[str, Any]) -> Dict[str, Any]:
     string_x_at_fb_end = nut_top_x + t * string_dx
     string_y_at_fb_end = nut_top_y + t * string_dy
 
-    # Calculate perpendicular distance from string point to fingerboard top surface
     vec_x = string_x_at_fb_end - fb_top_right_x
     vec_y = string_y_at_fb_end - fb_top_right_y
 
-    # Perpendicular direction to fingerboard
     perp_dx = math.cos(perp_angle)
     perp_dy = math.sin(perp_angle)
 
-    # Project vector onto perpendicular direction (dot product)
     string_height_at_fb_end = vec_x * perp_dx + vec_y * perp_dy
 
-    # Point on fingerboard surface directly below string
     fb_surface_point_x = string_x_at_fb_end - string_height_at_fb_end * perp_dx
     fb_surface_point_y = string_y_at_fb_end - string_height_at_fb_end * perp_dy
 
-    derived['String X at Fingerboard End'] = string_x_at_fb_end
-    derived['String Y at Fingerboard End'] = string_y_at_fb_end
-    derived['Fingerboard Surface Point X'] = fb_surface_point_x
-    derived['Fingerboard Surface Point Y'] = fb_surface_point_y
-    derived['String Height at Fingerboard End'] = string_height_at_fb_end
+    result['String X at Fingerboard End'] = string_x_at_fb_end
+    result['String Y at Fingerboard End'] = string_y_at_fb_end
+    result['Fingerboard Surface Point X'] = fb_surface_point_x
+    result['Fingerboard Surface Point Y'] = fb_surface_point_y
+    result['String Height at Fingerboard End'] = string_height_at_fb_end
+
+    return result
+
+
+def calculate_derived_values(params: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Calculate derived values from parameters by orchestrating sub-calculations.
+
+    Combines fingerboard thickness, string angles, neck geometry, fingerboard geometry,
+    and string height calculations into a single result dictionary.
+
+    Args:
+        params: Dictionary of parameter values
+
+    Returns:
+        Dictionary of derived values (label -> value)
+    """
+    derived = {}
+
+    # Extract basic parameters
+    vsl = params.get('vsl') or 0
+    instrument_family = params.get('instrument_family') or InstrumentFamily.VIOLIN.name
+
+    # Get family-specific default for number of frets
+    if params.get('no_frets') is not None:
+        no_frets = params.get('no_frets')
+    elif instrument_family == InstrumentFamily.VIOL.name:
+        no_frets = DEFAULT_FRETS_VIOL
+    elif instrument_family == InstrumentFamily.GUITAR_MANDOLIN.name:
+        no_frets = DEFAULT_FRETS_GUITAR
+    else:
+        no_frets = DEFAULT_FRETS_VIOLIN
+
+    fret_positions = calculate_fret_positions(vsl, no_frets)
+
+    # Calculate fingerboard thickness with sagitta
+    fb_result = _calculate_fingerboard_thickness(params)
+    derived.update(fb_result)
+    fb_thickness_at_nut = fb_result['fb_thickness_at_nut']
+    fb_thickness_at_join = fb_result['fb_thickness_at_join']
+
+    # Calculate string angles based on instrument family
+    if instrument_family in (InstrumentFamily.VIOLIN.name, InstrumentFamily.VIOL.name):
+        angle_result = _calculate_string_angles_violin(params, vsl, fb_thickness_at_join)
+    elif instrument_family == InstrumentFamily.GUITAR_MANDOLIN.name:
+        angle_result = _calculate_string_angles_guitar(params, vsl, fret_positions, fb_thickness_at_join)
+    else:
+        raise ValueError("Invalid calculation mode")
+
+    derived.update(angle_result)
+    neck_stop = angle_result['neck_stop']
+    string_angle_to_ribs_rad = angle_result['string_angle_to_ribs_rad']
+    string_angle_to_fb = angle_result['string_angle_to_fb']
+
+    # Calculate neck geometry and nut position
+    neck_result = _calculate_neck_geometry(
+        params, vsl, neck_stop, string_angle_to_ribs_rad, string_angle_to_fb,
+        fb_thickness_at_nut, fb_thickness_at_join
+    )
+    # Update body_stop in neck_result if it came from angle_result
+    neck_result['Body Stop'] = angle_result['body_stop']
+    neck_result['body_stop'] = angle_result['body_stop']
+    derived.update(neck_result)
+
+    # Calculate fingerboard geometry
+    fb_geom_result = _calculate_fingerboard_geometry(
+        params, neck_stop,
+        neck_result['neck_end_x'], neck_result['neck_end_y'],
+        neck_result['neck_line_angle'],
+        fb_thickness_at_nut, fb_thickness_at_join
+    )
+    derived.update(fb_geom_result)
+
+    # Calculate string height and dimensions
+    string_height_result = _calculate_string_height_and_dimensions(
+        params,
+        neck_result['neck_end_x'], neck_result['neck_end_y'],
+        neck_result['nut_top_x'], neck_result['nut_top_y'],
+        neck_result['bridge_top_x'], neck_result['bridge_top_y'],
+        fb_geom_result['fb_bottom_end_x'], fb_geom_result['fb_bottom_end_y'],
+        fb_geom_result['fb_direction_angle'],
+        fb_geom_result['fb_thickness_at_end']
+    )
+    derived.update(string_height_result)
 
     return derived
     

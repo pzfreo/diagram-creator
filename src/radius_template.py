@@ -6,6 +6,15 @@ Uses matplotlib TextPath to convert text to bezier curves for slicer-compatible 
 
 import math
 from typing import Dict, Any
+from constants import (
+    TEMPLATE_WIDTH_MARGIN,
+    MIN_FLAT_AREA_HEIGHT,
+    ARC_POINT_RESOLUTION,
+    TEXT_HEIGHT_FRACTION,
+    TEXT_WIDTH_FACTOR,
+    TEXT_MARGIN_FRACTION,
+    SVG_MARGIN
+)
 
 # Font URL configuration for TextPath
 # This will be served from GitHub Pages to avoid CORS issues
@@ -104,7 +113,7 @@ def generate_radius_template_svg(params: Dict[str, Any]) -> str:
     fb_width_at_end = params.get('fingerboard_width_at_end', 42.0)
 
     # Calculate template dimensions
-    template_width = fb_width_at_end + 10.0
+    template_width = fb_width_at_end + TEMPLATE_WIDTH_MARGIN
     half_template_width = template_width / 2.0
 
     # Calculate arc depth (sagitta for the template width, not fingerboard width)
@@ -116,10 +125,8 @@ def generate_radius_template_svg(params: Dict[str, Any]) -> str:
         arc_depth = fingerboard_radius - math.sqrt(
             fingerboard_radius**2 - half_template_width**2
         )
-        # Ensure minimum 20mm FLAT AREA (height - sagitta) for text
-        # So template_height - arc_depth >= 20
-        min_flat_area = 20.0
-        template_height = arc_depth + min_flat_area
+        # Ensure minimum flat area for text
+        template_height = arc_depth + MIN_FLAT_AREA_HEIGHT
 
     # Generate points for the template outline
     # Arc at BOTTOM, flat edge at TOP (readable when printed)
@@ -139,7 +146,7 @@ def generate_radius_template_svg(params: Dict[str, Any]) -> str:
     # Arc center is BELOW the rectangle (negative y)
     arc_center_y = -math.sqrt(fingerboard_radius**2 - half_template_width**2)
 
-    num_arc_points = 50
+    num_arc_points = ARC_POINT_RESOLUTION
 
     # Sweep from right to left along bottom arc
     for i in range(num_arc_points + 1):
@@ -168,17 +175,15 @@ def generate_radius_template_svg(params: Dict[str, Any]) -> str:
     # Generate text cutouts using matplotlib TextPath
     # Text positioned at TOP (flat edge), readable orientation
     radius_str = f"{fingerboard_radius:.0f}mm"
-    # Text height is 1/3 of the FLAT AREA (height - sagitta), not total height
+    # Text height is fraction of flat area
     flat_area = template_height - arc_depth
-    char_height = flat_area / 3.0
+    char_height = flat_area * TEXT_HEIGHT_FRACTION
 
-    # Estimate text width for centering (approximate)
-    text_width = len(radius_str) * char_height * 0.6
+    # Estimate text width for centering
+    text_width = len(radius_str) * char_height * TEXT_WIDTH_FACTOR
     text_x = -text_width / 2
-    # Position text baseline so text top is at consistent margin from edge
-    # text_y is the baseline, text extends UPWARD by char_height
-    # So: text_y + char_height = template_height - margin
-    text_margin = char_height * 0.3  # Small margin from top
+    # Position text baseline with margin from edge
+    text_margin = char_height * TEXT_MARGIN_FRACTION
     text_y = template_height - char_height - text_margin
 
     # Get text as bezier curve paths
@@ -189,18 +194,16 @@ def generate_radius_template_svg(params: Dict[str, Any]) -> str:
     all_y = [p[1] for p in points]
 
     # Include text bounds in viewBox calculation
-    # Text extends from text_x to (text_x + estimated_width) and text_y to (text_y + char_height)
     if text_path_d:
         # Add text bounding box to viewBox calculation
-        text_width_estimate = len(radius_str) * char_height * 0.6
+        text_width_estimate = len(radius_str) * char_height * TEXT_WIDTH_FACTOR
         all_x.extend([text_x, text_x + text_width_estimate])
         all_y.extend([text_y, text_y + char_height])
 
     min_x, max_x = min(all_x), max(all_x)
     min_y, max_y = min(all_y), max(all_y)
 
-    margin = 2
-    viewBox = f"{min_x - margin} {min_y - margin} {max_x - min_x + 2*margin} {max_y - min_y + 2*margin}"
+    viewBox = f"{min_x - SVG_MARGIN} {min_y - SVG_MARGIN} {max_x - min_x + 2*SVG_MARGIN} {max_y - min_y + 2*SVG_MARGIN}"
 
     # Build compound SVG path using user's proven approach
     # Single path with fill-rule="evenodd" where text overlaps create holes
@@ -216,13 +219,13 @@ def generate_radius_template_svg(params: Dict[str, Any]) -> str:
         center_y = (min_y + max_y) / 2
         transform = f"rotate(180, {center_x}, {center_y})"
 
-        svg = f'''<svg xmlns="http://www.w3.org/2000/svg" viewBox="{viewBox}" width="{max_x - min_x + 2*margin}mm" height="{max_y - min_y + 2*margin}mm">
+        svg = f'''<svg xmlns="http://www.w3.org/2000/svg" viewBox="{viewBox}" width="{max_x - min_x + 2*SVG_MARGIN}mm" height="{max_y - min_y + 2*SVG_MARGIN}mm">
   <path fill="black" stroke="none" fill-rule="evenodd" transform="{transform}" d="{combined_path_d}"/>
 </svg>'''
     else:
         # Fallback: just the rectangle without text cutouts
         print("Warning: Text cutouts not generated, showing template outline only")
-        svg = f'''<svg xmlns="http://www.w3.org/2000/svg" viewBox="{viewBox}" width="{max_x - min_x + 2*margin}mm" height="{max_y - min_y + 2*margin}mm">
+        svg = f'''<svg xmlns="http://www.w3.org/2000/svg" viewBox="{viewBox}" width="{max_x - min_x + 2*SVG_MARGIN}mm" height="{max_y - min_y + 2*SVG_MARGIN}mm">
   <path fill="black" stroke="black" stroke-width="0.5" d="{rect_path_d}"/>
 </svg>'''
 
