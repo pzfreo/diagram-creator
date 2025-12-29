@@ -218,7 +218,7 @@ async function generateNeck() {
             state.views.fret_positions = state.fretPositions;
             ui.displayCurrentView();
             ui.updateTabStates(params);
-            elements.dlPdf.disabled = false;
+            // Button states are now managed by displayCurrentView()
             elements.preview.classList.add('has-content');
             ui.setStatus('ready', '✅ Preview updated');
         } else {

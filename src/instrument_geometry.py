@@ -832,7 +832,7 @@ def generate_radius_template_svg(params: Dict[str, Any]) -> str:
     # Generate points for the template outline
     points = []
 
-    # Define corners
+    # Define corners (before rotation)
     bottom_left = (-half_template_width, 0)
     bottom_right = (half_template_width, 0)
     top_right = (half_template_width, template_height)
@@ -868,11 +868,16 @@ def generate_radius_template_svg(params: Dict[str, Any]) -> str:
     # Close back to start
     points.append(bottom_left)
 
-    # Create polygon outline
-    template_polygon = Polygon(points, filled=False)
+    # Rotate all points 180 degrees around center (0, template_height/2)
+    # For 180° rotation: (x, y) -> (-x, template_height - y)
+    rotated_points = [(-x, template_height - y) for x, y in points]
+
+    # Create polygon outline with rotated points
+    template_polygon = Polygon(rotated_points, filled=False)
     exporter.add_shape(template_polygon, layer="drawing")
 
     # Add radius label centered near bottom (smaller text)
+    # Keep text upright (not rotated with the shape)
     radius_text = Text(f"{fingerboard_radius:.0f}mm", font_size=6.0, font=FONT_NAME)
     radius_text = radius_text.move(Location((0, 5)))
     exporter.add_shape(radius_text, layer="text")
