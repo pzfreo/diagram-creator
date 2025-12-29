@@ -99,13 +99,13 @@ async function initializePython() {
         ui.setStatus('loading', 'Installing Python libraries...');
         await state.pyodide.runPythonAsync(`
             import micropip
-            await micropip.install(["numpy", "svgpathtools"])
+            await micropip.install(["numpy", "svgpathtools", "matplotlib"])
         `);
 
         ui.setStatus('loading', 'Loading instrument neck modules...');
         const modules = [
             'buildprimitives.py', 'dimension_helpers.py', 'derived_value_metadata.py',
-            'instrument_parameters.py', 'instrument_geometry.py', 'instrument_generator.py'
+            'instrument_parameters.py', 'radius_template.py', 'instrument_geometry.py', 'instrument_generator.py'
         ];
 
         for (const moduleName of modules) {
@@ -118,8 +118,27 @@ async function initializePython() {
         }
 
         await state.pyodide.runPythonAsync(`
-            import buildprimitives, dimension_helpers, instrument_parameters, instrument_geometry, instrument_generator
+            import buildprimitives, dimension_helpers, instrument_parameters, radius_template, instrument_geometry, instrument_generator
         `);
+
+        // Pre-load the font file for radius template text cutouts
+        ui.setStatus('loading', 'Loading fonts...');
+        try {
+            // Try web/fonts/ first (for local development), then fonts/ (for GitHub Pages)
+            let fontResponse = await fetch('fonts/AllertaStencil-Regular.ttf');
+            if (!fontResponse.ok) {
+                fontResponse = await fetch('../fonts/AllertaStencil-Regular.ttf');
+            }
+            if (fontResponse.ok) {
+                const fontData = await fontResponse.arrayBuffer();
+                state.pyodide.FS.writeFile('/tmp/AllertaStencil-Regular.ttf', new Uint8Array(fontData));
+                console.log('Font loaded successfully into Pyodide filesystem');
+            } else {
+                console.warn('Could not load AllertaStencil font');
+            }
+        } catch (e) {
+            console.warn('Could not pre-load font file:', e);
+        }
 
         ui.setStatus('loading', 'Building interface...');
         const paramDefsJson = await state.pyodide.runPythonAsync(`instrument_generator.get_parameter_definitions()`);

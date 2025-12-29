@@ -41,6 +41,7 @@ jobs:
           # 3. Copy all Python logic files INTO the public folder
           cp src/buildprimitives.py public/buildprimitives.py
           cp src/instrument_parameters.py public/instrument_parameters.py
+          cp src/radius_template.py public/radius_template.py
           cp src/instrument_geometry.py public/instrument_geometry.py
           cp src/instrument_generator.py public/instrument_generator.py
           cp src/dimension_helpers.py public/dimension_helpers.py
