@@ -1,12 +1,14 @@
-name: Deploy to GitHub Pages
+name: Test and Deploy
 
 on:
-  # Trigger on push to main branch
   push:
-    branches: ["main"]
+    branches: [main]
+  pull_request:
+    branches: [main]
   # Allow manual trigger from the Actions tab
   workflow_dispatch:
 
+# Permissions for deployment (only used if deploying)
 permissions:
   contents: read
   pages: write
@@ -17,11 +19,46 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-cov
+
+      - name: Run tests
+        run: |
+          pytest tests/ -v --cov=src --cov-report=term-missing
+
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v3
+        if: success()
+        with:
+          fail_ci_if_error: false
+
   deploy:
+    name: Deploy to GitHub Pages
+    needs: test  # Only runs if tests pass
+    # Only deploy on push to main (not on PRs or manual workflow_dispatch on branches)
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
