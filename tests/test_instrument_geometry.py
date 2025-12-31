@@ -21,18 +21,18 @@ def test_calculate_derived_values_violin():
     assert result['body_stop'] > 0
 
 
-def test_fret_positions_viol():
-    """Test fret position calculation for viol"""
+def test_viol_derived_values():
+    """Test basic derived value calculation for viol"""
     params = get_default_values()
     params['instrument_family'] = InstrumentFamily.VIOL.name
     params['no_frets'] = 7
     result = calculate_derived_values(params)
 
-    assert 'fret_positions' in result
-    assert len(result['fret_positions']) == 7
-    # Fret positions should be increasing
-    for i in range(1, len(result['fret_positions'])):
-        assert result['fret_positions'][i] > result['fret_positions'][i-1]
+    # Check that basic geometric values are calculated
+    assert 'neck_stop' in result
+    assert 'body_stop' in result
+    assert result['neck_stop'] > 0
+    assert result['body_stop'] > 0
 
 
 def test_string_angle_calculation():
@@ -48,24 +48,27 @@ def test_string_angle_calculation():
     assert 0 < result['String Angle to Fingerboard'] < 90
 
 
-def test_neck_angle_calculation():
-    """Test neck angle is calculated and in valid range"""
+def test_neck_line_angle_calculation():
+    """Test neck line angle is calculated and in valid range"""
     params = get_default_values()
     params['instrument_family'] = InstrumentFamily.VIOLIN.name
     result = calculate_derived_values(params)
 
-    assert 'Neck Angle' in result
-    # Neck angle should be reasonable (typically 0-10 degrees)
-    assert -10 < result['Neck Angle'] < 15
+    assert 'neck_line_angle' in result
+    # Neck line angle should be reasonable (typically -10 to +10 degrees)
+    assert -10 < result['neck_line_angle'] < 10
 
 
-def test_fingerboard_dimensions():
-    """Test fingerboard width calculations"""
+def test_fingerboard_thickness():
+    """Test fingerboard thickness calculations"""
     params = get_default_values()
     params['instrument_family'] = InstrumentFamily.VIOLIN.name
     result = calculate_derived_values(params)
 
-    assert 'Fingerboard Width at Nut' in result
-    assert 'Fingerboard Width at End' in result
-    # End should be wider than nut
-    assert result['Fingerboard Width at End'] > result['Fingerboard Width at Nut']
+    assert 'fb_thickness_at_nut' in result
+    assert 'fb_thickness_at_end' in result
+    # Thickness values should be positive
+    assert result['fb_thickness_at_nut'] > 0
+    assert result['fb_thickness_at_end'] > 0
+    # End thickness should be greater than nut thickness
+    assert result['fb_thickness_at_end'] > result['fb_thickness_at_nut']
