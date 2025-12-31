@@ -244,6 +244,7 @@ async function generateNeck() {
             ui.setStatus('error', '❌ Generation failed - see errors below');
         }
     } catch (error) {
+        console.error('Generation error:', error);
         ui.showErrors([`Unexpected error: ${error.message}`]);
         ui.setStatus('error', '❌ Generation failed');
     } finally {
