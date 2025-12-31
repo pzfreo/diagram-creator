@@ -38,7 +38,10 @@ const PYTHON_MODULES = [
   `${BASE_PATH}instrument_parameters.py`,
   `${BASE_PATH}radius_template.py`,
   `${BASE_PATH}instrument_geometry.py`,
-  `${BASE_PATH}instrument_generator.py`
+  `${BASE_PATH}instrument_generator.py`,
+  `${BASE_PATH}geometry_engine.py`,
+  `${BASE_PATH}svg_renderer.py`,
+  `${BASE_PATH}view_generator.py`
 ];
 
 // Pyodide runtime (large, cache separately)
@@ -91,8 +94,8 @@ self.addEventListener('activate', (event) => {
           cacheNames.map((cacheName) => {
             // Delete caches that don't match current version
             if (cacheName !== CACHE_NAME &&
-                cacheName !== PYODIDE_CACHE &&
-                cacheName !== CDN_CACHE) {
+              cacheName !== PYODIDE_CACHE &&
+              cacheName !== CDN_CACHE) {
               console.log('[ServiceWorker] Deleting old cache:', cacheName);
               return caches.delete(cacheName);
             }
