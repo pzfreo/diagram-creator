@@ -29,5 +29,11 @@ export const elements = {
     zoomControls: document.getElementById('zoom-controls'),
     dlSvg: document.getElementById('dl-svg'),
     dlPdf: document.getElementById('dl-pdf'),
-    calculatedFields: document.getElementById('calculated-fields')
+    calculatedFields: document.getElementById('calculated-fields'),
+    saveParamsBtn: document.getElementById('save-params-btn'),
+    loadParamsBtn: document.getElementById('load-params-btn'),
+    loadParamsInput: document.getElementById('load-params-input'),
+    zoomInBtn: document.getElementById('zoom-in'),
+    zoomOutBtn: document.getElementById('zoom-out'),
+    zoomResetBtn: document.getElementById('zoom-reset')
 };

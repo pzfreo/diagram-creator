@@ -61,14 +61,14 @@
             <div class="controls-panel" id="controls-panel">
                 <button class="mobile-close-btn" id="mobile-close-btn">✕</button>
                 <div class="sticky-generate-section">
-                    <button class="generate-btn" id="gen-btn" disabled onclick="generateNeck()">
+                    <button class="generate-btn" id="gen-btn" disabled>
                         <span>Generate Template</span>
                         <span class="generate-btn-shortcut" id="gen-btn-shortcut">⌘/Ctrl + Enter</span>
                     </button>
 
                     <div class="preset-selector">
                         <label for="preset">Presets:</label>
-                        <select id="preset" onchange="loadPreset()">
+                        <select id="preset">
                             <option value="">-- Custom --</option>
                         </select>
                     </div>
@@ -76,10 +76,9 @@
                     <div class="param-management">
                         <span class="param-management-label">Parameters</span>
                         <div class="param-buttons">
-                            <button class="param-btn param-btn-save" onclick="saveParameters()">💾 Save</button>
-                            <button class="param-btn param-btn-load"
-                                onclick="document.getElementById('load-params-input').click()">📂 Load</button>
-                            <input type="file" id="load-params-input" accept=".json" onchange="loadParameters(event)" />
+                            <button class="param-btn param-btn-save" id="save-params-btn">💾 Save</button>
+                            <button class="param-btn param-btn-load" id="load-params-btn">📂 Load</button>
+                            <input type="file" id="load-params-input" accept=".json" />
                         </div>
                     </div>
 
@@ -98,37 +97,25 @@
             <div class="preview-panel">
                 <div class="view-controls-header">
                     <div id="view-tabs" class="view-tabs">
-                        <button class="view-tab active" data-view="side" onclick="switchView('side')">
-                            Side View
-                        </button>
-                        <button class="view-tab" data-view="top" onclick="switchView('top')" disabled
-                            style="opacity: 0.3; cursor: not-allowed;">
-                            Top View (Coming Soon)
-                        </button>
-                        <button class="view-tab" data-view="cross_section" onclick="switchView('cross_section')"
-                            disabled style="opacity: 0.3; cursor: not-allowed;">
-                            Cross-Section (Coming Soon)
-                        </button>
-                        <button class="view-tab" data-view="dimensions" onclick="switchView('dimensions')">
-                            Dimensions
-                        </button>
-                        <button class="view-tab" data-view="fret_positions" onclick="switchView('fret_positions')">
-                            Fret Positions
-                        </button>
-                        <button class="view-tab" data-view="radius_template" onclick="switchView('radius_template')">
-                            Radius Template
-                        </button>
+                        <button class="view-tab active" data-view="side">Side View</button>
+                        <button class="view-tab" data-view="top" disabled style="opacity: 0.3; cursor: not-allowed;">Top
+                            View (Coming Soon)</button>
+                        <button class="view-tab" data-view="cross_section" disabled
+                            style="opacity: 0.3; cursor: not-allowed;">Cross-Section (Coming Soon)</button>
+                        <button class="view-tab" data-view="dimensions">Dimensions</button>
+                        <button class="view-tab" data-view="fret_positions">Fret Positions</button>
+                        <button class="view-tab" data-view="radius_template">Radius Template</button>
                     </div>
 
                     <div id="zoom-controls" class="zoom-controls">
-                        <button class="zoom-btn" onclick="zoomIn()" title="Zoom In">+</button>
-                        <button class="zoom-btn" onclick="zoomOut()" title="Zoom Out">−</button>
-                        <button class="zoom-btn" onclick="zoomReset()" title="Reset View">⟲</button>
+                        <button class="zoom-btn" id="zoom-in" title="Zoom In">+</button>
+                        <button class="zoom-btn" id="zoom-out" title="Zoom Out">−</button>
+                        <button class="zoom-btn" id="zoom-reset" title="Reset View">⟲</button>
                     </div>
 
                     <div id="download-buttons" class="download-buttons">
-                        <button class="btn-svg" id="dl-svg" onclick="downloadSVG()" disabled>⬇️ SVG</button>
-                        <button class="btn-pdf" id="dl-pdf" onclick="downloadPDF()" disabled>📄 PDF</button>
+                        <button class="btn-svg" id="dl-svg" disabled>⬇️ SVG</button>
+                        <button class="btn-pdf" id="dl-pdf" disabled>📄 PDF</button>
                     </div>
                 </div>
 

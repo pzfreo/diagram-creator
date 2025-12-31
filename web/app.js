@@ -1,6 +1,7 @@
 import { state, elements } from './state.js';
 import * as ui from './ui.js';
 import { downloadPDF } from './pdf_export.js';
+import { registerServiceWorker, initInstallPrompt } from './pwa_manager.js';
 
 // Auto-generate timer
 let generateTimeout = null;
@@ -17,17 +18,6 @@ function debounce(func, wait) {
         timeout = setTimeout(later, wait);
     };
 }
-
-// Global functions for HTML onclick attributes (transitioning to event listeners)
-window.generateNeck = generateNeck;
-window.loadPreset = loadPreset;
-window.switchView = switchView;
-window.zoomIn = zoomIn;
-window.zoomOut = zoomOut;
-window.zoomReset = zoomReset;
-window.downloadPDF = () => downloadPDF(collectParameters, sanitizeFilename);
-window.saveParameters = saveParameters;
-window.downloadSVG = downloadSVG;
 
 function hideErrors() {
     ui.hideErrors();
@@ -105,7 +95,8 @@ async function initializePython() {
         ui.setStatus('loading', 'Loading instrument neck modules...');
         const modules = [
             'constants.py', 'buildprimitives.py', 'dimension_helpers.py', 'derived_value_metadata.py',
-            'instrument_parameters.py', 'radius_template.py', 'instrument_geometry.py', 'instrument_generator.py'
+            'instrument_parameters.py', 'radius_template.py', 'instrument_geometry.py', 'instrument_generator.py',
+            'geometry_engine.py', 'svg_renderer.py', 'view_generator.py'
         ];
 
         for (const moduleName of modules) {
@@ -119,25 +110,18 @@ async function initializePython() {
 
         await state.pyodide.runPythonAsync(`
             import buildprimitives, dimension_helpers, instrument_parameters, radius_template, instrument_geometry, instrument_generator
+            import geometry_engine, svg_renderer, view_generator
         `);
 
-        // Pre-load the font file for radius template text cutouts
         ui.setStatus('loading', 'Loading fonts...');
         try {
-            // Try web/fonts/ first (for local development), then fonts/ (for GitHub Pages)
             let fontResponse = await fetch('fonts/AllertaStencil-Regular.ttf');
-            if (!fontResponse.ok) {
-                fontResponse = await fetch('../fonts/AllertaStencil-Regular.ttf');
-            }
+            if (!fontResponse.ok) fontResponse = await fetch('../fonts/AllertaStencil-Regular.ttf');
             if (fontResponse.ok) {
                 const fontData = await fontResponse.arrayBuffer();
                 state.pyodide.FS.writeFile('/tmp/AllertaStencil-Regular.ttf', new Uint8Array(fontData));
-            } else {
-                console.warn('Could not load AllertaStencil font');
             }
-        } catch (e) {
-            console.warn('Could not pre-load font file:', e);
-        }
+        } catch (e) { console.warn('Could not pre-load font file:', e); }
 
         ui.setStatus('loading', 'Building interface...');
         const paramDefsJson = await state.pyodide.runPythonAsync(`instrument_generator.get_parameter_definitions()`);
@@ -183,6 +167,7 @@ function loadPreset() {
 
 function collectParameters() {
     const params = {};
+    if (!state.parameterDefinitions) return params;
     for (const [name, param] of Object.entries(state.parameterDefinitions.parameters)) {
         const element = document.getElementById(name);
         if (!element) continue;
@@ -203,8 +188,10 @@ async function generateNeck() {
     ui.setStatus('generating', '⚙️ Updating preview...');
 
     if (window.innerWidth <= 1024) {
-        document.getElementById('controls-panel').classList.remove('mobile-open');
-        document.getElementById('sidebar-overlay').classList.remove('active');
+        const panel = document.getElementById('controls-panel');
+        if (panel) panel.classList.remove('mobile-open');
+        const overlay = document.getElementById('sidebar-overlay');
+        if (overlay) overlay.classList.remove('active');
         document.body.style.overflow = '';
     }
 
@@ -224,7 +211,6 @@ async function generateNeck() {
             state.fretPositions = result.fret_positions || null;
             state.derivedValues = result.derived_values || {};
 
-            // Get formatted derived values
             const derivedResultJson = await state.pyodide.runPythonAsync(`
                 from instrument_generator import get_derived_values
                 get_derived_values('${paramsJson.replace(/'/g, "\\'")}')
@@ -236,7 +222,6 @@ async function generateNeck() {
             state.views.fret_positions = state.fretPositions;
             ui.displayCurrentView();
             ui.updateTabStates(params);
-            // Button states are now managed by displayCurrentView()
             elements.preview.classList.add('has-content');
             ui.setStatus('ready', '✅ Preview updated');
         } else {
@@ -281,11 +266,8 @@ async function updateDerivedValues() {
             }
 
             for (const [label, value] of Object.entries(result.values)) {
-                // Skip internal variables (those with underscores)
                 if (label.includes('_')) continue;
-
                 const meta = (result.metadata || {})[label];
-                // Skip if no metadata or if metadata says not visible
                 if (!meta || !meta.visible) continue;
 
                 const div = document.createElement('div');
@@ -330,27 +312,21 @@ function downloadFile(content, filename, mimeType) {
 
 function downloadSVG() {
     if (!state.views || !state.views[state.currentView]) return;
-    const viewNames = {
-        'side': 'side-view',
-        'top': 'top-view',
-        'cross_section': 'cross-section',
-        'radius_template': 'radius-template'
-    };
+    const viewNames = { 'side': 'side-view', 'top': 'top-view', 'cross_section': 'cross-section', 'radius_template': 'radius-template' };
     const filename = `${getInstrumentFilename()}_${viewNames[state.currentView]}.svg`;
     downloadFile(state.views[state.currentView], filename, 'image/svg+xml');
 }
 
 function saveParameters() {
     const saveData = {
-        metadata: { version: '1.0', timestamp: new Date().toISOString(), description: 'Instrument Neck Parameters', generator: 'Instrument Neck Geometry Generator' },
+        metadata: { version: '1.0', timestamp: new Date().toISOString(), description: 'Instrument Neck Parameters' },
         parameters: collectParameters()
     };
     const filename = `${getInstrumentFilename()}_params_${new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5)}.json`;
     downloadFile(JSON.stringify(saveData, null, 2), filename, 'application/json');
 }
 
-// Global exposure for the input in index.html
-window.loadParameters = (event) => {
+function handleLoadParameters(event) {
     const file = event.target.files[0];
     if (!file) return;
     const reader = new FileReader();
@@ -369,19 +345,12 @@ window.loadParameters = (event) => {
             ui.hideErrors();
             ui.updateParameterVisibility(collectParameters());
             updateDerivedValues();
-            ui.setStatus('ready', '✅ Parameters loaded successfully');
+            ui.setStatus('ready', '✅ Parameters loaded');
         } catch (err) { alert(`Failed to load: ${err.message}`); }
     };
     reader.readAsText(file);
     event.target.value = '';
-};
-
-document.addEventListener('keydown', (e) => {
-    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
-        e.preventDefault();
-        if (!elements.genBtn.disabled && !state.isGenerating) generateNeck();
-    }
-});
+}
 
 // Initialize on load
 document.addEventListener('DOMContentLoaded', () => {
@@ -389,6 +358,26 @@ document.addEventListener('DOMContentLoaded', () => {
     const shortcut = document.getElementById('gen-btn-shortcut');
     if (shortcut) shortcut.textContent = isMac ? '⌘ + Enter' : 'Ctrl + Enter';
 
+    // Hook up event listeners
+    if (elements.genBtn) elements.genBtn.addEventListener('click', generateNeck);
+    if (elements.presetSelect) elements.presetSelect.addEventListener('change', loadPreset);
+    if (elements.saveParamsBtn) elements.saveParamsBtn.addEventListener('click', saveParameters);
+    if (elements.loadParamsBtn) elements.loadParamsBtn.addEventListener('click', () => elements.loadParamsInput.click());
+    if (elements.loadParamsInput) elements.loadParamsInput.addEventListener('change', handleLoadParameters);
+    if (elements.dlSvg) elements.dlSvg.addEventListener('click', downloadSVG);
+    if (elements.dlPdf) elements.dlPdf.addEventListener('click', () => downloadPDF(collectParameters, sanitizeFilename));
+
+    // Zoom controls
+    if (elements.zoomInBtn) elements.zoomInBtn.addEventListener('click', zoomIn);
+    if (elements.zoomOutBtn) elements.zoomOutBtn.addEventListener('click', zoomOut);
+    if (elements.zoomResetBtn) elements.zoomResetBtn.addEventListener('click', zoomReset);
+
+    // View tabs
+    document.querySelectorAll('.view-tab').forEach(tab => {
+        tab.addEventListener('click', () => switchView(tab.dataset.view));
+    });
+
+    // Mobile menu
     const mobileMenuBtn = document.getElementById('mobile-menu-btn');
     const mobileCloseBtn = document.getElementById('mobile-close-btn');
     const controlsPanel = document.getElementById('controls-panel');
@@ -397,77 +386,20 @@ document.addEventListener('DOMContentLoaded', () => {
     if (mobileMenuBtn && mobileCloseBtn && controlsPanel && sidebarOverlay) {
         const open = () => { controlsPanel.classList.add('mobile-open'); sidebarOverlay.classList.add('active'); document.body.style.overflow = 'hidden'; };
         const close = () => { controlsPanel.classList.remove('mobile-open'); sidebarOverlay.classList.remove('active'); document.body.style.overflow = ''; };
-        mobileMenuBtn.onclick = () => controlsPanel.classList.contains('mobile-open') ? close() : open();
-        mobileCloseBtn.onclick = close;
-        sidebarOverlay.onclick = close;
+        mobileMenuBtn.addEventListener('click', () => controlsPanel.classList.contains('mobile-open') ? close() : open());
+        mobileCloseBtn.addEventListener('click', close);
+        sidebarOverlay.addEventListener('click', close);
         document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && controlsPanel.classList.contains('mobile-open')) close(); });
     }
+
+    registerServiceWorker();
+    initInstallPrompt();
+    initializePython();
 });
 
-// PWA Install Prompt
-let deferredPrompt;
-
-window.addEventListener('beforeinstallprompt', (e) => {
-    // Prevent Chrome 67 and earlier from automatically showing the prompt
-    e.preventDefault();
-    deferredPrompt = e;
-
-    // Show a custom install button
-    const installBtn = document.createElement('button');
-    installBtn.id = 'install-btn';
-    installBtn.className = 'install-pwa-btn';
-    installBtn.textContent = '📱 Install App';
-    installBtn.style.cssText = `
-        position: fixed;
-        bottom: 20px;
-        right: 20px;
-        padding: 12px 24px;
-        background: #4F46E5;
-        color: white;
-        border: none;
-        border-radius: 8px;
-        cursor: pointer;
-        font-size: 14px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        z-index: 1000;
-    `;
-
-    installBtn.addEventListener('click', async () => {
-        if (!deferredPrompt) return;
-
-        deferredPrompt.prompt();
-        const { outcome } = await deferredPrompt.userChoice;
-        console.log(`User ${outcome} the install prompt`);
-
-        deferredPrompt = null;
-        installBtn.remove();
-    });
-
-    document.body.appendChild(installBtn);
+document.addEventListener('keydown', (e) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+        e.preventDefault();
+        if (!elements.genBtn.disabled && !state.isGenerating) generateNeck();
+    }
 });
-
-window.addEventListener('appinstalled', () => {
-    console.log('PWA installed successfully');
-    const installBtn = document.getElementById('install-btn');
-    if (installBtn) installBtn.remove();
-});
-
-// Register service worker for PWA functionality
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('service-worker.js')
-            .then((registration) => {
-                console.log('ServiceWorker registered:', registration.scope);
-
-                // Check for updates periodically
-                setInterval(() => {
-                    registration.update();
-                }, 60 * 60 * 1000); // Check every hour
-            })
-            .catch((error) => {
-                console.warn('ServiceWorker registration failed:', error);
-            });
-    });
-}
-
-initializePython();
