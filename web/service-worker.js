@@ -12,30 +12,33 @@ const CACHE_NAME = 'neck-generator-v1';
 const PYODIDE_CACHE = 'pyodide-runtime-v1';
 const CDN_CACHE = 'cdn-libraries-v1';
 
+// Get the base path (works both locally and on GitHub Pages)
+const BASE_PATH = self.location.pathname.substring(0, self.location.pathname.lastIndexOf('/') + 1);
+
 // App shell - critical files needed for offline operation
 const APP_SHELL = [
-  '/',
-  '/index.html',
-  '/styles.css',
-  '/app.js',
-  '/ui.js',
-  '/state.js',
-  '/pdf_export.js',
-  '/constants.js',
-  '/fonts/AllertaStencil-Regular.ttf',
-  '/manifest.json'
+  `${BASE_PATH}`,
+  `${BASE_PATH}index.html`,
+  `${BASE_PATH}styles.css`,
+  `${BASE_PATH}app.js`,
+  `${BASE_PATH}ui.js`,
+  `${BASE_PATH}state.js`,
+  `${BASE_PATH}pdf_export.js`,
+  `${BASE_PATH}constants.js`,
+  `${BASE_PATH}fonts/AllertaStencil-Regular.ttf`,
+  `${BASE_PATH}manifest.json`
 ];
 
 // Python modules
 const PYTHON_MODULES = [
-  '/constants.py',
-  '/buildprimitives.py',
-  '/dimension_helpers.py',
-  '/derived_value_metadata.py',
-  '/instrument_parameters.py',
-  '/radius_template.py',
-  '/instrument_geometry.py',
-  '/instrument_generator.py'
+  `${BASE_PATH}constants.py`,
+  `${BASE_PATH}buildprimitives.py`,
+  `${BASE_PATH}dimension_helpers.py`,
+  `${BASE_PATH}derived_value_metadata.py`,
+  `${BASE_PATH}instrument_parameters.py`,
+  `${BASE_PATH}radius_template.py`,
+  `${BASE_PATH}instrument_geometry.py`,
+  `${BASE_PATH}instrument_generator.py`
 ];
 
 // Pyodide runtime (large, cache separately)
