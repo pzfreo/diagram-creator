@@ -8,7 +8,7 @@
  * - Presets: Network-first with cache fallback
  */
 
-const CACHE_NAME = 'neck-generator-v1';
+const CACHE_NAME = 'neck-generator-v2';
 const PYODIDE_CACHE = 'pyodide-runtime-v1';
 const CDN_CACHE = 'cdn-libraries-v1';
 
@@ -24,6 +24,7 @@ const APP_SHELL = [
   `${BASE_PATH}ui.js`,
   `${BASE_PATH}state.js`,
   `${BASE_PATH}pdf_export.js`,
+  `${BASE_PATH}pwa_manager.js`,
   `${BASE_PATH}constants.js`,
   `${BASE_PATH}fonts/AllertaStencil-Regular.ttf`,
   `${BASE_PATH}manifest.json`
