@@ -672,7 +672,7 @@ def _draw_string_and_references(exporter: ExportSVG, nut_top_x: float, nut_top_y
 
 def _add_document_text(exporter: ExportSVG, instrument_name: str, generator_url: str,
                        body_length: float, rib_height: float, belly_edge_thickness: float,
-                       arching_height: float, bridge_height: float) -> None:
+                       arching_height: float, bridge_height: float, neck_end_x: float) -> None:
     """Add document title and generator attribution."""
     # Title at top center
     title_text = Text(instrument_name, TITLE_FONT_SIZE, font=FONT_NAME)
@@ -920,7 +920,7 @@ def generate_side_view_svg(params: Dict[str, Any]) -> str:
     # Add document text
     _add_document_text(exporter, instrument_name, generator_url,
                        body_length, rib_height, belly_edge_thickness,
-                       arching_height, bridge_height)
+                       arching_height, bridge_height, neck_end_x)
 
     # Generate and return SVG
     return exporter_to_svg(exporter)
