@@ -109,8 +109,16 @@ async function initializePython() {
         }
 
         await state.pyodide.runPythonAsync(`
-            import buildprimitives, dimension_helpers, instrument_parameters, radius_template, instrument_geometry, instrument_generator
+            import sys
+            import os
+            if '' not in sys.path:
+                sys.path.insert(0, '')
+            
+            # Import dependencies first
+            import constants, buildprimitives, dimension_helpers, instrument_parameters, radius_template
             import geometry_engine, svg_renderer, view_generator
+            # Then orchestrators
+            import instrument_geometry, instrument_generator
         `);
 
         ui.setStatus('loading', 'Loading fonts...');

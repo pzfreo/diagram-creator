@@ -23,19 +23,16 @@ from constants import (
 import math
 from typing import Dict, Any, Tuple, List
 
-# Re-export key functions for backward compatibility if needed by web interface
+# Re-export key functions for backward compatibility
 from geometry_engine import calculate_sagitta, calculate_fret_positions
 from view_generator import generate_fret_positions_view
 
 def calculate_derived_values(params: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Calculate derived values by orchestrating engine functions.
-    """
+    """Calculate derived values by orchestrating engine functions."""
     derived = {}
     vsl = params.get('vsl') or 0
     instrument_family = params.get('instrument_family') or InstrumentFamily.VIOLIN.name
 
-    # Determine number of frets
     if params.get('no_frets') is not None:
         no_frets = params.get('no_frets')
     elif instrument_family == InstrumentFamily.VIOL.name:
@@ -47,13 +44,11 @@ def calculate_derived_values(params: Dict[str, Any]) -> Dict[str, Any]:
 
     fret_positions = geometry_engine.calculate_fret_positions(vsl, no_frets)
 
-    # 1. Fingerboard thickness
     fb_result = geometry_engine.calculate_fingerboard_thickness(params)
     derived.update(fb_result)
     fb_thickness_at_nut = fb_result['fb_thickness_at_nut']
     fb_thickness_at_join = fb_result['fb_thickness_at_join']
 
-    # 2. String angles
     if instrument_family in (InstrumentFamily.VIOLIN.name, InstrumentFamily.VIOL.name):
         angle_result = geometry_engine.calculate_string_angles_violin(params, vsl, fb_thickness_at_join)
     elif instrument_family == InstrumentFamily.GUITAR_MANDOLIN.name:
@@ -66,69 +61,68 @@ def calculate_derived_values(params: Dict[str, Any]) -> Dict[str, Any]:
     string_angle_to_ribs_rad = angle_result['string_angle_to_ribs_rad']
     string_angle_to_fb = angle_result['string_angle_to_fb']
 
-    # 3. Neck geometry
     neck_result = geometry_engine.calculate_neck_geometry(
         params, vsl, neck_stop, string_angle_to_ribs_rad, string_angle_to_fb,
         fb_thickness_at_nut, fb_thickness_at_join
     )
-    neck_result['Body Stop'] = angle_result['body_stop']
     neck_result['body_stop'] = angle_result['body_stop']
     derived.update(neck_result)
 
-    # 4. Fingerboard geometry
     fb_geom_result = geometry_engine.calculate_fingerboard_geometry(
         params, neck_stop,
-        neck_result['neck_end_x'], neck_result['neck_end_y'],
-        neck_result['neck_line_angle'],
+        derived['neck_end_x'], derived['neck_end_y'],
+        derived['neck_line_angle'],
         fb_thickness_at_nut, fb_thickness_at_join
     )
     derived.update(fb_geom_result)
 
-    # 5. String height and dimensions
     string_height_result = geometry_engine.calculate_string_height_and_dimensions(
         params,
-        neck_result['neck_end_x'], neck_result['neck_end_y'],
-        neck_result['nut_top_x'], neck_result['nut_top_y'],
-        neck_result['bridge_top_x'], neck_result['bridge_top_y'],
-        fb_geom_result['fb_bottom_end_x'], fb_geom_result['fb_bottom_end_y'],
-        fb_geom_result['fb_direction_angle'],
-        fb_geom_result['fb_thickness_at_end']
+        derived['neck_end_x'], derived['neck_end_y'],
+        derived['nut_top_x'], derived['nut_top_y'],
+        derived['bridge_top_x'], derived['bridge_top_y'],
+        derived['fb_bottom_end_x'], derived['fb_bottom_end_y'],
+        derived['fb_direction_angle'],
+        derived['fb_thickness_at_end']
     )
     derived.update(string_height_result)
 
     return derived
 
-def exporter_to_svg(exp: ExportSVG) -> str:
-    """Convert ExportSVG to SVG string."""
-    return exp.write(filename=None)
+def generate_multi_view_svg(params: Dict[str, Any]) -> Dict[str, str]:
+    """
+    Main entry point for generating all SVG views.
+    Restored for backward compatibility with instrument_generator.py.
+    """
+    side_svg = generate_side_view_svg(params)
+    radius_template = generate_radius_template_svg(params)
+    
+    # Placeholder views for now (as in original code)
+    return {
+        'side': side_svg,
+        'top': "Top View Placeholder",
+        'cross_section': "Cross-Section Placeholder",
+        'radius_template': radius_template
+    }
 
 def generate_side_view_svg(params: Dict[str, Any], show_measurements: bool = True) -> str:
     """Orchestrate full side view SVG generation."""
     derived = calculate_derived_values(params)
     
-    # Extract params for drawing
-    body_length = params.get('body_length', 0)
-    belly_edge_thickness = params.get('belly_edge_thickness', 0)
-    rib_height = params.get('rib_height', 0)
-    body_stop = derived['body_stop']
-    arching_height = params.get('arching_height', 0)
-    overstand = params.get('overstand', 0)
-    bridge_height = params.get('bridge_height', 0)
-    nut_draw_radius = derived['Nut Draw Radius']
-    neck_line_angle = derived['neck_line_angle']
-    neck_angle_deg = derived['Neck Angle']
-    
     exporter = svg_renderer.setup_exporter(show_measurements)
     
-    svg_renderer.draw_body(exporter, body_length, belly_edge_thickness, rib_height, body_stop, arching_height)
-    
-    neck_vertical_line, neck_angled_line = svg_renderer.draw_neck(
-        exporter, overstand, derived['neck_end_x'], derived['neck_end_y'],
-        bridge_height, body_stop, arching_height,
-        nut_draw_radius, neck_line_angle, neck_angle_deg
+    svg_renderer.draw_body(
+        exporter, params.get('body_length', 0), params.get('belly_edge_thickness', 0),
+        params.get('rib_height', 0), derived['body_stop'], params.get('arching_height', 0)
     )
     
-    fb_top_end_x, fb_top_end_y = svg_renderer.draw_fingerboard(
+    svg_renderer.draw_neck(
+        exporter, params.get('overstand', 0), derived['neck_end_x'], derived['neck_end_y'],
+        params.get('bridge_height', 0), derived['body_stop'], params.get('arching_height', 0),
+        derived['Nut Draw Radius'], derived['neck_line_angle'], derived['Neck Angle']
+    )
+    
+    svg_renderer.draw_fingerboard(
         exporter, derived['neck_end_x'], derived['neck_end_y'],
         derived['fb_bottom_end_x'], derived['fb_bottom_end_y'],
         derived['fb_thickness_at_nut'], derived['fb_thickness_at_end'],
@@ -144,7 +138,8 @@ def generate_side_view_svg(params: Dict[str, Any], show_measurements: bool = Tru
     
     svg_renderer.add_document_text(
         exporter, params.get('instrument_name', 'Instrument'), "https://github.com/pzfreo/diagram-creator",
-        body_length, rib_height, belly_edge_thickness, arching_height, bridge_height, derived['neck_end_x']
+        params.get('body_length', 0), params.get('rib_height', 0), params.get('belly_edge_thickness', 0),
+        params.get('arching_height', 0), params.get('bridge_height', 0), derived['neck_end_x']
     )
     
     svg_renderer.add_dimensions(
@@ -152,29 +147,13 @@ def generate_side_view_svg(params: Dict[str, Any], show_measurements: bool = Tru
         reference_line_end_x, derived['nut_top_x'], derived['nut_top_y'],
         derived['bridge_top_x'], derived['bridge_top_y'], string_line,
         derived['String Length'], derived['neck_end_x'], derived['neck_end_y'],
-        overstand, body_stop, arching_height,
-        bridge_height, body_length, rib_height,
-        belly_edge_thickness, derived['Fingerboard Surface Point X'],
+        params.get('overstand', 0), derived['body_stop'], params.get('arching_height', 0),
+        params.get('bridge_height', 0), params.get('body_length', 0), params.get('rib_height', 0),
+        params.get('belly_edge_thickness', 0), derived['Fingerboard Surface Point X'],
         derived['Fingerboard Surface Point Y'], derived['String X at Fingerboard End'],
         derived['String Y at Fingerboard End'], derived['String Height at Fingerboard End'],
         derived['Nut Perpendicular Intersection X'], derived['Nut Perpendicular Intersection Y'],
         derived['Nut to Perpendicular Distance']
     )
     
-    return exporter_to_svg(exporter)
-
-def generate_all_views(params: Dict[str, Any]) -> Dict[str, Any]:
-    """Generate all views required by the web interface."""
-    side_svg = generate_side_view_svg(params)
-    radius_template_svg = generate_radius_template_svg(params)
-    fret_positions = generate_fret_positions_view(params)
-    
-    # Table views are just the HTML for now
-    dimensions_html = "Dimensions Table Placeholder" # Will be handled by web/ui.js
-    
-    return {
-        'side': side_svg,
-        'radius_template': radius_template_svg,
-        'fret_positions': fret_positions,
-        'dimensions': dimensions_html
-    }
+    return exporter.write(filename=None)
