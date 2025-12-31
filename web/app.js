@@ -1,4 +1,4 @@
-import { state, elements } from './state.js';
+import { state, elements, initElements } from './state.js';
 import * as ui from './ui.js';
 import { downloadPDF } from './pdf_export.js';
 import { registerServiceWorker, initInstallPrompt } from './pwa_manager.js';
@@ -362,6 +362,9 @@ function handleLoadParameters(event) {
 
 // Initialize on load
 document.addEventListener('DOMContentLoaded', () => {
+    // Initialize DOM element references first
+    initElements();
+
     const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
     const shortcut = document.getElementById('gen-btn-shortcut');
     if (shortcut) shortcut.textContent = isMac ? '⌘ + Enter' : 'Ctrl + Enter';

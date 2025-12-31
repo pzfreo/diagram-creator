@@ -16,24 +16,28 @@ export const state = {
 // Make state available globally for libraries like pdf-export that might still need it in transition
 window.state = state;
 
-export const elements = {
-    status: document.getElementById('status'),
-    statusText: document.getElementById('status-text'),
-    genBtn: document.getElementById('gen-btn'),
-    preview: document.getElementById('preview-container'),
-    errorPanel: document.getElementById('error-panel'),
-    errorList: document.getElementById('error-list'),
-    parametersContainer: document.getElementById('parameters-container'),
-    presetSelect: document.getElementById('preset'),
-    viewTabs: document.getElementById('view-tabs'),
-    zoomControls: document.getElementById('zoom-controls'),
-    dlSvg: document.getElementById('dl-svg'),
-    dlPdf: document.getElementById('dl-pdf'),
-    calculatedFields: document.getElementById('calculated-fields'),
-    saveParamsBtn: document.getElementById('save-params-btn'),
-    loadParamsBtn: document.getElementById('load-params-btn'),
-    loadParamsInput: document.getElementById('load-params-input'),
-    zoomInBtn: document.getElementById('zoom-in'),
-    zoomOutBtn: document.getElementById('zoom-out'),
-    zoomResetBtn: document.getElementById('zoom-reset')
-};
+// Elements will be populated after DOM is ready
+export const elements = {};
+
+// Initialize elements after DOM is ready
+export function initElements() {
+    elements.status = document.getElementById('status');
+    elements.statusText = document.getElementById('status-text');
+    elements.genBtn = document.getElementById('gen-btn');
+    elements.preview = document.getElementById('preview-container');
+    elements.errorPanel = document.getElementById('error-panel');
+    elements.errorList = document.getElementById('error-list');
+    elements.parametersContainer = document.getElementById('parameters-container');
+    elements.presetSelect = document.getElementById('preset');
+    elements.viewTabs = document.getElementById('view-tabs');
+    elements.zoomControls = document.getElementById('zoom-controls');
+    elements.dlSvg = document.getElementById('dl-svg');
+    elements.dlPdf = document.getElementById('dl-pdf');
+    elements.calculatedFields = document.getElementById('calculated-fields');
+    elements.saveParamsBtn = document.getElementById('save-params-btn');
+    elements.loadParamsBtn = document.getElementById('load-params-btn');
+    elements.loadParamsInput = document.getElementById('load-params-input');
+    elements.zoomInBtn = document.getElementById('zoom-in');
+    elements.zoomOutBtn = document.getElementById('zoom-out');
+    elements.zoomResetBtn = document.getElementById('zoom-reset');
+}
