@@ -403,4 +403,70 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
+// PWA Install Prompt
+let deferredPrompt;
+
+window.addEventListener('beforeinstallprompt', (e) => {
+    // Prevent Chrome 67 and earlier from automatically showing the prompt
+    e.preventDefault();
+    deferredPrompt = e;
+
+    // Show a custom install button
+    const installBtn = document.createElement('button');
+    installBtn.id = 'install-btn';
+    installBtn.className = 'install-pwa-btn';
+    installBtn.textContent = '📱 Install App';
+    installBtn.style.cssText = `
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        padding: 12px 24px;
+        background: #4F46E5;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 14px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        z-index: 1000;
+    `;
+
+    installBtn.addEventListener('click', async () => {
+        if (!deferredPrompt) return;
+
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        console.log(`User ${outcome} the install prompt`);
+
+        deferredPrompt = null;
+        installBtn.remove();
+    });
+
+    document.body.appendChild(installBtn);
+});
+
+window.addEventListener('appinstalled', () => {
+    console.log('PWA installed successfully');
+    const installBtn = document.getElementById('install-btn');
+    if (installBtn) installBtn.remove();
+});
+
+// Register service worker for PWA functionality
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/service-worker.js')
+            .then((registration) => {
+                console.log('ServiceWorker registered:', registration.scope);
+
+                // Check for updates periodically
+                setInterval(() => {
+                    registration.update();
+                }, 60 * 60 * 1000); // Check every hour
+            })
+            .catch((error) => {
+                console.warn('ServiceWorker registration failed:', error);
+            });
+    });
+}
+
 initializePython();

@@ -51,6 +51,13 @@ jobs:
           # 4. Copy presets directory for instrument configurations
           cp -r presets public/
 
+          # 5. Copy PWA assets
+          cp web/manifest.json public/manifest.json
+          cp web/service-worker.js public/service-worker.js
+          cp web/favicon.ico public/favicon.ico
+          mkdir -p public/icons
+          cp -r web/icons/* public/icons/
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:

@@ -928,3 +928,16 @@ input[type="checkbox"] {
     color: var(--color-gray-500);
     font-size: 1.1rem;
 }
+
+/* PWA Install Button */
+.install-pwa-btn:hover {
+    background: var(--color-primary-light);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 8px rgba(0,0,0,0.15);
+    transition: all 0.2s ease;
+}
+
+.install-pwa-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
