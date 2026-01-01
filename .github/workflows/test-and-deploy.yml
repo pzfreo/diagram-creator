@@ -1,4 +1,4 @@
-name: Test
+name: Test and Deploy Redirect
 
 on:
   push:
@@ -8,8 +8,18 @@ on:
   # Allow manual trigger from the Actions tab
   workflow_dispatch:
 
-# Note: Deployment is handled by Vercel
-# This workflow only runs tests to ensure code quality
+# Permissions for GitHub Pages deployment
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Note: Main application deployment is handled by Vercel
+# This workflow runs tests and deploys a redirect page to GitHub Pages
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
 
 jobs:
   test:
@@ -41,8 +51,35 @@ jobs:
         with:
           fail_ci_if_error: false
 
-  # Deployment is now handled by Vercel
+  deploy-redirect:
+    name: Deploy Redirect to GitHub Pages
+    needs: test  # Only runs if tests pass
+    # Only deploy on push to main (not on PRs)
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload redirect page
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: 'github-pages-redirect'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+  # Main application deployment is handled by Vercel
   # Vercel automatically:
-  # - Deploys main branch to production
+  # - Deploys main branch to production at overstand.tools
   # - Creates preview deployments for all PRs
   # - Runs the build script (scripts/build.sh) for each deployment
