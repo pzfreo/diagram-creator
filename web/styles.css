@@ -1691,83 +1691,109 @@ input[type="checkbox"] {
 }
 
 /* About Modal Specific Styles */
-.modal-content .about-section {
-    margin-bottom: 1.5rem;
+.modal-content .about-content {
+    line-height: 1.7;
 }
 
-.modal-content .about-section:last-child {
-    margin-bottom: 0;
+.modal-content .about-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--color-text);
+    margin: 0 0 1rem 0;
+    line-height: 1.3;
 }
 
-.modal-content .about-description {
+.modal-content .about-subtitle {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--color-text);
+    margin: 1.5rem 0 0.75rem 0;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--color-gray-200);
+}
+
+.modal-content .about-text {
     color: var(--color-text-secondary);
-    line-height: 1.6;
-    margin-bottom: 1rem;
+    line-height: 1.7;
+    margin: 0 0 1rem 0;
+}
+
+.modal-content .about-version-container {
+    margin: 1rem 0 1.5rem 0;
 }
 
 .modal-content .about-version {
     display: inline-block;
     background: var(--color-gray-100);
-    padding: 0.25rem 0.75rem;
+    padding: 0.35rem 0.85rem;
     border-radius: var(--radius-sm);
     font-size: 0.9rem;
     color: var(--color-text-secondary);
     font-family: 'SF Mono', 'Monaco', 'Cascadia Code', monospace;
+    font-weight: 500;
 }
 
-.modal-content .about-features {
+.modal-content .about-list {
     list-style: none;
     padding: 0;
-    margin: 1rem 0;
+    margin: 1rem 0 1.5rem 0;
 }
 
-.modal-content .about-features li {
+.modal-content .about-list li {
     padding: 0.5rem 0;
     padding-left: 1.75rem;
     position: relative;
-    line-height: 1.6;
+    line-height: 1.7;
+    color: var(--color-text-secondary);
 }
 
-.modal-content .about-features li:before {
-    content: "✓";
+.modal-content .about-list li:before {
+    content: "•";
     position: absolute;
-    left: 0;
+    left: 0.25rem;
     color: var(--color-primary);
     font-weight: bold;
-    font-size: 1.1rem;
-}
-
-.modal-content .about-tech {
-    color: var(--color-text-secondary);
-    font-size: 0.95rem;
-    margin: 1rem 0;
-}
-
-.modal-content .about-links {
-    display: flex;
-    gap: 1rem;
-    margin-top: 1.5rem;
-    flex-wrap: wrap;
+    font-size: 1.2rem;
 }
 
 .modal-content .about-link {
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
-    padding: 0.5rem 1rem;
+    padding: 0.6rem 1.1rem;
     background: var(--color-primary-50);
     color: var(--color-primary);
     text-decoration: none;
     border-radius: var(--radius-md);
-    font-size: 0.9rem;
+    font-size: 0.95rem;
     font-weight: 500;
     transition: all 0.2s ease;
+    margin-right: 0.75rem;
+    margin-bottom: 0.75rem;
 }
 
 .modal-content .about-link:hover {
     background: var(--color-primary);
     color: white;
     transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.modal-content .about-email {
+    color: var(--color-primary);
+    text-decoration: none;
+    border-bottom: 1px solid var(--color-primary);
+    transition: all 0.2s ease;
+}
+
+.modal-content .about-email:hover {
+    color: var(--color-primary-dark);
+    border-bottom-color: var(--color-primary-dark);
+}
+
+.modal-content strong {
+    font-weight: 600;
+    color: var(--color-text);
 }
 
 /* Keyboard Shortcuts Modal Specific Styles */
@@ -1854,14 +1880,5 @@ input[type="checkbox"] {
 
     .modal-content {
         padding: 1.25rem;
-    }
-
-    .modal-content .about-links {
-        flex-direction: column;
-    }
-
-    .modal-content .about-link {
-        width: 100%;
-        justify-content: center;
     }
 }

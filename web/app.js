@@ -660,49 +660,134 @@ function showKeyboardShortcuts() {
     closeMenu();
 }
 
-function showAbout() {
-    const version = document.getElementById('version-info')?.textContent || 'Unknown';
+// Simple markdown to HTML converter for about.md
+function markdownToHtml(markdown) {
+    let html = markdown;
 
-    const content = `
-        <div class="about-section">
-            <p class="about-description">
-                A tool for designing and calculating precise neck geometry for stringed
-                instruments including violins, viols, guitars, and mandolins.
-            </p>
-            <div>
-                <span class="about-version">Version ${version}</span>
-            </div>
-        </div>
+    // Unescape characters
+    html = html.replace(/\\!/g, '!');
+    html = html.replace(/\\\*/g, '*');
 
-        <div class="about-section">
-            <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.75rem;">Features</h3>
-            <ul class="about-features">
-                <li>11 preset instruments with accurate dimensions</li>
-                <li>Real-time geometry calculations</li>
-                <li>Collapsible parameter sections</li>
-                <li>SVG and PDF export</li>
-                <li>Customizable for any instrument type</li>
-            </ul>
-        </div>
+    // Convert headers
+    html = html.replace(/^# \*\*(.*?)\*\*/gm, '<h1 class="about-title">$1</h1>');
+    html = html.replace(/^# (.*?)$/gm, '<h1 class="about-title">$1</h1>');
+    html = html.replace(/^## (.*?)$/gm, '<h3 class="about-subtitle">$1</h3>');
 
-        <div class="about-section">
-            <p class="about-tech">
-                Built with Python (Pyodide), JavaScript, and SVG
-            </p>
+    // Convert bold text
+    html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
 
-            <div class="about-links">
-                <a href="https://overstand.tools" target="_blank" class="about-link">
-                    🌐 Visit Website
-                </a>
-                <a href="https://github.com/pzfreo/diagram-creator" target="_blank" class="about-link">
-                    💻 View on GitHub
-                </a>
-            </div>
-        </div>
-    `;
+    // Convert links with emoji/icon
+    html = html.replace(/\[(🌐|💻|📧)\s*(.*?)\]\((.*?)\)/g, '<a href="$3" target="_blank" class="about-link">$1 $2</a>');
 
-    showModal('Instrument Neck Geometry Generator', content);
-    closeMenu();
+    // Convert email links
+    html = html.replace(/\[(.*?)\]\(mailto:(.*?)\)/g, '<a href="mailto:$2" class="about-email">$1</a>');
+
+    // Convert regular links
+    html = html.replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank">$1</a>');
+
+    // Split into lines for processing
+    const lines = html.split('\n');
+    const output = [];
+    let inList = false;
+    let currentParagraph = [];
+
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim();
+
+        if (!line) {
+            // Empty line - close any open paragraph or list
+            if (currentParagraph.length > 0) {
+                output.push('<p class="about-text">' + currentParagraph.join(' ') + '</p>');
+                currentParagraph = [];
+            }
+            if (inList) {
+                output.push('</ul>');
+                inList = false;
+            }
+            continue;
+        }
+
+        // Check if it's a header or link line (already processed)
+        if (line.startsWith('<h1') || line.startsWith('<h3') || line.startsWith('<a href') || line.match(/^Version:/)) {
+            // Close any open paragraph
+            if (currentParagraph.length > 0) {
+                output.push('<p class="about-text">' + currentParagraph.join(' ') + '</p>');
+                currentParagraph = [];
+            }
+            if (inList) {
+                output.push('</ul>');
+                inList = false;
+            }
+
+            // Handle version line specially
+            if (line.match(/^Version:/)) {
+                output.push('<div class="about-version-container">' + line.replace(/Version:\s*(.+)/, '<span class="about-version">Version $1</span>') + '</div>');
+            } else {
+                output.push(line);
+            }
+            continue;
+        }
+
+        // Check if it's a list item
+        if (line.startsWith('•') || line.startsWith('-')) {
+            // Close any open paragraph
+            if (currentParagraph.length > 0) {
+                output.push('<p class="about-text">' + currentParagraph.join(' ') + '</p>');
+                currentParagraph = [];
+            }
+
+            if (!inList) {
+                output.push('<ul class="about-list">');
+                inList = true;
+            }
+            const itemText = line.replace(/^[•\-]\s*/, '');
+            output.push('<li>' + itemText + '</li>');
+            continue;
+        }
+
+        // Regular text line - add to current paragraph
+        if (inList) {
+            output.push('</ul>');
+            inList = false;
+        }
+        currentParagraph.push(line);
+    }
+
+    // Close any remaining open paragraph or list
+    if (currentParagraph.length > 0) {
+        output.push('<p class="about-text">' + currentParagraph.join(' ') + '</p>');
+    }
+    if (inList) {
+        output.push('</ul>');
+    }
+
+    return '<div class="about-content">' + output.join('\n') + '</div>';
+}
+
+async function showAbout() {
+    try {
+        // Fetch about.md
+        const response = await fetch('about.md');
+        if (!response.ok) {
+            throw new Error('Failed to load about.md');
+        }
+        const markdown = await response.text();
+
+        // Convert markdown to HTML
+        const content = markdownToHtml(markdown);
+
+        // Extract title from first h1 (if exists)
+        const titleMatch = content.match(/<h1 class="about-title">(.*?)<\/h1>/);
+        const title = titleMatch ? titleMatch[1] : 'About';
+
+        showModal(title, content);
+        closeMenu();
+    } catch (error) {
+        console.error('Error loading about:', error);
+        // Fallback content
+        showModal('About', '<p class="about-text">Unable to load about information.</p>');
+        closeMenu();
+    }
 }
 
 // Initialize on load
