@@ -112,7 +112,7 @@ async function initializePython() {
         ui.setStatus('loading', 'Loading instrument neck modules...');
         const modules = [
             'constants.py', 'buildprimitives.py', 'dimension_helpers.py', 'derived_value_metadata.py',
-            'instrument_parameters.py', 'radius_template.py', 'instrument_geometry.py', 'instrument_generator.py',
+            'instrument_parameters.py', 'ui_metadata.py', 'radius_template.py', 'instrument_geometry.py', 'instrument_generator.py',
             'geometry_engine.py', 'svg_renderer.py', 'view_generator.py'
         ];
 
@@ -156,6 +156,15 @@ async function initializePython() {
         const derivedMetaResult = JSON.parse(derivedMetaJson);
         if (derivedMetaResult.success) state.derivedMetadata = derivedMetaResult.metadata;
 
+        // Load UI metadata bundle (sections, presets, parameters, derived values)
+        const uiMetaJson = await state.pyodide.runPythonAsync(`instrument_generator.get_ui_metadata()`);
+        const uiMetaResult = JSON.parse(uiMetaJson);
+        if (uiMetaResult.success) {
+            state.uiMetadata = uiMetaResult.metadata;
+        } else {
+            console.error('Failed to load UI metadata:', uiMetaResult.error);
+        }
+
         state.presets = await loadPresetsFromDirectory();
 
         ui.generateUI(UI_CALLBACKS);
@@ -174,16 +183,32 @@ async function initializePython() {
 function loadPreset() {
     const presetId = elements.presetSelect.value;
     if (!presetId) return;
-    const preset = state.presets[presetId];
-    if (!preset || !preset.parameters) return;
 
-    for (const [name, value] of Object.entries(preset.parameters)) {
+    let preset = null;
+    let parameters = null;
+
+    // Try ui_metadata presets first
+    if (state.uiMetadata && state.uiMetadata.presets && state.uiMetadata.presets[presetId]) {
+        preset = state.uiMetadata.presets[presetId];
+        parameters = preset.basic_params;
+    }
+    // Fallback to legacy file-based presets
+    else if (state.presets && state.presets[presetId]) {
+        preset = state.presets[presetId];
+        parameters = preset.parameters;
+    }
+
+    if (!preset || !parameters) return;
+
+    // Apply preset parameters
+    for (const [name, value] of Object.entries(parameters)) {
         const element = document.getElementById(name);
         if (element) {
             if (element.type === 'checkbox') element.checked = value;
             else element.value = value;
         }
     }
+
     ui.hideErrors();
     ui.updateParameterVisibility(collectParameters());
     updateDerivedValues();
@@ -278,29 +303,38 @@ async function updateDerivedValues() {
         const container = elements.calculatedFields;
 
         if (result.success && Object.keys(result.values).length > 0) {
-            container.style.display = 'grid';
-            container.innerHTML = '';
+            // Update output sections if using component-based UI
+            if (state.uiSections && state.uiSections.output) {
+                for (const section of state.uiSections.output) {
+                    section.updateValues(result.values);
+                }
+                container.style.display = 'none'; // Hide old metrics display
+            } else {
+                // Legacy output display
+                container.style.display = 'grid';
+                container.innerHTML = '';
 
-            for (const [name, param] of Object.entries(state.parameterDefinitions.parameters)) {
-                if (ui.isParameterOutput(param, currentMode)) {
-                    const input = document.getElementById(name);
-                    if (input && result.values[param.label] != null) {
-                        input.value = !isNaN(result.values[param.label]) ? result.values[param.label] : '';
+                for (const [name, param] of Object.entries(state.parameterDefinitions.parameters)) {
+                    if (ui.isParameterOutput(param, currentMode)) {
+                        const input = document.getElementById(name);
+                        if (input && result.values[param.label] != null) {
+                            input.value = !isNaN(result.values[param.label]) ? result.values[param.label] : '';
+                        }
                     }
                 }
-            }
 
-            for (const [label, value] of Object.entries(result.values)) {
-                if (label.includes('_')) continue;
-                const meta = (result.metadata || {})[label];
-                if (!meta || !meta.visible) continue;
+                for (const [label, value] of Object.entries(result.values)) {
+                    if (label.includes('_')) continue;
+                    const meta = (result.metadata || {})[label];
+                    if (!meta || !meta.visible) continue;
 
-                const div = document.createElement('div');
-                div.className = 'metric-card';
-                let formattedValue = (value == null || isNaN(value)) ? '—' : (result.formatted && result.formatted[label]) || (meta ? `${value.toFixed(meta.decimals)} ${meta.unit}`.trim() : value);
+                    const div = document.createElement('div');
+                    div.className = 'metric-card';
+                    let formattedValue = (value == null || isNaN(value)) ? '—' : (result.formatted && result.formatted[label]) || (meta ? `${value.toFixed(meta.decimals)} ${meta.unit}`.trim() : value);
 
-                div.innerHTML = `<span class="metric-label" title="${meta ? meta.description : ''}">${meta ? meta.display_name : label}</span><span class="metric-value">${formattedValue}</span>`;
-                container.appendChild(div);
+                    div.innerHTML = `<span class="metric-label" title="${meta ? meta.description : ''}">${meta ? meta.display_name : label}</span><span class="metric-value">${formattedValue}</span>`;
+                    container.appendChild(div);
+                }
             }
         } else container.style.display = 'none';
     } catch (e) { console.error("Failed to update derived values:", e); }
