@@ -58,7 +58,7 @@ def load_preset_metadata_from_json(filepath: str) -> Optional[PresetMetadata]:
             id=preset_id,
             display_name=metadata.get('display_name', preset_id),
             family=metadata.get('family', 'VIOLIN'),
-            icon=metadata.get('icon', '🎻'),
+            icon=metadata.get('icon', ''),
             description=metadata.get('description', ''),
             filepath=filepath
         )

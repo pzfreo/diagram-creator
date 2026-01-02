@@ -175,15 +175,22 @@ async function initializePython() {
 
         ui.generateUI(UI_CALLBACKS);
         ui.populatePresets();
-        updateDerivedValues();
-        generateNeck();
 
-        // Initialize previousValue for preset selector (first preset is selected by default)
+        // Load the first preset's parameters (the one selected by default in dropdown)
+        if (elements.presetSelect && elements.presetSelect.value) {
+            await loadPreset();
+        } else {
+            // No presets available, just use defaults
+            updateDerivedValues();
+            generateNeck();
+        }
+
+        // Initialize previousValue for preset selector
         if (elements.presetSelect && elements.presetSelect.value) {
             elements.presetSelect.dataset.previousValue = elements.presetSelect.value;
         }
 
-        // Parameters start unmodified (we just loaded defaults)
+        // Parameters start unmodified (we just loaded a preset)
         state.parametersModified = false;
 
         elements.genBtn.disabled = false;

@@ -372,7 +372,7 @@ export function populatePresets() {
         for (const [id, preset] of sortedPresets) {
             const option = document.createElement('option');
             option.value = id;
-            option.textContent = `${preset.icon} ${preset.display_name}`;
+            option.textContent = preset.display_name;
             option.title = preset.description;
             select.appendChild(option);
         }

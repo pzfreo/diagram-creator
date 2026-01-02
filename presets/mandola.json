@@ -1,12 +1,12 @@
 {
   "metadata": {
     "version": "1.0",
-    "timestamp": "2026-01-02T12:55:25.150623Z",
+    "timestamp": "2026-01-02T13:20:24.907848Z",
     "description": "Alto mandola dimensions (fret-join driven)",
     "preset_id": "mandola",
     "display_name": "Mandola",
     "family": "GUITAR_MANDOLIN",
-    "icon": "\ud83c\udfb8"
+    "icon": ""
   },
   "parameters": {
     "arching_height": 14.0,

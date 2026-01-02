@@ -57,8 +57,8 @@ class InstrumentPreset:
     display_name: str                    # Display name (e.g., 'Violin')
     family: str                          # VIOLIN, VIOL, or GUITAR_MANDOLIN
     basic_params: Dict[str, Any]         # Auto-fill values
-    icon: str                            # Emoji/icon
-    description: str                     # Tooltip/help text
+    icon: str = ''                       # Emoji/icon (optional, deprecated)
+    description: str = ''                # Tooltip/help text
 
     def to_dict(self) -> dict:
         """Convert to JSON-serializable dict"""

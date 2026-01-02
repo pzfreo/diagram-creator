@@ -1,12 +1,12 @@
 {
   "metadata": {
     "version": "1.0",
-    "timestamp": "2026-01-02T12:55:25.152112Z",
+    "timestamp": "2026-01-02T13:20:24.909486Z",
     "description": "Standard violin dimensions based on Stradivari models",
     "preset_id": "violin",
     "display_name": "Violin",
     "family": "VIOLIN",
-    "icon": "\ud83c\udfbb"
+    "icon": ""
   },
   "parameters": {
     "arching_height": 15.0,

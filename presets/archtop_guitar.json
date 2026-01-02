@@ -1,12 +1,12 @@
 {
   "metadata": {
     "version": "1.0",
-    "timestamp": "2026-01-02T12:55:25.149256Z",
+    "timestamp": "2026-01-02T13:20:24.906250Z",
     "description": "Archtop jazz guitar dimensions (fret-join driven)",
     "preset_id": "archtop_guitar",
     "display_name": "Archtop Guitar",
     "family": "GUITAR_MANDOLIN",
-    "icon": "\ud83c\udfb8"
+    "icon": ""
   },
   "parameters": {
     "arching_height": 18.0,

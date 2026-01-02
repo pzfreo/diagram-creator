@@ -1,12 +1,12 @@
 {
   "metadata": {
     "version": "1.0",
-    "timestamp": "2026-01-02T12:55:25.151115Z",
+    "timestamp": "2026-01-02T13:20:24.908595Z",
     "description": "Octave mandolin / bouzouki dimensions (fret-join driven)",
     "preset_id": "octave_mandolin",
     "display_name": "Octave Mandolin",
     "family": "GUITAR_MANDOLIN",
-    "icon": "\ud83c\udfb8"
+    "icon": ""
   },
   "parameters": {
     "arching_height": 16.0,

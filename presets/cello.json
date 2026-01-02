@@ -1,12 +1,12 @@
 {
   "metadata": {
     "version": "1.0",
-    "timestamp": "2026-01-02T12:55:25.150091Z",
+    "timestamp": "2026-01-02T13:20:24.907415Z",
     "description": "Standard cello dimensions",
     "preset_id": "cello",
     "display_name": "Cello",
     "family": "VIOLIN",
-    "icon": "\ud83c\udfbb"
+    "icon": ""
   },
   "parameters": {
     "arching_height": 28.0,

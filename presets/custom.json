@@ -1,12 +1,12 @@
 {
   "metadata": {
     "version": "1.0",
-    "timestamp": "2026-01-02T12:55:25.150423Z",
+    "timestamp": "2026-01-02T13:20:24.907632Z",
     "description": "Start with default values for a custom instrument",
     "preset_id": "custom",
     "display_name": "Other / Custom",
     "family": "VIOLIN",
-    "icon": "\ud83d\udd27"
+    "icon": ""
   },
   "parameters": {
     "instrument_family": "VIOLIN",

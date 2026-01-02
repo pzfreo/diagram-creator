@@ -31,7 +31,7 @@ def export_presets_from_csv(csv_path='instrument_presets_full.csv', output_dir='
         preset_id = row['preset_id']
         display_name = row['display_name']
         family = row['family']
-        icon = row['icon']
+        icon = row.get('icon', '')  # Optional icon field
         description = row['description']
 
         # Build parameters dict (exclude metadata columns)

@@ -1,12 +1,12 @@
 {
   "metadata": {
     "version": "1.0",
-    "timestamp": "2026-01-02T12:55:25.149783Z",
+    "timestamp": "2026-01-02T13:20:24.907153Z",
     "description": "Bass viol dimensions (Viola da Gamba)",
     "preset_id": "bass_viol",
     "display_name": "Bass Viol",
     "family": "VIOL",
-    "icon": "\ud83c\udfbb"
+    "icon": ""
   },
   "parameters": {
     "arching_height": 25.0,

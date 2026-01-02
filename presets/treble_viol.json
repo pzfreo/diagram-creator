@@ -1,12 +1,12 @@
 {
   "metadata": {
     "version": "1.0",
-    "timestamp": "2026-01-02T12:55:25.151582Z",
+    "timestamp": "2026-01-02T13:20:24.909043Z",
     "description": "Treble viol / Pardessus de viole",
     "preset_id": "treble_viol",
     "display_name": "Treble Viol",
     "family": "VIOL",
-    "icon": "\ud83c\udfbb"
+    "icon": ""
   },
   "parameters": {
     "arching_height": 14.0,

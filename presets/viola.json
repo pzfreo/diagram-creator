@@ -1,12 +1,12 @@
 {
   "metadata": {
     "version": "1.0",
-    "timestamp": "2026-01-02T12:55:25.151873Z",
+    "timestamp": "2026-01-02T13:20:24.909267Z",
     "description": "Standard viola dimensions",
     "preset_id": "viola",
     "display_name": "Viola",
     "family": "VIOLIN",
-    "icon": "\ud83c\udfbb"
+    "icon": ""
   },
   "parameters": {
     "arching_height": 16.0,

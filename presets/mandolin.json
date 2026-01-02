@@ -1,12 +1,12 @@
 {
   "metadata": {
     "version": "1.0",
-    "timestamp": "2026-01-02T12:55:25.150873Z",
+    "timestamp": "2026-01-02T13:20:24.908120Z",
     "description": "Standard mandolin dimensions (fret-join driven)",
     "preset_id": "mandolin",
     "display_name": "Mandolin",
     "family": "GUITAR_MANDOLIN",
-    "icon": "\ud83c\udfb8"
+    "icon": ""
   },
   "parameters": {
     "arching_height": 12.0,
