@@ -562,44 +562,146 @@ function closeMenu() {
     document.body.style.overflow = '';
 }
 
+// Modal Dialog Functions
+function showModal(title, content) {
+    const modalOverlay = document.getElementById('modal-overlay');
+    const modalTitle = document.getElementById('modal-title');
+    const modalContent = document.getElementById('modal-content');
+
+    modalTitle.textContent = title;
+    modalContent.innerHTML = content;
+
+    // Show modal with animation
+    modalOverlay.classList.add('active');
+
+    // Prevent body scroll when modal is open
+    document.body.style.overflow = 'hidden';
+}
+
+function closeModal() {
+    const modalOverlay = document.getElementById('modal-overlay');
+    modalOverlay.classList.remove('active');
+    document.body.style.overflow = '';
+}
+
 function showKeyboardShortcuts() {
     const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
     const mod = isMac ? '⌘' : 'Ctrl';
 
-    alert(`Keyboard Shortcuts:
+    const content = `
+        <div class="shortcuts-section">
+            <h3>File Operations</h3>
+            <ul class="shortcut-list">
+                <li class="shortcut-item">
+                    <span class="shortcut-description">Generate Template</span>
+                    <div class="shortcut-keys">
+                        <span class="key">${mod}</span>
+                        <span class="key-separator">+</span>
+                        <span class="key">Enter</span>
+                    </div>
+                </li>
+                <li class="shortcut-item">
+                    <span class="shortcut-description">Save Parameters</span>
+                    <div class="shortcut-keys">
+                        <span class="key">${mod}</span>
+                        <span class="key-separator">+</span>
+                        <span class="key">S</span>
+                    </div>
+                </li>
+                <li class="shortcut-item">
+                    <span class="shortcut-description">Load Parameters</span>
+                    <div class="shortcut-keys">
+                        <span class="key">${mod}</span>
+                        <span class="key-separator">+</span>
+                        <span class="key">O</span>
+                    </div>
+                </li>
+            </ul>
+        </div>
 
-${mod} + Enter: Generate Template
-${mod} + S: Save Parameters
-${mod} + O: Load Parameters
-Escape: Close Menu/Dialogs
+        <div class="shortcuts-section">
+            <h3>Zoom Controls</h3>
+            <ul class="shortcut-list">
+                <li class="shortcut-item">
+                    <span class="shortcut-description">Zoom In</span>
+                    <div class="shortcut-keys">
+                        <span class="key">+</span>
+                    </div>
+                </li>
+                <li class="shortcut-item">
+                    <span class="shortcut-description">Zoom Out</span>
+                    <div class="shortcut-keys">
+                        <span class="key">-</span>
+                    </div>
+                </li>
+                <li class="shortcut-item">
+                    <span class="shortcut-description">Reset Zoom</span>
+                    <div class="shortcut-keys">
+                        <span class="key">0</span>
+                    </div>
+                </li>
+            </ul>
+        </div>
 
-Zoom Controls (when viewing diagrams):
-+: Zoom In
--: Zoom Out
-0: Reset Zoom`);
+        <div class="shortcuts-section">
+            <h3>Navigation</h3>
+            <ul class="shortcut-list">
+                <li class="shortcut-item">
+                    <span class="shortcut-description">Close Menu/Dialogs</span>
+                    <div class="shortcut-keys">
+                        <span class="key">Esc</span>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    `;
 
+    showModal('Keyboard Shortcuts', content);
     closeMenu();
 }
 
 function showAbout() {
-    alert(`Instrument Neck Geometry Generator
+    const version = document.getElementById('version-info')?.textContent || 'Unknown';
 
-A tool for designing and calculating precise neck geometry for stringed instruments including violins, viols, guitars, and mandolins.
+    const content = `
+        <div class="about-section">
+            <p class="about-description">
+                A tool for designing and calculating precise neck geometry for stringed
+                instruments including violins, viols, guitars, and mandolins.
+            </p>
+            <div>
+                <span class="about-version">Version ${version}</span>
+            </div>
+        </div>
 
-Version: ${document.getElementById('version-info')?.textContent || 'Unknown'}
+        <div class="about-section">
+            <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.75rem;">Features</h3>
+            <ul class="about-features">
+                <li>11 preset instruments with accurate dimensions</li>
+                <li>Real-time geometry calculations</li>
+                <li>Collapsible parameter sections</li>
+                <li>SVG and PDF export</li>
+                <li>Customizable for any instrument type</li>
+            </ul>
+        </div>
 
-Features:
-• 11 preset instruments with accurate dimensions
-• Real-time geometry calculations
-• Collapsible parameter sections
-• SVG and PDF export
-• Customizable for any instrument type
+        <div class="about-section">
+            <p class="about-tech">
+                Built with Python (Pyodide), JavaScript, and SVG
+            </p>
 
-Built with Python (Pyodide), JavaScript, and SVG
+            <div class="about-links">
+                <a href="https://overstand.tools" target="_blank" class="about-link">
+                    🌐 Visit Website
+                </a>
+                <a href="https://github.com/pzfreo/diagram-creator" target="_blank" class="about-link">
+                    💻 View on GitHub
+                </a>
+            </div>
+        </div>
+    `;
 
-https://overstand.tools
-https://github.com/pzfreo/diagram-creator`);
-
+    showModal('Instrument Neck Geometry Generator', content);
     closeMenu();
 }
 
@@ -769,6 +871,15 @@ document.addEventListener('DOMContentLoaded', () => {
     if (menuKeyboardShortcuts) menuKeyboardShortcuts.addEventListener('click', showKeyboardShortcuts);
     if (menuAbout) menuAbout.addEventListener('click', showAbout);
 
+    // Modal dialog
+    const modalCloseBtn = document.getElementById('modal-close-btn');
+    const modalOverlay = document.getElementById('modal-overlay');
+    if (modalCloseBtn) modalCloseBtn.addEventListener('click', closeModal);
+    if (modalOverlay) modalOverlay.addEventListener('click', (e) => {
+        // Close modal when clicking the overlay background (not the dialog itself)
+        if (e.target === modalOverlay) closeModal();
+    });
+
     registerServiceWorker();
     initInstallPrompt();
     loadVersionInfo();
@@ -794,8 +905,17 @@ document.addEventListener('keydown', (e) => {
         elements.loadParamsInput.click();
     }
 
-    // Close menu: Escape
+    // Close dialogs: Escape
     if (e.key === 'Escape') {
+        // Check if modal is open first (priority over menu)
+        const modalOverlay = document.getElementById('modal-overlay');
+        if (modalOverlay && modalOverlay.classList.contains('active')) {
+            e.preventDefault();
+            closeModal();
+            return;
+        }
+
+        // Then check if menu is open
         const menuPanel = document.getElementById('menu-panel');
         if (menuPanel && menuPanel.classList.contains('open')) {
             e.preventDefault();
