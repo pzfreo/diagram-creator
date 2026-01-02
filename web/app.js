@@ -706,8 +706,9 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
-        // Escape key closes panels
+        // Keyboard shortcuts for panel closing and zoom
         document.addEventListener('keydown', (e) => {
+            // Escape key closes panels
             if (e.key === 'Escape') {
                 if (menuPanel.classList.contains('open') || controlsPanel.classList.contains('mobile-open')) {
                     e.preventDefault();
@@ -717,6 +718,21 @@ document.addEventListener('DOMContentLoaded', () => {
                     mobileMenuToggle.classList.remove('active');
                     mobileParamsToggle.classList.remove('active');
                     document.body.style.overflow = '';
+                }
+            }
+
+            // Zoom keyboard shortcuts (+, -, 0)
+            // Don't trigger if user is typing in an input field
+            if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA' && e.target.tagName !== 'SELECT') {
+                if (e.key === '+' || e.key === '=') {
+                    e.preventDefault();
+                    zoomIn();
+                } else if (e.key === '-' || e.key === '_') {
+                    e.preventDefault();
+                    zoomOut();
+                } else if (e.key === '0') {
+                    e.preventDefault();
+                    zoomReset();
                 }
             }
         });
