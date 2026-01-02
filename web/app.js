@@ -370,6 +370,9 @@ async function updateDerivedValues() {
         const container = elements.calculatedFields;
 
         if (result.success && Object.keys(result.values).length > 0) {
+            // Update core metrics panel (always visible, prominent display)
+            updateCoreMetricsPanel(result.values, result.metadata);
+
             // Update output sections if using component-based UI
             if (state.uiSections && state.uiSections.output) {
                 for (const section of state.uiSections.output) {
@@ -405,6 +408,55 @@ async function updateDerivedValues() {
             }
         } else container.style.display = 'none';
     } catch (e) { console.error("Failed to update derived values:", e); }
+}
+
+function updateCoreMetricsPanel(values, metadata) {
+    const panel = document.getElementById('core-metrics-grid');
+    if (!panel) return;
+
+    // Define core metrics to display (in order, with primary flag for neck angle)
+    const coreMetrics = [
+        { key: 'Neck Angle', primary: true },
+        { key: 'Neck Stop' },
+        { key: 'Body Stop' },
+        { key: 'Nut Relative to Ribs' }
+    ];
+
+    panel.innerHTML = '';
+
+    for (const metric of coreMetrics) {
+        const value = values[metric.key];
+        const meta = metadata ? metadata[metric.key] : null;
+
+        if (value === undefined || value === null) continue;
+
+        const item = document.createElement('div');
+        item.className = metric.primary ? 'core-metric-item primary' : 'core-metric-item';
+
+        const label = document.createElement('span');
+        label.className = 'core-metric-label';
+        label.textContent = meta ? meta.display_name : metric.key;
+        if (meta && meta.description) {
+            item.title = meta.description;
+        }
+
+        const valueSpan = document.createElement('span');
+        valueSpan.className = 'core-metric-value';
+
+        const formattedValue = meta ? value.toFixed(meta.decimals) : value.toFixed(1);
+        valueSpan.textContent = formattedValue;
+
+        if (meta && meta.unit) {
+            const unit = document.createElement('span');
+            unit.className = 'core-metric-unit';
+            unit.textContent = meta.unit;
+            valueSpan.appendChild(unit);
+        }
+
+        item.appendChild(label);
+        item.appendChild(valueSpan);
+        panel.appendChild(item);
+    }
 }
 
 function switchView(viewName) {

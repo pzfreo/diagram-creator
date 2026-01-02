@@ -1308,3 +1308,78 @@ input[type="checkbox"] {
 .accordion-content .param-group:last-child {
     margin-bottom: 0;
 }
+
+/* ============================================
+   CORE METRICS PANEL (Always Visible)
+   ============================================ */
+
+.core-metrics-panel {
+    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+    box-shadow: var(--shadow-md);
+    color: white;
+}
+
+.core-metrics-header {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    opacity: 0.9;
+    margin-bottom: var(--spacing-sm);
+}
+
+.core-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: var(--spacing-sm);
+}
+
+.core-metric-item {
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(10px);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-sm) var(--spacing-md);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    transition: all 0.2s ease;
+}
+
+.core-metric-item:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-1px);
+}
+
+.core-metric-item.primary {
+    background: rgba(255, 255, 255, 0.25);
+    border: 2px solid rgba(255, 255, 255, 0.4);
+    grid-column: span 2;
+}
+
+.core-metric-label {
+    font-size: 0.7rem;
+    font-weight: 500;
+    opacity: 0.85;
+    display: block;
+    margin-bottom: 0.25rem;
+}
+
+.core-metric-value {
+    font-family: 'SF Mono', 'Monaco', 'Courier New', monospace;
+    font-size: 1.25rem;
+    font-weight: 700;
+    display: block;
+    line-height: 1.2;
+}
+
+.core-metric-item.primary .core-metric-value {
+    font-size: 1.75rem;
+}
+
+.core-metric-unit {
+    font-size: 0.8rem;
+    font-weight: 400;
+    opacity: 0.8;
+    margin-left: 0.25rem;
+}
