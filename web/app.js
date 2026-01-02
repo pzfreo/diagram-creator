@@ -623,19 +623,87 @@ document.addEventListener('DOMContentLoaded', () => {
         tab.addEventListener('click', () => switchView(tab.dataset.view));
     });
 
-    // Mobile menu
-    const mobileMenuBtn = document.getElementById('mobile-menu-btn');
-    const mobileCloseBtn = document.getElementById('mobile-close-btn');
+    // Mobile icon bar - manages menu and parameters panels
+    const mobileIconBar = document.getElementById('mobile-icon-bar');
+    const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
+    const mobileParamsToggle = document.getElementById('mobile-params-toggle');
+    const menuPanel = document.getElementById('menu-panel');
     const controlsPanel = document.getElementById('controls-panel');
     const sidebarOverlay = document.getElementById('sidebar-overlay');
 
-    if (mobileMenuBtn && mobileCloseBtn && controlsPanel && sidebarOverlay) {
-        const open = () => { controlsPanel.classList.add('mobile-open'); sidebarOverlay.classList.add('active'); document.body.style.overflow = 'hidden'; };
-        const close = () => { controlsPanel.classList.remove('mobile-open'); sidebarOverlay.classList.remove('active'); document.body.style.overflow = ''; };
-        mobileMenuBtn.addEventListener('click', () => controlsPanel.classList.contains('mobile-open') ? close() : open());
-        mobileCloseBtn.addEventListener('click', close);
-        sidebarOverlay.addEventListener('click', close);
-        document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && controlsPanel.classList.contains('mobile-open')) close(); });
+    if (mobileIconBar && mobileMenuToggle && mobileParamsToggle) {
+        // Toggle menu panel
+        mobileMenuToggle.addEventListener('click', () => {
+            const isOpen = menuPanel.classList.contains('open');
+
+            // Close both panels first
+            menuPanel.classList.remove('open');
+            controlsPanel.classList.remove('mobile-open');
+            mobileMenuToggle.classList.remove('active');
+            mobileParamsToggle.classList.remove('active');
+
+            if (!isOpen) {
+                // Open menu panel
+                menuPanel.classList.add('open');
+                sidebarOverlay.classList.add('active');
+                mobileMenuToggle.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            } else {
+                // Close overlay
+                sidebarOverlay.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+        });
+
+        // Toggle parameters panel
+        mobileParamsToggle.addEventListener('click', () => {
+            const isOpen = controlsPanel.classList.contains('mobile-open');
+
+            // Close both panels first
+            menuPanel.classList.remove('open');
+            controlsPanel.classList.remove('mobile-open');
+            mobileMenuToggle.classList.remove('active');
+            mobileParamsToggle.classList.remove('active');
+
+            if (!isOpen) {
+                // Open parameters panel
+                controlsPanel.classList.add('mobile-open');
+                sidebarOverlay.classList.add('active');
+                mobileParamsToggle.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            } else {
+                // Close overlay
+                sidebarOverlay.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+        });
+
+        // Close panels when overlay clicked
+        if (sidebarOverlay) {
+            sidebarOverlay.addEventListener('click', () => {
+                menuPanel.classList.remove('open');
+                controlsPanel.classList.remove('mobile-open');
+                sidebarOverlay.classList.remove('active');
+                mobileMenuToggle.classList.remove('active');
+                mobileParamsToggle.classList.remove('active');
+                document.body.style.overflow = '';
+            });
+        }
+
+        // Close panels on Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                if (menuPanel.classList.contains('open') || controlsPanel.classList.contains('mobile-open')) {
+                    e.preventDefault();
+                    menuPanel.classList.remove('open');
+                    controlsPanel.classList.remove('mobile-open');
+                    sidebarOverlay.classList.remove('active');
+                    mobileMenuToggle.classList.remove('active');
+                    mobileParamsToggle.classList.remove('active');
+                    document.body.style.overflow = '';
+                }
+            }
+        });
     }
 
     // Menu system
