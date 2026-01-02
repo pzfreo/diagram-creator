@@ -557,45 +557,232 @@ function closeMenu() {
     document.body.style.overflow = '';
 }
 
+// Modal Dialog Functions
+function showModal(title, content) {
+    const modalOverlay = document.getElementById('modal-overlay');
+    const modalTitle = document.getElementById('modal-title');
+    const modalContent = document.getElementById('modal-content');
+
+    modalTitle.textContent = title;
+    modalContent.innerHTML = content;
+
+    // Show modal with animation
+    modalOverlay.classList.add('active');
+
+    // Prevent body scroll when modal is open
+    document.body.style.overflow = 'hidden';
+}
+
+function closeModal() {
+    const modalOverlay = document.getElementById('modal-overlay');
+    modalOverlay.classList.remove('active');
+    document.body.style.overflow = '';
+}
+
 function showKeyboardShortcuts() {
     const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
     const mod = isMac ? '⌘' : 'Ctrl';
 
-    alert(`Keyboard Shortcuts:
+    const content = `
+        <div class="shortcuts-section">
+            <h3>File Operations</h3>
+            <ul class="shortcut-list">
+                <li class="shortcut-item">
+                    <span class="shortcut-description">Generate Template</span>
+                    <div class="shortcut-keys">
+                        <span class="key">${mod}</span>
+                        <span class="key-separator">+</span>
+                        <span class="key">Enter</span>
+                    </div>
+                </li>
+                <li class="shortcut-item">
+                    <span class="shortcut-description">Save Parameters</span>
+                    <div class="shortcut-keys">
+                        <span class="key">${mod}</span>
+                        <span class="key-separator">+</span>
+                        <span class="key">S</span>
+                    </div>
+                </li>
+                <li class="shortcut-item">
+                    <span class="shortcut-description">Load Parameters</span>
+                    <div class="shortcut-keys">
+                        <span class="key">${mod}</span>
+                        <span class="key-separator">+</span>
+                        <span class="key">O</span>
+                    </div>
+                </li>
+            </ul>
+        </div>
 
-${mod} + Enter: Generate Template
-${mod} + S: Save Parameters
-${mod} + O: Load Parameters
-Escape: Close Menu/Dialogs
+        <div class="shortcuts-section">
+            <h3>Zoom Controls</h3>
+            <ul class="shortcut-list">
+                <li class="shortcut-item">
+                    <span class="shortcut-description">Zoom In</span>
+                    <div class="shortcut-keys">
+                        <span class="key">+</span>
+                    </div>
+                </li>
+                <li class="shortcut-item">
+                    <span class="shortcut-description">Zoom Out</span>
+                    <div class="shortcut-keys">
+                        <span class="key">-</span>
+                    </div>
+                </li>
+                <li class="shortcut-item">
+                    <span class="shortcut-description">Reset Zoom</span>
+                    <div class="shortcut-keys">
+                        <span class="key">0</span>
+                    </div>
+                </li>
+            </ul>
+        </div>
 
-Zoom Controls (when viewing diagrams):
-+: Zoom In
--: Zoom Out
-0: Reset Zoom`);
+        <div class="shortcuts-section">
+            <h3>Navigation</h3>
+            <ul class="shortcut-list">
+                <li class="shortcut-item">
+                    <span class="shortcut-description">Close Menu/Dialogs</span>
+                    <div class="shortcut-keys">
+                        <span class="key">Esc</span>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    `;
 
+    showModal('Keyboard Shortcuts', content);
     closeMenu();
 }
 
-function showAbout() {
-    alert(`Instrument Neck Geometry Generator
+// Simple markdown to HTML converter for about.md
+function markdownToHtml(markdown) {
+    let html = markdown;
 
-A tool for designing and calculating precise neck geometry for stringed instruments including violins, viols, guitars, and mandolins.
+    // Unescape characters
+    html = html.replace(/\\!/g, '!');
+    html = html.replace(/\\\*/g, '*');
 
-Version: ${document.getElementById('version-info')?.textContent || 'Unknown'}
+    // Convert headers
+    html = html.replace(/^# \*\*(.*?)\*\*/gm, '<h1 class="about-title">$1</h1>');
+    html = html.replace(/^# (.*?)$/gm, '<h1 class="about-title">$1</h1>');
+    html = html.replace(/^## (.*?)$/gm, '<h3 class="about-subtitle">$1</h3>');
 
-Features:
-• 11 preset instruments with accurate dimensions
-• Real-time geometry calculations
-• Collapsible parameter sections
-• SVG and PDF export
-• Customizable for any instrument type
+    // Convert bold text
+    html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
 
-Built with Python (Pyodide), JavaScript, and SVG
+    // Convert links with emoji/icon
+    html = html.replace(/\[(🌐|💻|📧)\s*(.*?)\]\((.*?)\)/g, '<a href="$3" target="_blank" class="about-link">$1 $2</a>');
 
-https://overstand.tools
-https://github.com/pzfreo/diagram-creator`);
+    // Convert email links
+    html = html.replace(/\[(.*?)\]\(mailto:(.*?)\)/g, '<a href="mailto:$2" class="about-email">$1</a>');
 
-    closeMenu();
+    // Convert regular links
+    html = html.replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank">$1</a>');
+
+    // Split into lines for processing
+    const lines = html.split('\n');
+    const output = [];
+    let inList = false;
+    let currentParagraph = [];
+
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim();
+
+        if (!line) {
+            // Empty line - close any open paragraph or list
+            if (currentParagraph.length > 0) {
+                output.push('<p class="about-text">' + currentParagraph.join(' ') + '</p>');
+                currentParagraph = [];
+            }
+            if (inList) {
+                output.push('</ul>');
+                inList = false;
+            }
+            continue;
+        }
+
+        // Check if it's a header or link line (already processed)
+        if (line.startsWith('<h1') || line.startsWith('<h3') || line.startsWith('<a href') || line.match(/^Version:/)) {
+            // Close any open paragraph
+            if (currentParagraph.length > 0) {
+                output.push('<p class="about-text">' + currentParagraph.join(' ') + '</p>');
+                currentParagraph = [];
+            }
+            if (inList) {
+                output.push('</ul>');
+                inList = false;
+            }
+
+            // Handle version line specially
+            if (line.match(/^Version:/)) {
+                output.push('<div class="about-version-container">' + line.replace(/Version:\s*(.+)/, '<span class="about-version">Version $1</span>') + '</div>');
+            } else {
+                output.push(line);
+            }
+            continue;
+        }
+
+        // Check if it's a list item
+        if (line.startsWith('•') || line.startsWith('-')) {
+            // Close any open paragraph
+            if (currentParagraph.length > 0) {
+                output.push('<p class="about-text">' + currentParagraph.join(' ') + '</p>');
+                currentParagraph = [];
+            }
+
+            if (!inList) {
+                output.push('<ul class="about-list">');
+                inList = true;
+            }
+            const itemText = line.replace(/^[•\-]\s*/, '');
+            output.push('<li>' + itemText + '</li>');
+            continue;
+        }
+
+        // Regular text line - add to current paragraph
+        if (inList) {
+            output.push('</ul>');
+            inList = false;
+        }
+        currentParagraph.push(line);
+    }
+
+    // Close any remaining open paragraph or list
+    if (currentParagraph.length > 0) {
+        output.push('<p class="about-text">' + currentParagraph.join(' ') + '</p>');
+    }
+    if (inList) {
+        output.push('</ul>');
+    }
+
+    return '<div class="about-content">' + output.join('\n') + '</div>';
+}
+
+async function showAbout() {
+    try {
+        // Fetch about.md
+        const response = await fetch('about.md');
+        if (!response.ok) {
+            throw new Error('Failed to load about.md');
+        }
+        const markdown = await response.text();
+
+        // Convert markdown to HTML
+        const content = markdownToHtml(markdown);
+
+        // Extract title from first h1 (if exists)
+        const titleMatch = content.match(/<h1 class="about-title">(.*?)<\/h1>/);
+        const title = titleMatch ? titleMatch[1] : 'About';
+
+        showModal(title, content);
+        closeMenu();
+    } catch (error) {
+        console.error('Error loading about:', error);
+        // Fallback content
+        showModal('About', '<p class="about-text">Unable to load about information.</p>');
+        closeMenu();
+    }
 }
 
 // Initialize on load
@@ -764,6 +951,15 @@ document.addEventListener('DOMContentLoaded', () => {
     if (menuKeyboardShortcuts) menuKeyboardShortcuts.addEventListener('click', showKeyboardShortcuts);
     if (menuAbout) menuAbout.addEventListener('click', showAbout);
 
+    // Modal dialog
+    const modalCloseBtn = document.getElementById('modal-close-btn');
+    const modalOverlay = document.getElementById('modal-overlay');
+    if (modalCloseBtn) modalCloseBtn.addEventListener('click', closeModal);
+    if (modalOverlay) modalOverlay.addEventListener('click', (e) => {
+        // Close modal when clicking the overlay background (not the dialog itself)
+        if (e.target === modalOverlay) closeModal();
+    });
+
     registerServiceWorker();
     initInstallPrompt();
     loadVersionInfo();
@@ -789,8 +985,17 @@ document.addEventListener('keydown', (e) => {
         elements.loadParamsInput.click();
     }
 
-    // Close menu: Escape
+    // Close dialogs: Escape
     if (e.key === 'Escape') {
+        // Check if modal is open first (priority over menu)
+        const modalOverlay = document.getElementById('modal-overlay');
+        if (modalOverlay && modalOverlay.classList.contains('active')) {
+            e.preventDefault();
+            closeModal();
+            return;
+        }
+
+        // Then check if menu is open
         const menuPanel = document.getElementById('menu-panel');
         if (menuPanel && menuPanel.classList.contains('open')) {
             e.preventDefault();

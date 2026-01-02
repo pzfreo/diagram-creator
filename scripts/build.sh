@@ -107,15 +107,26 @@ sed "s/__BUILD_ID__/${BUILD_ID}/g; s/__ENVIRONMENT__/${ENVIRONMENT}/g" \
 echo "  ✓ Service worker processed (cache: neck-generator-v${BUILD_ID})"
 
 # ============================================================================
+# PROCESS ABOUT.MD
+# ============================================================================
+
+echo "📄 Processing about.md..."
+
+# Replace {{version}} placeholder in about.md
+sed "s/{{version}}/${VERSION}/g" web/about.md > public/about.md
+
+echo "  ✓ about.md processed with version ${VERSION}"
+
+# ============================================================================
 # COPY WEB FILES
 # ============================================================================
 
 echo "📋 Copying web files..."
 
-# Copy all web files except service-worker.js and version.json (already processed)
+# Copy all web files except service-worker.js, version.json, and about.md (already processed)
 for file in web/*; do
     filename=$(basename "$file")
-    if [ "$filename" != "service-worker.js" ] && [ "$filename" != "version.json" ]; then
+    if [ "$filename" != "service-worker.js" ] && [ "$filename" != "version.json" ] && [ "$filename" != "about.md" ]; then
         if [ -d "$file" ]; then
             cp -r "$file" "public/"
         else
