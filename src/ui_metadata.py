@@ -407,7 +407,12 @@ INSTRUMENT_PRESETS = {
         icon='🔧',
         basic_params={
             'instrument_family': 'VIOLIN',
-            # Leave other params at system defaults - user will set them
+            'vsl': 325.0,           # Default string length
+            'body_length': 355.0,   # Default body length
+            'body_stop': 195.0,     # Default body stop
+            'overstand': 12.0,      # Default overstand
+            'bridge_height': 33.0,  # Default bridge height
+            'arching_height': 15.0  # Default arching height
         },
         description='Start with default values for a custom instrument'
     )
