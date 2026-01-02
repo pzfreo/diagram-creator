@@ -90,14 +90,21 @@ h1 {
 }
 
 header {
-    text-align: center;
     color: var(--color-gray-900);
     margin-bottom: 0.5rem;
     padding: 0.25rem 0;
+}
+
+.header-content {
     display: flex;
-    justify-content: center;
+    justify-content: space-between;
     align-items: center;
     gap: 1rem;
+}
+
+.header-text {
+    flex: 1;
+    text-align: center;
 }
 
 .subtitle {
@@ -1400,6 +1407,7 @@ input[type="checkbox"] {
     font-size: 0.9rem;
     font-weight: 500;
     color: var(--color-gray-800);
+    white-space: nowrap;
 }
 
 .menu-btn:hover {
@@ -1415,6 +1423,17 @@ input[type="checkbox"] {
 
 .menu-label {
     font-size: 0.85rem;
+}
+
+/* Hide menu label on mobile to save space */
+@media (max-width: 768px) {
+    .menu-label {
+        display: none;
+    }
+
+    .menu-btn {
+        padding: 0.5rem;
+    }
 }
 
 /* Menu Panel (Slide-out from right) */

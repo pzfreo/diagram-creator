@@ -50,9 +50,17 @@
 
     <div class="app-container">
         <header>
-            <h1>🎻 Instrument Neck Geometry Generator</h1>
-            <p class="subtitle">Parametric CAD for Lutherie - Design precise neck templates based on historical and
-                modern measurements</p>
+            <div class="header-content">
+                <div class="header-text">
+                    <h1>🎻 Instrument Neck Geometry Generator</h1>
+                    <p class="subtitle">Parametric CAD for Lutherie - Design precise neck templates based on historical and
+                        modern measurements</p>
+                </div>
+                <button class="menu-btn" id="menu-btn" title="Menu">
+                    <span class="menu-icon">☰</span>
+                    <span class="menu-label">Menu</span>
+                </button>
+            </div>
         </header>
 
         <div id="status" class="status-bar loading">
@@ -77,10 +85,6 @@
                         </select>
                     </div>
 
-                    <button class="menu-btn" id="menu-btn" title="Menu">
-                        <span class="menu-icon">☰</span>
-                        <span class="menu-label">Menu</span>
-                    </button>
                     <input type="file" id="load-params-input" accept=".json" style="display: none;" />
 
                 </div>
