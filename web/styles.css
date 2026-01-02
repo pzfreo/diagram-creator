@@ -351,22 +351,24 @@ header {
     /* Both controls-panel and menu-panel slide from left */
     .controls-panel,
     .menu-panel {
-        position: fixed;
-        top: 0;
-        left: 56px; /* Start after icon bar */
-        bottom: 0;
-        width: calc(100% - 56px);
-        max-width: 400px;
-        transform: translateX(-100%);
-        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        z-index: 1003;
-        box-shadow: var(--shadow-xl);
-        border-radius: 0 var(--radius-xl) var(--radius-xl) 0;
+        position: fixed !important;
+        top: 0 !important;
+        left: 56px !important;
+        right: auto !important; /* Override desktop right: 0 */
+        bottom: 0 !important;
+        width: calc(100% - 56px) !important;
+        max-width: 400px !important;
+        height: auto !important; /* Override base height: 100% */
+        transform: translateX(-100%) !important;
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        z-index: 1003 !important;
+        box-shadow: var(--shadow-xl) !important;
+        border-radius: 0 var(--radius-xl) var(--radius-xl) 0 !important;
     }
 
     .controls-panel.mobile-open,
     .menu-panel.open {
-        transform: translateX(0);
+        transform: translateX(0) !important;
     }
 
     .status-bar {
@@ -375,12 +377,13 @@ header {
 
     .sidebar-overlay {
         display: block;
-        left: 56px; /* Start after icon bar */
+        left: 56px !important; /* Start after icon bar */
+        z-index: 1002 !important; /* Above app-container, below panels */
     }
 
     .sidebar-overlay.active {
         /* Cover everything except icon bar */
-        left: 56px;
+        left: 56px !important;
     }
 
     .preview-panel {
@@ -1446,24 +1449,30 @@ input[type="checkbox"] {
     }
 }
 
-/* Menu Panel (Slide-out from right) */
+/* Menu Panel - Desktop: slides from right, Mobile: slides from left */
 .menu-panel {
     position: fixed;
     top: 0;
-    right: 0;
-    width: 320px;
-    height: 100vh;
     background: var(--color-surface);
-    box-shadow: -4px 0 20px rgba(0, 0, 0, 0.15);
-    z-index: 1001;
-    transform: translateX(100%);
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     display: flex;
     flex-direction: column;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.menu-panel.open {
-    transform: translateX(0);
+/* Desktop menu panel (slides from right) */
+@media (min-width: 1025px) {
+    .menu-panel {
+        right: 0;
+        width: 320px;
+        height: 100vh;
+        box-shadow: -4px 0 20px rgba(0, 0, 0, 0.15);
+        z-index: 1001;
+        transform: translateX(100%);
+    }
+
+    .menu-panel.open {
+        transform: translateX(0);
+    }
 }
 
 .menu-header {
