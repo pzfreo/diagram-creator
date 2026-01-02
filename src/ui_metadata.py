@@ -220,8 +220,15 @@ SECTIONS = {
 # ============================================
 # INSTRUMENT PRESETS
 # ============================================
+# NOTE: Presets are now loaded from JSON files in the presets/ directory.
+# This allows easy editing without touching Python code.
+# To add/edit presets:
+# 1. Edit instrument_presets_full.csv with your values
+# 2. Run: python3 scripts/export_presets_to_json.py
+# 3. This will create/update JSON files in presets/
 
-INSTRUMENT_PRESETS = {
+# Legacy hardcoded presets - kept as fallback only
+_LEGACY_INSTRUMENT_PRESETS = {
     'violin': InstrumentPreset(
         id='violin',
         display_name='Violin',
@@ -417,6 +424,33 @@ INSTRUMENT_PRESETS = {
         description='Start with default values for a custom instrument'
     )
 }
+
+# Load presets from JSON files (preferred method)
+def _load_presets_from_json():
+    """Load preset metadata from JSON files in presets/ directory"""
+    try:
+        from preset_loader import discover_presets
+        presets_metadata = discover_presets()
+
+        # Convert to InstrumentPreset format for compatibility
+        presets = {}
+        for preset_id, metadata in presets_metadata.items():
+            presets[preset_id] = InstrumentPreset(
+                id=metadata.id,
+                display_name=metadata.display_name,
+                family=metadata.family,
+                icon=metadata.icon,
+                basic_params={},  # Will be loaded from JSON by JavaScript
+                description=metadata.description
+            )
+        return presets
+    except Exception as e:
+        print(f"Warning: Could not load presets from JSON: {e}")
+        print("Falling back to legacy hardcoded presets")
+        return _LEGACY_INSTRUMENT_PRESETS
+
+# Try to load from JSON, fall back to legacy if that fails
+INSTRUMENT_PRESETS = _load_presets_from_json()
 
 
 # ============================================

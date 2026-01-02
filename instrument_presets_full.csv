@@ -1,0 +1,12 @@
+preset_id,display_name,family,icon,description,arching_height,belly_edge_thickness,body_length,body_stop,bridge_height,fb_visible_height_at_join,fb_visible_height_at_nut,fingerboard_length,fingerboard_radius,fingerboard_width_at_end,fingerboard_width_at_nut,fret_join,instrument_family,instrument_name,no_frets,overstand,rib_height,show_measurements,string_height_12th_fret,string_height_eof,string_height_nut,vsl
+archtop_guitar,Archtop Guitar,GUITAR_MANDOLIN,🎸,Archtop jazz guitar dimensions (fret-join driven),18.0,3.5,505.0,195.0,25.0,6.0,4.0,270.0,41.0,30.0,24.0,14,GUITAR_MANDOLIN,My Instrument,20,8.0,30.0,True,4.0,4.0,0.6,635.0
+bass_viol,Bass Viol,VIOL,🎻,Bass viol dimensions (Viola da Gamba),25.0,3.5,750.0,400.0,75.0,6.0,4.0,270.0,41.0,30.0,24.0,12,VIOL,My Instrument,7,20.0,30.0,True,4.0,4.0,0.6,680.0
+cello,Cello,VIOLIN,🎻,Standard cello dimensions,28.0,3.5,755.0,400.0,80.0,6.0,4.0,270.0,41.0,30.0,24.0,12,VIOLIN,My Instrument,7,24.0,30.0,True,4.0,4.0,0.6,690.0
+custom,Other / Custom,VIOLIN,🔧,Start with default values for a custom instrument,15.0,3.5,355.0,195.0,33.0,6.0,4.0,270.0,41.0,30.0,24.0,12,VIOLIN,My Instrument,7,12.0,30.0,True,4.0,4.0,0.6,325.0
+mandola,Mandola,GUITAR_MANDOLIN,🎸,Alto mandola dimensions (fret-join driven),14.0,3.5,350.0,195.0,18.0,6.0,4.0,270.0,41.0,30.0,24.0,12,GUITAR_MANDOLIN,My Instrument,20,6.0,30.0,True,4.0,4.0,0.6,420.0
+mandolin,Mandolin,GUITAR_MANDOLIN,🎸,Standard mandolin dimensions (fret-join driven),12.0,3.5,280.0,195.0,15.0,6.0,4.0,270.0,41.0,30.0,24.0,12,GUITAR_MANDOLIN,My Instrument,20,5.0,30.0,True,4.0,4.0,0.6,330.0
+octave_mandolin,Octave Mandolin,GUITAR_MANDOLIN,🎸,Octave mandolin / bouzouki dimensions (fret-join driven),16.0,3.5,450.0,195.0,22.0,6.0,4.0,270.0,41.0,30.0,24.0,12,GUITAR_MANDOLIN,My Instrument,20,7.0,30.0,True,4.0,4.0,0.6,550.0
+tenor_viol,Tenor Viol,VIOL,🎻,Tenor viol dimensions,16.0,3.5,480.0,240.0,35.0,6.0,4.0,270.0,41.0,30.0,24.0,12,VIOL,My Instrument,7,12.0,30.0,True,4.0,4.0,0.6,400.0
+treble_viol,Treble Viol,VIOL,🎻,Treble viol / Pardessus de viole,14.0,3.5,400.0,200.0,30.0,6.0,4.0,270.0,41.0,30.0,24.0,12,VIOL,My Instrument,7,10.0,30.0,True,4.0,4.0,0.6,330.0
+viola,Viola,VIOLIN,🎻,Standard viola dimensions,16.0,3.5,410.0,225.0,35.0,6.0,4.0,270.0,41.0,30.0,24.0,12,VIOLIN,My Instrument,7,14.0,30.0,True,4.0,4.0,0.6,370.0
+violin,Violin,VIOLIN,🎻,Standard violin dimensions based on Stradivari models,15.0,3.5,355.0,195.0,33.0,6.0,4.0,270.0,41.0,30.0,24.0,12,VIOLIN,My Instrument,7,12.0,30.0,True,4.0,4.0,0.6,325.0

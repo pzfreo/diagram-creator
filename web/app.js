@@ -180,25 +180,45 @@ async function initializePython() {
     }
 }
 
-function loadPreset() {
+async function loadPreset() {
     const presetId = elements.presetSelect.value;
     if (!presetId) return;
 
-    let preset = null;
     let parameters = null;
 
-    // Try ui_metadata presets first
-    if (state.uiMetadata && state.uiMetadata.presets && state.uiMetadata.presets[presetId]) {
-        preset = state.uiMetadata.presets[presetId];
-        parameters = preset.basic_params;
-    }
-    // Fallback to legacy file-based presets
-    else if (state.presets && state.presets[presetId]) {
-        preset = state.presets[presetId];
-        parameters = preset.parameters;
+    // Try to load from JSON file in presets/ directory
+    const presetPaths = ['./presets/', '../presets/'];
+    const filename = `${presetId}.json`;
+
+    for (const basePath of presetPaths) {
+        try {
+            const response = await fetch(`${basePath}${filename}`);
+            if (response.ok) {
+                const presetData = await response.json();
+                if (presetData.parameters) {
+                    parameters = presetData.parameters;
+                    break;
+                }
+            }
+        } catch (e) {
+            console.warn(`Could not load preset from ${basePath}${filename}:`, e);
+        }
     }
 
-    if (!preset || !parameters) return;
+    // Fallback to legacy file-based presets if JSON not found
+    if (!parameters && state.presets && state.presets[presetId]) {
+        parameters = state.presets[presetId].parameters;
+    }
+
+    // Fallback to ui_metadata basic_params (for backward compatibility)
+    if (!parameters && state.uiMetadata && state.uiMetadata.presets && state.uiMetadata.presets[presetId]) {
+        parameters = state.uiMetadata.presets[presetId].basic_params;
+    }
+
+    if (!parameters) {
+        console.error(`Could not load preset: ${presetId}`);
+        return;
+    }
 
     // Apply preset parameters
     for (const [name, value] of Object.entries(parameters)) {
