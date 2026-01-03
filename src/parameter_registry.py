@@ -728,6 +728,44 @@ PARAMETER_REGISTRY: Dict[str, UnifiedParameter] = {
     ),
 
     # ============================================
+    # VIOL-SPECIFIC PARAMETERS (Input Only)
+    # ============================================
+
+    'break_angle': UnifiedParameter(
+        key='break_angle',
+        display_name='Break Angle',
+        param_type=ParameterType.NUMERIC,
+        unit='°',
+        description='Angle at which the back breaks (viol back construction)',
+        role=ParameterRole.INPUT_ONLY,
+        input_config=InputConfig(
+            min_val=0.0,
+            max_val=45.0,
+            default=15.0,
+            step=0.5,
+            visible_when={'instrument_family': 'VIOL'},
+            category='Viol Construction'
+        )
+    ),
+
+    'top_block_height': UnifiedParameter(
+        key='top_block_height',
+        display_name='Top Block Height',
+        param_type=ParameterType.NUMERIC,
+        unit='mm',
+        description='Height of the top block where the neck joins the body',
+        role=ParameterRole.INPUT_ONLY,
+        input_config=InputConfig(
+            min_val=10.0,
+            max_val=150.0,
+            default=40.0,
+            step=1.0,
+            visible_when={'instrument_family': 'VIOL'},
+            category='Viol Construction'
+        )
+    ),
+
+    # ============================================
     # OUTPUT ONLY PARAMETERS (Geometry Results)
     # ============================================
 
