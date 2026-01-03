@@ -149,9 +149,9 @@ def generate_side_view_svg(params: Dict[str, Any], show_measurements: bool = Tru
         derived['string_length'], derived['neck_end_x'], derived['neck_end_y'],
         params.get('overstand', 0), derived['body_stop'], params.get('arching_height', 0),
         params.get('bridge_height', 0), params.get('body_length', 0), params.get('rib_height', 0),
-        params.get('belly_edge_thickness', 0), derived['fingerboard_surface_point_x'],
-        derived['fingerboard_surface_point_y'], derived['string_x_at_fingerboard_end'],
-        derived['string_y_at_fingerboard_end'], derived['string_height_at_fingerboard_end'],
+        params.get('belly_edge_thickness', 0), derived['fb_surface_point_x'],
+        derived['fb_surface_point_y'], derived['string_x_at_fb_end'],
+        derived['string_y_at_fb_end'], derived['string_height_at_fb_end'],
         derived['nut_perpendicular_intersection_x'], derived['nut_perpendicular_intersection_y'],
         derived['nut_to_perpendicular_distance']
     )

@@ -1,6 +1,7 @@
 import { state, elements } from './state.js';
 import { ParameterSection } from './components/parameter-section.js';
 import { OutputSection } from './components/output-section.js';
+import { ZOOM_CONFIG } from './constants.js';
 
 export function setStatus(type, message) {
     elements.status.className = `status-bar ${type}`;
@@ -438,7 +439,7 @@ export function displayCurrentView() {
 
         state.svgCanvas.viewbox(viewBoxConfig.x, viewBoxConfig.y, viewBoxConfig.width, viewBoxConfig.height);
         state.initialViewBox = viewBoxConfig;
-        state.svgCanvas.panZoom({ zoomMin: 0.1, zoomMax: 20, zoomFactor: 0.3 });
+        state.svgCanvas.panZoom({ zoomMin: ZOOM_CONFIG.min, zoomMax: ZOOM_CONFIG.max, zoomFactor: ZOOM_CONFIG.factor });
     }
 
     document.querySelectorAll('.view-tab').forEach(tab => {

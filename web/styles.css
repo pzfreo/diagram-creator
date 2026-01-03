@@ -1863,6 +1863,28 @@ input[type="checkbox"] {
     margin: 0 0.25rem;
 }
 
+/* Modal message styles */
+.modal-content .modal-error-message,
+.modal-content .modal-info-message {
+    font-size: 1rem;
+    line-height: 1.6;
+    margin: 0;
+    padding: 1rem;
+    border-radius: 8px;
+}
+
+.modal-content .modal-error-message {
+    background-color: var(--color-red-50, #fef2f2);
+    border: 1px solid var(--color-red-200, #fecaca);
+    color: var(--color-red-700, #b91c1c);
+}
+
+.modal-content .modal-info-message {
+    background-color: var(--color-blue-50, #eff6ff);
+    border: 1px solid var(--color-blue-200, #bfdbfe);
+    color: var(--color-blue-700, #1d4ed8);
+}
+
 /* Mobile Responsive */
 @media (max-width: 768px) {
     .modal-dialog {

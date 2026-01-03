@@ -184,10 +184,6 @@ def calculate_fingerboard_geometry(params: Dict[str, Any], neck_stop: float, nec
     fb_bottom_end_y = neck_end_y + fingerboard_length * math.sin(fb_direction_angle)
     fb_thickness_at_end = fb_thickness_at_nut + (fb_thickness_at_join - fb_thickness_at_nut) * (fingerboard_length / neck_stop)
 
-    result['fingerboard_direction_angle'] = fb_direction_angle
-    result['fingerboard_bottom_end_x'] = fb_bottom_end_x
-    result['fingerboard_bottom_end_y'] = fb_bottom_end_y
-    result['fingerboard_thickness_at_end'] = fb_thickness_at_end
     result['fb_direction_angle'] = fb_direction_angle
     result['fb_bottom_end_x'] = fb_bottom_end_x
     result['fb_bottom_end_y'] = fb_bottom_end_y
@@ -256,11 +252,11 @@ def calculate_string_height_and_dimensions(params: Dict[str, Any], neck_end_x: f
     fb_surface_point_x = string_x_at_fb_end - string_height_at_fb_end * perp_dx
     fb_surface_point_y = string_y_at_fb_end - string_height_at_fb_end * perp_dy
 
-    result['string_x_at_fingerboard_end'] = string_x_at_fb_end
-    result['string_y_at_fingerboard_end'] = string_y_at_fb_end
-    result['fingerboard_surface_point_x'] = fb_surface_point_x
-    result['fingerboard_surface_point_y'] = fb_surface_point_y
-    result['string_height_at_fingerboard_end'] = string_height_at_fb_end
+    result['string_x_at_fb_end'] = string_x_at_fb_end
+    result['string_y_at_fb_end'] = string_y_at_fb_end
+    result['fb_surface_point_x'] = fb_surface_point_x
+    result['fb_surface_point_y'] = fb_surface_point_y
+    result['string_height_at_fb_end'] = string_height_at_fb_end
 
     return result
 

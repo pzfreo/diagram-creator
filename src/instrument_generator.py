@@ -60,11 +60,22 @@ def generate_violin_neck(params_json: str) -> str:
             fret_positions = generate_fret_positions_view(params)
             derived_values = calculate_derived_values(params)
 
+            # Format derived values for display
+            formatted_values = {}
+            metadata_dict = {}
+            for key, value in derived_values.items():
+                metadata = DERIVED_VALUE_METADATA.get(key)
+                if metadata:
+                    formatted_values[key] = metadata.format_with_unit(value)
+                    metadata_dict[key] = metadata.to_dict()
+
             return json.dumps({
                 "success": True,
                 "views": views,
                 "fret_positions": fret_positions,
                 "derived_values": derived_values,
+                "derived_formatted": formatted_values,
+                "derived_metadata": metadata_dict,
                 "errors": []
             })
 
@@ -130,7 +141,7 @@ def get_derived_values(params_json: str) -> str:
     except Exception as e:
         return json.dumps({
             "success": False,
-            "error": str(e)
+            "errors": [str(e)]
         })
 
 
@@ -153,7 +164,7 @@ def get_derived_value_metadata() -> str:
     except Exception as e:
         return json.dumps({
             "success": False,
-            "error": str(e)
+            "errors": [str(e)]
         })
 
 
@@ -169,7 +180,8 @@ def get_parameter_definitions() -> str:
         return get_parameters_as_json()
     except Exception as e:
         return json.dumps({
-            "error": f"Failed to load parameters: {str(e)}"
+            "success": False,
+            "errors": [f"Failed to load parameters: {str(e)}"]
         })
 
 
@@ -200,7 +212,7 @@ def get_ui_metadata() -> str:
     except Exception as e:
         return json.dumps({
             "success": False,
-            "error": str(e)
+            "errors": [str(e)]
         })
 
 
@@ -249,7 +261,8 @@ def get_presets() -> str:
         return json.dumps(presets)
     except Exception as e:
         return json.dumps({
-            "error": f"Failed to load presets: {str(e)}"
+            "success": False,
+            "errors": [f"Failed to load presets: {str(e)}"]
         })
 
 
