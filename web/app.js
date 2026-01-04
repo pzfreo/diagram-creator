@@ -306,11 +306,14 @@ async function generateNeck() {
         params._generator_url = window.location.href;
         const paramsJson = JSON.stringify(params);
 
+        console.log('[Generate] Calling Python with params:', paramsJson.substring(0, 200) + '...');
         const resultJson = await state.pyodide.runPythonAsync(`
             from instrument_generator import generate_violin_neck
             generate_violin_neck('${paramsJson.replace(/'/g, "\\'")}')
         `);
+        console.log('[Generate] Python returned:', typeof resultJson, resultJson ? resultJson.substring(0, 200) + '...' : resultJson);
         const result = JSON.parse(resultJson);
+        console.log('[Generate] Parsed result:', { success: result.success, errorCount: result.errors?.length, errors: result.errors });
 
         if (result.success) {
             state.views = result.views;
@@ -330,7 +333,8 @@ async function generateNeck() {
             ui.setStatus('error', '❌ Generation failed - see errors below');
         }
     } catch (error) {
-        console.error('Generation error:', error);
+        console.error('[Generate] Exception:', error);
+        console.error('[Generate] Error stack:', error.stack);
         ui.showErrors([`Unexpected error: ${error.message}`]);
         ui.setStatus('error', '❌ Generation failed');
     } finally {
@@ -346,11 +350,14 @@ async function updateDerivedValues() {
         const paramsJson = JSON.stringify(params);
         const currentMode = params.instrument_family || 'VIOLIN';
 
+        console.log('[DerivedValues] Calling Python...');
         const resultJson = await state.pyodide.runPythonAsync(`
             from instrument_generator import get_derived_values
             get_derived_values('${paramsJson.replace(/'/g, "\\'")}')
         `);
+        console.log('[DerivedValues] Python returned:', typeof resultJson, resultJson ? resultJson.substring(0, 200) + '...' : resultJson);
         const result = JSON.parse(resultJson);
+        console.log('[DerivedValues] Parsed result:', { success: result.success });
         const container = elements.calculatedFields;
 
         if (result.success && Object.keys(result.values).length > 0) {
