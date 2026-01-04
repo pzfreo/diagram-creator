@@ -1,8 +1,9 @@
 import { state } from './state.js';
+import { showInfoModal, showErrorModal } from './modal.js';
 
 export async function downloadPDF(collectParameters, sanitizeFilename) {
     if (!state || !state.views || !state.views[state.currentView]) {
-        alert('Please generate a template first.');
+        showInfoModal('No Template', 'Please generate a template first.');
         return;
     }
 
@@ -49,7 +50,7 @@ export async function downloadPDF(collectParameters, sanitizeFilename) {
         if (currentView === 'fret_positions') {
             const fretData = state.views.fret_positions;
             if (!fretData || !fretData.available) {
-                alert('Fret positions not available for this instrument family.');
+                showInfoModal('Not Available', 'Fret positions are not available for this instrument family.');
                 return;
             }
             const doc = new jsPDF();
@@ -138,6 +139,6 @@ export async function downloadPDF(collectParameters, sanitizeFilename) {
 
     } catch (error) {
         console.error('PDF error:', error);
-        alert(`PDF generation failed: ${error.message}`);
+        showErrorModal('PDF Generation Failed', error.message);
     }
 }

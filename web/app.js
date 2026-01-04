@@ -2,9 +2,8 @@ import { state, elements, initElements } from './state.js';
 import * as ui from './ui.js';
 import { downloadPDF } from './pdf_export.js';
 import { registerServiceWorker, initInstallPrompt } from './pwa_manager.js';
-
-// Auto-generate timer
-let generateTimeout = null;
+import { showModal, closeModal, showErrorModal } from './modal.js';
+import { DEBOUNCE_GENERATE, ZOOM_CONFIG } from './constants.js';
 
 // Helper: Debounce
 function debounce(func, wait) {
@@ -19,35 +18,28 @@ function debounce(func, wait) {
     };
 }
 
-function hideErrors() {
-    ui.hideErrors();
-}
-
-function debouncedGenerate() {
-    clearTimeout(generateTimeout);
-    generateTimeout = setTimeout(() => {
-        if (!elements.errorPanel.classList.contains('show')) {
-            generateNeck();
-        }
-    }, 500);
-}
+// Debounced generation - skips if errors are showing
+const debouncedGenerate = debounce(() => {
+    if (!elements.errorPanel.classList.contains('show')) {
+        generateNeck();
+    }
+}, DEBOUNCE_GENERATE);
 
 function markParametersModified() {
     state.parametersModified = true;
 }
 
+// Handle parameter changes - update derived values immediately, debounce generation
+function handleParameterChange() {
+    markParametersModified();
+    updateDerivedValues();
+    debouncedGenerate();
+}
+
 const UI_CALLBACKS = {
     collectParameters,
-    onInputChange: debounce(() => {
-        markParametersModified();
-        updateDerivedValues();
-        debouncedGenerate();
-    }, 300),
-    onEnumChange: (e) => {
-        markParametersModified();
-        updateDerivedValues();
-        debouncedGenerate();
-    },
+    onInputChange: handleParameterChange,
+    onEnumChange: handleParameterChange,
     debouncedGenerate
 };
 
@@ -324,13 +316,8 @@ async function generateNeck() {
             state.views = result.views;
             state.fretPositions = result.fret_positions || null;
             state.derivedValues = result.derived_values || {};
-
-            const derivedResultJson = await state.pyodide.runPythonAsync(`
-                from instrument_generator import get_derived_values
-                get_derived_values('${paramsJson.replace(/'/g, "\\'")}')
-            `);
-            const dResult = JSON.parse(derivedResultJson);
-            state.derivedFormatted = dResult.success ? dResult.formatted : {};
+            state.derivedFormatted = result.derived_formatted || {};
+            state.derivedMetadata = result.derived_metadata || state.derivedMetadata;
 
             state.views.dimensions = ui.generateDimensionsTableHTML(params, state.derivedValues, state.derivedFormatted);
             state.views.fret_positions = state.fretPositions;
@@ -468,8 +455,8 @@ function switchView(viewName) {
     ui.displayCurrentView();
 }
 
-function zoomIn() { if (state.svgCanvas) state.svgCanvas.zoom(state.svgCanvas.zoom() * 1.3); }
-function zoomOut() { if (state.svgCanvas) state.svgCanvas.zoom(state.svgCanvas.zoom() / 1.3); }
+function zoomIn() { if (state.svgCanvas) state.svgCanvas.zoom(state.svgCanvas.zoom() * ZOOM_CONFIG.factor); }
+function zoomOut() { if (state.svgCanvas) state.svgCanvas.zoom(state.svgCanvas.zoom() / ZOOM_CONFIG.factor); }
 function zoomReset() {
     if (state.svgCanvas && state.initialViewBox) {
         state.svgCanvas.viewbox(state.initialViewBox.x, state.initialViewBox.y, state.initialViewBox.width, state.initialViewBox.height);
@@ -534,7 +521,7 @@ function handleLoadParameters(event) {
             ui.updateParameterVisibility(collectParameters());
             updateDerivedValues();
             ui.setStatus('ready', '✅ Parameters loaded');
-        } catch (err) { alert(`Failed to load: ${err.message}`); }
+        } catch (err) { showErrorModal('Load Failed', err.message); }
     };
     reader.readAsText(file);
     event.target.value = '';
@@ -557,27 +544,7 @@ function closeMenu() {
     document.body.style.overflow = '';
 }
 
-// Modal Dialog Functions
-function showModal(title, content) {
-    const modalOverlay = document.getElementById('modal-overlay');
-    const modalTitle = document.getElementById('modal-title');
-    const modalContent = document.getElementById('modal-content');
-
-    modalTitle.textContent = title;
-    modalContent.innerHTML = content;
-
-    // Show modal with animation
-    modalOverlay.classList.add('active');
-
-    // Prevent body scroll when modal is open
-    document.body.style.overflow = 'hidden';
-}
-
-function closeModal() {
-    const modalOverlay = document.getElementById('modal-overlay');
-    modalOverlay.classList.remove('active');
-    document.body.style.overflow = '';
-}
+// Modal Dialog Functions - imported from modal.js
 
 function showKeyboardShortcuts() {
     const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
