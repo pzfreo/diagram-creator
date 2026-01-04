@@ -3,3 +3,6 @@ matplotlib>=3.5.0
 
 # Testing
 pytest>=7.0.0
+
+# Note: PDF generation for CLI requires additional deps (see requirements-cli.txt)
+# These are NOT included here as they require system Cairo libraries
