@@ -306,7 +306,8 @@ async function generateNeck() {
         params._generator_url = window.location.href;
         const paramsJson = JSON.stringify(params);
 
-        console.log('[Generate] Calling Python with params:', paramsJson.substring(0, 200) + '...');
+        console.log('[Generate] Full params:', params);
+        console.log('[Generate] Calling Python with params:', paramsJson.substring(0, 500) + '...');
         const resultJson = await state.pyodide.runPythonAsync(`
             from instrument_generator import generate_violin_neck
             generate_violin_neck('${paramsJson.replace(/'/g, "\\'")}')
