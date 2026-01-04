@@ -306,14 +306,11 @@ async function generateNeck() {
         params._generator_url = window.location.href;
         const paramsJson = JSON.stringify(params);
 
-        // Use base64 encoding to safely pass JSON to Python (avoids all escaping issues)
-        const paramsBase64 = btoa(unescape(encodeURIComponent(paramsJson)));
-        const resultJson = await state.pyodide.runPythonAsync(`
-            import base64
-            from instrument_generator import generate_violin_neck
-            _params_json = base64.b64decode('${paramsBase64}').decode('utf-8')
-            generate_violin_neck(_params_json)
-        `);
+        // Escape JSON for safe embedding in Python single-quoted string
+        // Must escape: backslashes first (\ → \\), then single quotes (' → \')
+        const escapedJson = paramsJson.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+        const resultJson = await state.pyodide.runPythonAsync(`from instrument_generator import generate_violin_neck
+generate_violin_neck('${escapedJson}')`);
         const result = JSON.parse(resultJson);
 
         if (result.success) {
@@ -350,14 +347,10 @@ async function updateDerivedValues() {
         const paramsJson = JSON.stringify(params);
         const currentMode = params.instrument_family || 'VIOLIN';
 
-        // Use base64 encoding to safely pass JSON to Python (avoids all escaping issues)
-        const paramsBase64 = btoa(unescape(encodeURIComponent(paramsJson)));
-        const resultJson = await state.pyodide.runPythonAsync(`
-            import base64
-            from instrument_generator import get_derived_values
-            _params_json = base64.b64decode('${paramsBase64}').decode('utf-8')
-            get_derived_values(_params_json)
-        `);
+        // Escape JSON for safe embedding in Python single-quoted string
+        const escapedJson = paramsJson.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+        const resultJson = await state.pyodide.runPythonAsync(`from instrument_generator import get_derived_values
+get_derived_values('${escapedJson}')`);
         const result = JSON.parse(resultJson);
         const container = elements.calculatedFields;
 
