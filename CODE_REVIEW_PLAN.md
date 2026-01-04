@@ -32,10 +32,9 @@ This codebase is a well-architected parametric CAD tool for designing musical in
 **Issue:** State is exposed globally via `window.state` for "libraries in transition."
 **Recommendation:** Remove global state exposure and pass state explicitly where needed.
 
-### 2.2 Inconsistent Error Handling
-**Location:** `web/app.js:537` uses `alert()`, `web/pdf_export.js:141-142` uses `alert()`
-**Issue:** Using browser `alert()` dialogs is inconsistent with the custom modal system added in PR #15.
-**Recommendation:** Replace all `alert()` calls with the custom `showModal()` function.
+### 2.2 ~~Inconsistent Error Handling~~ ✅ COMPLETED (PR #15)
+**Status:** All `alert()` calls replaced with modal system in PR #15.
+**Implementation:** `web/modal.js` provides `showModal()`, `showErrorModal()`, `showInfoModal()` functions.
 
 ### 2.3 Magic Numbers and Strings
 **Location:** Various locations
@@ -135,10 +134,8 @@ This codebase is a well-architected parametric CAD tool for designing musical in
 **Issue:** Legacy code is maintained alongside new component-based UI.
 **Recommendation:** If the component-based UI is stable, consider deprecating and eventually removing legacy code paths.
 
-### 7.2 PDF Export Should Use Modal System
-**Location:** `web/pdf_export.js:7-8`, `web/pdf_export.js:53-54`, `web/pdf_export.js:141`
-**Issue:** Uses `alert()` for error messages instead of the modal system.
-**Recommendation:** Import and use `showModal()` for consistent UX.
+### 7.2 ~~PDF Export Should Use Modal System~~ ✅ COMPLETED (PR #15)
+**Status:** `pdf_export.js` now imports and uses `showInfoModal()` and `showErrorModal()` from `modal.js`.
 
 ### 7.3 Service Worker Caching Strategy
 **Location:** `web/service-worker.js`
@@ -198,8 +195,8 @@ state.pyodide.runPythonAsync(`
 ## Priority Ranking
 
 ### High Priority (Should address soon)
-1. **2.2** - Replace `alert()` with modal system
-2. **5.1** - Add tests for `geometry_engine.py`
+1. ~~**2.2** - Replace `alert()` with modal system~~ ✅ COMPLETED
+2. ~~**5.1** - Add tests for `geometry_engine.py`~~ ✅ COMPLETED (24 tests)
 3. **8.1** - Review Python string injection pattern
 4. **9.1** - Remove redundant Python calls
 
@@ -220,8 +217,8 @@ state.pyodide.runPythonAsync(`
 
 ## Implementation Approach
 
-1. **Phase 1: Quick Wins** - Fix alert() calls, consolidate debounce, remove duplicate logic
-2. **Phase 2: Testing** - Add tests for geometry_engine.py and instrument_generator.py
+1. **Phase 1: Quick Wins** - ~~Fix alert() calls~~ ✅, consolidate debounce, remove duplicate logic
+2. **Phase 2: Testing** - ~~Add tests for geometry_engine.py~~ ✅ and instrument_generator.py
 3. **Phase 3: Refactoring** - Extract markdown parser, standardize naming
 4. **Phase 4: Architecture** - Remove legacy UI code, split CSS
 
