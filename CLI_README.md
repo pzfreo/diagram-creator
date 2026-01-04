@@ -8,7 +8,13 @@ The CLI is located at `src/instrument-gen-cli` and requires Python 3.
 
 Install dependencies:
 ```bash
+# Basic dependencies (SVG and HTML generation)
 pip install -r requirements.txt
+
+# For PDF generation (requires system Cairo library)
+# macOS: brew install cairo
+# Ubuntu: apt-get install libcairo2-dev
+pip install -r requirements-cli.txt
 ```
 
 Make it executable (already done):

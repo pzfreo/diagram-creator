@@ -1,0 +1,13 @@
+# Additional dependencies for CLI PDF generation
+# These require system Cairo libraries (libcairo2-dev on Linux, cairo on macOS)
+#
+# Install with: pip install -r requirements-cli.txt
+#
+# On macOS: brew install cairo
+# On Ubuntu: apt-get install libcairo2-dev
+
+-r requirements.txt
+
+# PDF generation
+svglib>=1.0.0
+reportlab>=3.6.0
