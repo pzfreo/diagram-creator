@@ -649,6 +649,48 @@ async function showAbout() {
     }
 }
 
+async function clearCacheAndReload() {
+    closeMenu();
+
+    const confirmed = confirm(
+        'This will clear all cached data and reload the app.\n\n' +
+        'Use this if you\'re experiencing issues with outdated code or data.\n\n' +
+        'Continue?'
+    );
+
+    if (!confirmed) return;
+
+    try {
+        // Show status
+        ui.setStatus('loading', 'Clearing cache...');
+
+        // 1. Clear all caches
+        if ('caches' in window) {
+            const cacheNames = await caches.keys();
+            await Promise.all(cacheNames.map(name => caches.delete(name)));
+            console.log('[ClearCache] Deleted caches:', cacheNames);
+        }
+
+        // 2. Unregister all service workers
+        if ('serviceWorker' in navigator) {
+            const registrations = await navigator.serviceWorker.getRegistrations();
+            await Promise.all(registrations.map(reg => reg.unregister()));
+            console.log('[ClearCache] Unregistered service workers:', registrations.length);
+        }
+
+        // 3. Clear localStorage (optional - preserves user preferences)
+        // localStorage.clear();
+
+        // 4. Force hard reload (bypass cache)
+        ui.setStatus('loading', 'Reloading...');
+        window.location.reload(true);
+
+    } catch (error) {
+        console.error('[ClearCache] Error:', error);
+        alert('Failed to clear cache: ' + error.message + '\n\nTry manually clearing your browser cache.');
+    }
+}
+
 // Initialize on load
 document.addEventListener('DOMContentLoaded', () => {
     // Initialize DOM element references first
@@ -806,6 +848,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const menuLoadParams = document.getElementById('menu-load-params');
     const menuKeyboardShortcuts = document.getElementById('menu-keyboard-shortcuts');
     const menuAbout = document.getElementById('menu-about');
+    const menuClearCache = document.getElementById('menu-clear-cache');
 
     if (menuBtn) menuBtn.addEventListener('click', openMenu);
     if (menuCloseBtn) menuCloseBtn.addEventListener('click', closeMenu);
@@ -814,6 +857,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (menuLoadParams) menuLoadParams.addEventListener('click', () => { closeMenu(); elements.loadParamsInput.click(); });
     if (menuKeyboardShortcuts) menuKeyboardShortcuts.addEventListener('click', showKeyboardShortcuts);
     if (menuAbout) menuAbout.addEventListener('click', showAbout);
+    if (menuClearCache) menuClearCache.addEventListener('click', clearCacheAndReload);
 
     // Modal dialog
     const modalCloseBtn = document.getElementById('modal-close-btn');
