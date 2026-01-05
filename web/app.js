@@ -681,9 +681,11 @@ async function clearCacheAndReload() {
         // 3. Clear localStorage (optional - preserves user preferences)
         // localStorage.clear();
 
-        // 4. Force hard reload (bypass cache)
+        // 4. Force hard reload with cache-busting query param
+        // This works better than reload(true) which is deprecated
         ui.setStatus('loading', 'Reloading...');
-        window.location.reload(true);
+        const baseUrl = window.location.href.split('?')[0].split('#')[0];
+        window.location.href = baseUrl + '?cache_bust=' + Date.now();
 
     } catch (error) {
         console.error('[ClearCache] Error:', error);
