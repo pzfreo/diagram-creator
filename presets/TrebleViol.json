@@ -2,8 +2,8 @@
   "metadata": {
     "version": "1.0",
     "timestamp": "2025-12-23T10:52:01.800Z",
-    "description": "Instrument Neck Parameters",
-    "generator": "Instrument Neck Geometry Generator"
+    "description": "Overstand Parameters",
+    "generator": "Overstand"
   },
   "parameters": {
     "instrument_family": "VIOL",

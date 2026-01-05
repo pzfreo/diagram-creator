@@ -488,7 +488,7 @@ function downloadSVG() {
 
 function saveParameters() {
     const saveData = {
-        metadata: { version: '1.0', timestamp: new Date().toISOString(), description: 'Instrument Neck Parameters' },
+        metadata: { version: '1.0', timestamp: new Date().toISOString(), description: 'Overstand Parameters' },
         parameters: collectParameters()
     };
     const filename = `${getInstrumentFilename()}_params_${new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5)}.json`;

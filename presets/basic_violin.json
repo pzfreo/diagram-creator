@@ -3,7 +3,7 @@
     "version": "1.0",
     "timestamp": "2025-01-01T00:00:00.000Z",
     "description": "Basic Violin Preset",
-    "generator": "Instrument Neck Geometry Generator"
+    "generator": "Overstand"
   },
   "parameters": {
     "instrument_family": "VIOLIN",

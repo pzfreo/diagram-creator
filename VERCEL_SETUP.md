@@ -41,15 +41,15 @@ Click **"Deploy"** to start your first deployment!
 
 After the first deployment completes:
 
-1. Visit the production URL (e.g., `https://neck-generator.vercel.app`)
+1. Visit the production URL (e.g., `https://overstand.tools`)
 2. Open browser DevTools → Console
 3. Look for messages like:
    ```
    [PWA] Environment: production, Version: 1.0.xxxx
-   [ServiceWorker] Installing... (production, neck-generator-vXXXXXX)
+   [ServiceWorker] Installing... (production, overstand-vXXXXXX)
    ```
 4. Open DevTools → Application → Cache Storage
-5. Verify you see cache named like `neck-generator-v1767298837`
+5. Verify you see cache named like `overstand-v1767298837`
 
 ### 4. Test PR Preview
 
@@ -93,8 +93,8 @@ The system automatically detects three environments:
 ### Cache Versioning
 
 Each build gets a unique cache name based on build ID:
-- Production: `neck-generator-v1234567890`
-- Preview: `neck-generator-v0987654321`
+- Production: `overstand-v1234567890`
+- Preview: `overstand-v0987654321`
 
 This ensures users never get stuck on old cached versions!
 
@@ -116,7 +116,7 @@ python3 -m http.server 8000
 Check the browser console for:
 ```
 [PWA] Environment: development, Version: dev-1234567890
-[ServiceWorker] Installing... (development, neck-generator-v1234567890)
+[ServiceWorker] Installing... (development, overstand-v1234567890)
 ```
 
 ## Troubleshooting
@@ -177,7 +177,7 @@ If you want to keep GitHub Pages as backup:
 To redirect GitHub Pages to Vercel:
 ```html
 <!-- Add to web/index.html for GitHub Pages -->
-<meta http-equiv="refresh" content="0; url=https://neck-generator.vercel.app">
+<meta http-equiv="refresh" content="0; url=https://overstand.tools">
 ```
 
 ## Next Steps

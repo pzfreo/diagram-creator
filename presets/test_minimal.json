@@ -3,7 +3,7 @@
     "version": "1.0",
     "timestamp": "2025-01-15T00:00:00.000Z",
     "description": "Minimal test preset with basic valid parameters",
-    "generator": "Instrument Neck Geometry Generator"
+    "generator": "Overstand"
   },
   "parameters": {
     "instrument_family": "VIOLIN",

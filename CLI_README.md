@@ -1,4 +1,4 @@
-# Instrument Generator CLI
+# Overstand CLI
 
 Command-line interface for generating instrument diagrams from parameter files.
 
@@ -77,7 +77,7 @@ The CLI accepts JSON files in the same format as the web UI's save/load feature:
     "version": "1.0",
     "timestamp": "2025-01-01T00:00:00.000Z",
     "description": "My Custom Instrument",
-    "generator": "Instrument Neck Geometry Generator"
+    "generator": "Overstand"
   },
   "parameters": {
     "instrument_name": "My Violin",

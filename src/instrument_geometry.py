@@ -1,5 +1,5 @@
 """
-Instrument Neck Geometry Generator (Refactored)
+Overstand - Instrument Geometry Orchestrator
 
 This module acts as an orchestrator, combining logic from:
 - geometry_engine.py: Pure mathematical calculations
