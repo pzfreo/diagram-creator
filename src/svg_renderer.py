@@ -1,5 +1,5 @@
 """
-SVG Renderer for Instrument Neck Diagrams
+Overstand - SVG Renderer
 
 This module handles the conversion of geometric models into SVG elements.
 """

@@ -1,5 +1,5 @@
 """
-Geometry Engine for Instrument Neck Calculations
+Overstand - Geometry Engine
 
 This module contains pure mathematical calculations for instrument geometry,
 independent of any drawing or UI logic.

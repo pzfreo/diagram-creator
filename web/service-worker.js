@@ -1,5 +1,5 @@
 /**
- * Service Worker for Instrument Neck Geometry Generator PWA
+ * Service Worker for Overstand PWA
  *
  * Implements intelligent caching strategies for offline functionality:
  * - App Shell: Cache-first for HTML, CSS, JS, fonts
@@ -10,7 +10,7 @@
  * Build script replaces __BUILD_ID__ and __ENVIRONMENT__ at build time
  */
 
-const CACHE_NAME = 'neck-generator-v__BUILD_ID__';
+const CACHE_NAME = 'overstand-v__BUILD_ID__';
 const PYODIDE_CACHE = 'pyodide-runtime-v1';
 const CDN_CACHE = 'cdn-libraries-v1';
 const ENVIRONMENT = '__ENVIRONMENT__';

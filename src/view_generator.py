@@ -1,5 +1,5 @@
 """
-View Generator for Instrument Neck Diagrams
+Overstand - View Generator
 
 This module handles the generation of HTML-based views like fret position tables.
 """

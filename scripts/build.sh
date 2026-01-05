@@ -118,7 +118,7 @@ SERVICE_WORKER_OUTPUT="public/service-worker.js"
 sed "s/__BUILD_ID__/${BUILD_ID}/g; s/__ENVIRONMENT__/${ENVIRONMENT}/g" \
     "$SERVICE_WORKER_TEMPLATE" > "$SERVICE_WORKER_OUTPUT"
 
-echo "  ✓ Service worker processed (cache: neck-generator-v${BUILD_ID})"
+echo "  ✓ Service worker processed (cache: overstand-v${BUILD_ID})"
 
 # ============================================================================
 # PROCESS ABOUT.MD
@@ -177,7 +177,7 @@ echo ""
 echo "Environment:  $ENVIRONMENT"
 echo "Version:      $VERSION"
 echo "Build ID:     $BUILD_ID"
-echo "Cache Name:   neck-generator-v${BUILD_ID}"
+echo "Cache Name:   overstand-v${BUILD_ID}"
 echo "Commit:       $COMMIT_SHORT"
 if [ -n "$DEPLOY_URL" ]; then
     echo "Deploy URL:   $DEPLOY_URL"

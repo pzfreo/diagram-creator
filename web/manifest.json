@@ -1,7 +1,7 @@
 {
-  "name": "Instrument Neck Geometry Generator",
-  "short_name": "Neck Generator",
-  "description": "Design and visualize custom violin, viol, and guitar/mandolin necks with precise geometric control",
+  "name": "Overstand",
+  "short_name": "Overstand",
+  "description": "Arched instrument neck geometry tool for violin, viol, and guitar/mandolin",
   "start_url": "./",
   "display": "standalone",
   "background_color": "#ffffff",
