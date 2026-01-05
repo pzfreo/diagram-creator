@@ -159,6 +159,20 @@ header {
     font-family: 'Courier New', monospace;
 }
 
+.reset-link {
+    font-size: 0.65rem;
+    color: var(--color-gray-400);
+    text-decoration: none;
+    margin-left: 8px;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+}
+
+.reset-link:hover {
+    opacity: 1;
+    text-decoration: underline;
+}
+
 .spinner {
     width: 18px;
     height: 18px;
