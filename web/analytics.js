@@ -1,6 +1,6 @@
 /**
  * Analytics module for Overstand
- * Uses Plausible Analytics (privacy-friendly, no cookies)
+ * Uses Umami Analytics (privacy-friendly, no cookies)
  *
  * Events tracked:
  * - Preset Selected: When user selects an instrument preset
@@ -18,14 +18,14 @@
  */
 
 /**
- * Track an analytics event safely (no-op if Plausible not loaded)
+ * Track an analytics event safely (no-op if Umami not loaded)
  * @param {string} eventName - The event name
  * @param {Object} [props] - Optional properties to include
  */
 export function trackEvent(eventName, props = {}) {
-    // Plausible exposes window.plausible when loaded
-    if (typeof window.plausible === 'function') {
-        window.plausible(eventName, { props });
+    // Umami exposes window.umami when loaded
+    if (typeof window.umami === 'object' && typeof window.umami.track === 'function') {
+        window.umami.track(eventName, props);
     }
 }
 
