@@ -123,7 +123,7 @@ export function trackParameterEdit(paramName) {
 // Engagement Time Tracking
 // ============================================
 
-const ENGAGEMENT_MILESTONES = [5, 15, 30, 60]; // minutes
+const ENGAGEMENT_MILESTONES = [2, 4, 6, 8, 10, 15, 30, 60]; // minutes
 let sessionStartTime = Date.now();
 let milestonesReached = new Set();
 let engagementCheckInterval = null;
