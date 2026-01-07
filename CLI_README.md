@@ -30,8 +30,9 @@ instrument-gen-cli INPUT_FILE [OPTIONS]
 
 ### Options
 
-- `--view {side,top,cross_section,dimensions,pdf}` - Generate a specific view
-- `--output FILE` or `-o FILE` - Output file (default: stdout, required for pdf)
+- `--view {side,top,cross_section,dimensions}` - Generate a specific view
+- `--pdf` - Output as PDF instead of native format (SVG/HTML)
+- `--output FILE` or `-o FILE` - Output file (default: stdout, required for `--pdf`)
 - `--all` - Generate all available views (requires `--output-dir`)
 - `--output-dir DIR` - Output directory for `--all` mode
 
@@ -44,7 +45,7 @@ python src/instrument-gen-cli presets/basic_violin.json --view side --output my-
 
 ### Generate side view as PDF
 ```bash
-python src/instrument-gen-cli presets/basic_violin.json --view pdf --output my-violin.pdf
+python src/instrument-gen-cli presets/basic_violin.json --view side --pdf --output my-violin.pdf
 ```
 
 ### Generate dimensions table HTML
@@ -52,15 +53,28 @@ python src/instrument-gen-cli presets/basic_violin.json --view pdf --output my-v
 python src/instrument-gen-cli presets/basic_violin.json --view dimensions --output dimensions.html
 ```
 
-### Generate all views at once
+### Generate dimensions table as PDF
+```bash
+python src/instrument-gen-cli presets/basic_violin.json --view dimensions --pdf --output dimensions.pdf
+```
+
+### Generate all views at once (native formats)
 ```bash
 python src/instrument-gen-cli presets/basic_violin.json --all --output-dir ./output
 ```
 
 This creates:
 - `Basic_Violin_side.svg` - Side view diagram
-- `Basic_Violin_side.pdf` - Side view as PDF
 - `Basic_Violin_dimensions.html` - Dimensions table
+
+### Generate all views as PDFs
+```bash
+python src/instrument-gen-cli presets/basic_violin.json --all --pdf --output-dir ./output
+```
+
+This creates:
+- `Basic_Violin_side.pdf` - Side view as PDF
+- `Basic_Violin_dimensions.pdf` - Dimensions table as PDF
 
 ### Print to stdout (useful for piping)
 ```bash
@@ -101,9 +115,8 @@ You can also use simplified format with just parameters:
 
 ## Available Views
 
-- **side** - Side view SVG diagram
-- **pdf** - Side view as PDF (scale-accurate for printing)
-- **dimensions** - Dimensions table HTML
+- **side** - Side view diagram (SVG, or PDF with `--pdf`)
+- **dimensions** - Dimensions table (HTML, or PDF with `--pdf`)
 - **top** - Top view SVG (coming soon)
 - **cross_section** - Cross-section view SVG (coming soon)
 
@@ -116,8 +129,9 @@ The side view generates a scalable vector graphic that can be:
 - Printed at any scale
 
 ### PDF Output
-The PDF view generates a print-ready document:
-- Uses svglib + reportlab for conversion
+The `--pdf` flag generates print-ready documents from any view:
+- SVG views (side, top, cross_section) use svglib + reportlab for conversion
+- HTML views (dimensions) use weasyprint for conversion
 - Maintains scale accuracy for workshop use
 
 ### HTML Output
