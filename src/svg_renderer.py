@@ -256,13 +256,13 @@ def add_dimensions(exporter: ExportSVG, show_measurements: bool,
     )
     exporter.add_shape(tailpiece_to_bridge_line, layer="schematic_dotted")
 
-    # Draw the string break angle dimension at the bridge
+    # Draw the string break angle dimension at the bridge (arc and label only, no lines)
     if string_break_angle > 0:
         for shape, layer in create_angle_dimension(
             string_line, tailpiece_to_bridge_line,
             label=f"{string_break_angle:.1f}°",
             arc_radius=14, font_size=DIMENSION_FONT_SIZE,
-            text_inside=True
+            text_inside=True, line_extension=0
         ):
             exporter.add_shape(shape, layer=layer)
 
