@@ -260,7 +260,7 @@ def add_dimensions(exporter: ExportSVG, show_measurements: bool,
         for shape, layer in create_angle_dimension(
             string_line, tailpiece_to_bridge_line,
             label=f"{string_break_angle:.1f}°",
-            arc_radius=20, font_size=DIMENSION_FONT_SIZE,
+            arc_radius=14, font_size=DIMENSION_FONT_SIZE,
             text_inside=True
         ):
             exporter.add_shape(shape, layer=layer)
