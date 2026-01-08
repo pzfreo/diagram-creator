@@ -309,10 +309,10 @@ def add_dimensions(exporter: ExportSVG, show_measurements: bool,
         exporter.add_shape(arrow_head, layer="arrows")
 
         # Label (red, right-justified, two lines)
-        # Estimate text widths for right-alignment (char width ≈ 0.5 * font size)
-        char_width = DIMENSION_FONT_SIZE * 0.5
+        # Estimate text widths for right-alignment (char width ≈ 0.6 * font size)
+        char_width = DIMENSION_FONT_SIZE * 0.6
         line_height = DIMENSION_FONT_SIZE * 1.2
-        right_edge = arrow_x - 10
+        right_edge = arrow_x - 3
 
         # Top line: "xx%"
         percent_str = f"{downward_force_percent:.0f}%"
