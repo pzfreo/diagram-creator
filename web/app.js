@@ -411,7 +411,7 @@ function updateCoreMetricsPanel(values, metadata, params) {
     if (!panel) return;
 
     // Get key measurements config from metadata, or use fallback
-    const keyMeasurementsConfig = appState.uiMetadata?.key_measurements || [
+    const keyMeasurementsConfig = state.uiMetadata?.key_measurements || [
         { key: 'neck_angle', primary: true },
         { key: 'neck_stop', key_conditional: { 'GUITAR_MANDOLIN': 'body_stop' } },
         { key: 'nut_relative_to_ribs' },
