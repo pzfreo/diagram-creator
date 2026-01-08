@@ -237,24 +237,25 @@ def add_dimensions(exporter: ExportSVG, show_measurements: bool,
     rib_text = rib_text.move(Location((rib_dim_x + DIMENSION_FONT_SIZE, belly_edge_thickness - rib_height/2)))
     exporter.add_shape(rib_text, layer="text")
 
-    # Tailpiece height reference line and dimension
-    if tailpiece_height > 0:
-        tailpiece_base_y = belly_edge_thickness
-        tailpiece_top_y = belly_edge_thickness + tailpiece_height
+    # Tailpiece to bridge line (string path to tailpiece)
+    tailpiece_base_y = belly_edge_thickness
+    tailpiece_top_y = belly_edge_thickness + tailpiece_height
 
+    # Always draw dotted line from tailpiece attachment to bridge top
+    tailpiece_to_bridge_line = Edge.make_line(
+        (body_length, tailpiece_top_y),
+        (bridge_top_x, bridge_top_y)
+    )
+    exporter.add_shape(tailpiece_to_bridge_line, layer="schematic_dotted")
+
+    # Only show height reference and dimension when tailpiece_height > 0
+    if tailpiece_height > 0:
         # Dotted reference line showing tailpiece height
         tailpiece_ref_line = Edge.make_line(
             (body_length, tailpiece_base_y),
             (body_length, tailpiece_top_y)
         )
         exporter.add_shape(tailpiece_ref_line, layer="schematic_dotted")
-
-        # Dotted line from tailpiece top to bridge top (string path to tailpiece)
-        tailpiece_to_bridge_line = Edge.make_line(
-            (body_length, tailpiece_top_y),
-            (bridge_top_x, bridge_top_y)
-        )
-        exporter.add_shape(tailpiece_to_bridge_line, layer="schematic_dotted")
 
         # Dimension with arrows and label
         tailpiece_dim_x = body_length + 20
