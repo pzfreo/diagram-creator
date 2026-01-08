@@ -176,6 +176,7 @@ SECTIONS = {
             'body_stop',
             'nut_relative_to_ribs',
             'string_break_angle',
+            'downward_force_percent',
             'fb_thickness_at_nut',
             'fb_thickness_at_join'
         ],
@@ -190,7 +191,6 @@ SECTIONS = {
         default_expanded=False,
         order=11,
         parameter_names=[
-            'downward_force_percent',
             'sagitta_at_nut',
             'sagitta_at_join',
             'string_angle_to_ribs',
