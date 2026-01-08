@@ -322,7 +322,7 @@ def add_dimensions(exporter: ExportSVG, show_measurements: bool,
 
         # Bottom line: "downforce" - lowercase letters are narrower
         downforce_char_width = DIMENSION_FONT_SIZE * 0.5
-        downforce_width = 9 * downforce_char_width
+        downforce_width = 7 * downforce_char_width
         downforce_text = Text("downforce", DIMENSION_FONT_SIZE, font=FONT_NAME)
         downforce_text = downforce_text.move(Location((right_edge - downforce_width, arrow_mid_y - line_height / 2)))
         exporter.add_shape(downforce_text, layer="dimensions")
