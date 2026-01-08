@@ -102,6 +102,9 @@ def calculate_derived_values(params: Dict[str, Any]) -> Dict[str, Any]:
     dy = derived['bridge_top_y'] - (belly_edge_thickness + tailpiece_height)
     derived['afterlength_angle'] = math.atan2(dy, dx) * 180 / math.pi
 
+    # Calculate string break angle at the bridge
+    derived['string_break_angle'] = 180 - derived['string_angle_to_ribs'] - derived['afterlength_angle']
+
     return derived
 
 def generate_multi_view_svg(params: Dict[str, Any]) -> Dict[str, str]:
