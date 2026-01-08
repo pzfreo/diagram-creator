@@ -88,6 +88,10 @@ def calculate_derived_values(params: Dict[str, Any]) -> Dict[str, Any]:
     )
     derived.update(string_height_result)
 
+    # Add degree versions of internal angles for display
+    derived['neck_line_angle_deg'] = derived['neck_line_angle'] * 180 / math.pi
+    derived['fb_direction_angle_deg'] = derived['fb_direction_angle'] * 180 / math.pi
+
     # Calculate afterlength angle (angle of string from bridge to tailpiece relative to ribs)
     body_length = params.get('body_length', 0)
     belly_edge_thickness = params.get('belly_edge_thickness', 0)

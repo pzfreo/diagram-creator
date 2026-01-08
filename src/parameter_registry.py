@@ -1031,6 +1031,21 @@ PARAMETER_REGISTRY: Dict[str, UnifiedParameter] = {
         )
     ),
 
+    'neck_line_angle_deg': UnifiedParameter(
+        key='neck_line_angle_deg',
+        display_name='Neck Line Angle (deg)',
+        param_type=ParameterType.NUMERIC,
+        unit='°',
+        description='Angle of neck center line',
+        role=ParameterRole.OUTPUT_ONLY,
+        output_config=OutputConfig(
+            decimals=1,
+            visible=True,
+            category='Geometry',
+            order=10
+        )
+    ),
+
     'nut_top_x': UnifiedParameter(
         key='nut_top_x',
         display_name='Nut Top X',
@@ -1133,6 +1148,21 @@ PARAMETER_REGISTRY: Dict[str, UnifiedParameter] = {
             visible=False,
             category='Internal',
             order=111
+        )
+    ),
+
+    'fb_direction_angle_deg': UnifiedParameter(
+        key='fb_direction_angle_deg',
+        display_name='Fingerboard Direction Angle (deg)',
+        param_type=ParameterType.NUMERIC,
+        unit='°',
+        description='Angle of fingerboard direction',
+        role=ParameterRole.OUTPUT_ONLY,
+        output_config=OutputConfig(
+            decimals=1,
+            visible=True,
+            category='Geometry',
+            order=11
         )
     ),
 
