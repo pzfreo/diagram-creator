@@ -176,6 +176,7 @@ SECTIONS = {
             'body_stop',
             'nut_relative_to_ribs',
             'string_break_angle',
+            'afterlength_angle',
             'fb_thickness_at_nut',
             'fb_thickness_at_join'
         ],

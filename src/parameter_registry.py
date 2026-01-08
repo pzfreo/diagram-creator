@@ -462,6 +462,21 @@ PARAMETER_REGISTRY: Dict[str, UnifiedParameter] = {
         )
     ),
 
+    'afterlength_angle': UnifiedParameter(
+        key='afterlength_angle',
+        display_name='Afterlength Angle',
+        param_type=ParameterType.NUMERIC,
+        unit='°',
+        description='Angle of the string afterlength (bridge to tailpiece) relative to the ribs',
+        role=ParameterRole.OUTPUT_ONLY,
+        output_config=OutputConfig(
+            decimals=1,
+            visible=True,
+            category='Geometry',
+            order=9
+        )
+    ),
+
     # ============================================
     # BASIC DIMENSION PARAMETERS (Input Only)
     # ============================================

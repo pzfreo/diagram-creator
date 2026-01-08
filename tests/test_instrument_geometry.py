@@ -72,3 +72,32 @@ def test_fingerboard_thickness():
     assert result['fb_thickness_at_end'] > 0
     # End thickness should be greater than nut thickness
     assert result['fb_thickness_at_end'] > result['fb_thickness_at_nut']
+
+
+def test_afterlength_angle_calculation():
+    """Test afterlength angle calculation"""
+    params = get_default_values()
+    params['instrument_family'] = InstrumentFamily.VIOLIN.name
+    params['tailpiece_height'] = 0
+    result = calculate_derived_values(params)
+
+    assert 'afterlength_angle' in result
+    # Afterlength angle should be negative (string goes downward from bridge to tailpiece)
+    assert result['afterlength_angle'] < 0
+    # Should be within reasonable range (-45 to 0 degrees typically)
+    assert -45 < result['afterlength_angle'] < 0
+
+
+def test_afterlength_angle_increases_with_tailpiece_height():
+    """Test that afterlength angle increases when tailpiece height increases"""
+    params = get_default_values()
+    params['instrument_family'] = InstrumentFamily.VIOLIN.name
+
+    params['tailpiece_height'] = 0
+    result_no_height = calculate_derived_values(params)
+
+    params['tailpiece_height'] = 10
+    result_with_height = calculate_derived_values(params)
+
+    # Higher tailpiece means less negative angle (string goes down less steeply)
+    assert result_with_height['afterlength_angle'] > result_no_height['afterlength_angle']

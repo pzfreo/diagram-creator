@@ -342,5 +342,18 @@ def test_viol_break_angle_display_name():
     assert param.role == ParameterRole.INPUT_ONLY
 
 
+def test_afterlength_angle_parameter():
+    """Test afterlength_angle output parameter exists with correct properties"""
+    assert 'afterlength_angle' in PARAMETER_REGISTRY
+    param = PARAMETER_REGISTRY['afterlength_angle']
+
+    assert param.role == ParameterRole.OUTPUT_ONLY
+    assert param.param_type == ParameterType.NUMERIC
+    assert param.unit == '°'
+    assert param.output_config is not None
+    assert param.output_config.visible == True
+    assert param.output_config.category == 'Geometry'
+
+
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

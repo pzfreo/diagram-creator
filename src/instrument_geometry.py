@@ -88,6 +88,15 @@ def calculate_derived_values(params: Dict[str, Any]) -> Dict[str, Any]:
     )
     derived.update(string_height_result)
 
+    # Calculate afterlength angle (angle of string from bridge to tailpiece relative to ribs)
+    body_length = params.get('body_length', 0)
+    belly_edge_thickness = params.get('belly_edge_thickness', 0)
+    tailpiece_height = params.get('tailpiece_height', 0)
+
+    dx = body_length - derived['bridge_top_x']
+    dy = (belly_edge_thickness + tailpiece_height) - derived['bridge_top_y']
+    derived['afterlength_angle'] = math.atan2(dy, dx) * 180 / math.pi
+
     return derived
 
 def generate_multi_view_svg(params: Dict[str, Any]) -> Dict[str, str]:
