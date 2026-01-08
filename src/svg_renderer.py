@@ -216,6 +216,12 @@ def add_dimensions(exporter: ExportSVG, show_measurements: bool,
                                                offset_x=8, font_size=DIMENSION_FONT_SIZE):
         exporter.add_shape(shape, layer=layer)
 
+    # Bridge height dimension
+    bridge_feature_line = Edge.make_line((body_stop, arching_height), (body_stop, arching_height + bridge_height))
+    for shape, layer in create_vertical_dimension(bridge_feature_line, f"{bridge_height:.1f}",
+                                               offset_x=8, font_size=DIMENSION_FONT_SIZE):
+        exporter.add_shape(shape, layer=layer)
+
     bottom_y = belly_edge_thickness - rib_height
     body_stop_feature_line = Edge.make_line((0, bottom_y), (body_stop, bottom_y))
     for shape, layer in create_horizontal_dimension(body_stop_feature_line, f"{body_stop:.1f}",
