@@ -471,3 +471,35 @@ class TestFullSVGGeneration:
 
         # Should have more dotted lines with tailpiece height
         assert dotted_count_with > dotted_count_zero
+
+    def test_string_break_angle_matches_derived_value(self, default_violin_params):
+        """Test that the break angle drawn on SVG matches the calculated derived value."""
+        import re
+        from instrument_geometry import generate_side_view_svg, calculate_derived_values
+
+        params = default_violin_params.copy()
+        svg = generate_side_view_svg(params)
+        derived = calculate_derived_values(params)
+
+        # Get the calculated break angle
+        calculated_angle = derived['string_break_angle']
+
+        # Find the break angle in the SVG (formatted as "XXX.X°")
+        # The angle dimension text should appear in the SVG
+        angle_pattern = r'(\d+\.\d+)°'
+        angle_matches = re.findall(angle_pattern, svg)
+
+        # The string_break_angle should be present in the SVG
+        # Convert to float for comparison
+        found_break_angle = False
+        for match in angle_matches:
+            svg_angle = float(match)
+            # Check if this matches our calculated break angle (within 0.1 degree)
+            if abs(svg_angle - calculated_angle) < 0.15:
+                found_break_angle = True
+                break
+
+        assert found_break_angle, (
+            f"String break angle {calculated_angle:.1f}° not found in SVG. "
+            f"Found angles: {angle_matches}"
+        )

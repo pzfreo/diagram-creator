@@ -171,7 +171,8 @@ def add_dimensions(exporter: ExportSVG, show_measurements: bool,
                   fb_surface_point_y: float, string_x_at_fb_end: float,
                   string_y_at_fb_end: float, string_height_at_fb_end: float,
                   intersect_x: float, intersect_y: float,
-                  nut_to_perp_distance: float, tailpiece_height: float = 0.0) -> None:
+                  nut_to_perp_distance: float, tailpiece_height: float = 0.0,
+                  string_break_angle: float = 0.0) -> None:
     """Add dimension annotations."""
     if show_measurements:
         rib_to_nut_feature_line = Edge.make_line((reference_line_end_x, 0), (reference_line_end_x, nut_top_y))
@@ -247,6 +248,16 @@ def add_dimensions(exporter: ExportSVG, show_measurements: bool,
         (bridge_top_x, bridge_top_y)
     )
     exporter.add_shape(tailpiece_to_bridge_line, layer="schematic_dotted")
+
+    # Draw the string break angle dimension at the bridge
+    if string_break_angle > 0:
+        for shape, layer in create_angle_dimension(
+            string_line, tailpiece_to_bridge_line,
+            label=f"{string_break_angle:.1f}°",
+            arc_radius=20, font_size=DIMENSION_FONT_SIZE,
+            text_inside=True
+        ):
+            exporter.add_shape(shape, layer=layer)
 
     # Only show height reference and dimension when tailpiece_height > 0
     if tailpiece_height > 0:

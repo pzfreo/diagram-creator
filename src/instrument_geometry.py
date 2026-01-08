@@ -172,7 +172,8 @@ def generate_side_view_svg(params: Dict[str, Any], show_measurements: bool = Tru
         derived['string_y_at_fb_end'], derived['string_height_at_fb_end'],
         derived['nut_perpendicular_intersection_x'], derived['nut_perpendicular_intersection_y'],
         derived['nut_to_perpendicular_distance'],
-        tailpiece_height=params.get('tailpiece_height', 0)
+        tailpiece_height=params.get('tailpiece_height', 0),
+        string_break_angle=derived['string_break_angle']
     )
     
     return exporter.write(filename=None)
