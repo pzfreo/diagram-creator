@@ -233,8 +233,7 @@ KEY_MEASUREMENTS = [
     {'key': 'neck_angle', 'primary': True},
     {'key': 'neck_stop', 'key_conditional': {'GUITAR_MANDOLIN': 'body_stop'}},
     {'key': 'nut_relative_to_ribs'},
-    {'key': 'string_break_angle'},
-    {'key': 'downward_force_percent'}
+    {'key': 'string_break_angle'}
 ]
 
 

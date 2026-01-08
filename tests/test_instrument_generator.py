@@ -310,7 +310,6 @@ class TestGetUIMetadata:
         keys = [m['key'] for m in key_measurements]
         assert 'neck_angle' in keys, "neck_angle should be in key_measurements"
         assert 'string_break_angle' in keys, "string_break_angle should be in key_measurements"
-        assert 'downward_force_percent' in keys, "downward_force_percent should be in key_measurements"
 
         # Check first item has primary flag
         assert key_measurements[0].get('primary') is True, "First key measurement should be primary"
