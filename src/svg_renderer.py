@@ -601,3 +601,66 @@ def draw_neck_cross_section(exporter: ExportSVG,
         (half_fb_width + 5, y_top_of_block)
     )
     exporter.add_shape(block_ref_line, layer="schematic")
+
+
+def add_cross_section_dimensions(exporter: ExportSVG, show_measurements: bool,
+                                  y_button: float, y_top_of_block: float,
+                                  y_fb_bottom: float, y_fb_top: float,
+                                  half_button_width: float, half_neck_width_at_ribs: float,
+                                  half_fb_width: float, sagitta_at_join: float) -> None:
+    """
+    Add dimension annotations to the cross-section view.
+    """
+    if not show_measurements:
+        return
+
+    fb_visible_height = y_fb_top - sagitta_at_join
+
+    # Horizontal dimensions - widths
+    dim_offset_y = -8  # Below the feature
+
+    # 1. Button width (at bottom)
+    button_line = Edge.make_line((-half_button_width, y_button), (half_button_width, y_button))
+    button_width = half_button_width * 2
+    for shape, layer in create_horizontal_dimension(
+        button_line, f"{button_width:.1f}", offset_y=dim_offset_y, font_size=DIMENSION_FONT_SIZE
+    ):
+        exporter.add_shape(shape, layer=layer)
+
+    # 2. Neck width at top of ribs
+    neck_line = Edge.make_line((-half_neck_width_at_ribs, y_top_of_block),
+                                (half_neck_width_at_ribs, y_top_of_block))
+    neck_width = half_neck_width_at_ribs * 2
+    # Offset to the right side to avoid overlap
+    for shape, layer in create_horizontal_dimension(
+        neck_line, f"{neck_width:.1f}", offset_y=dim_offset_y - 8, font_size=DIMENSION_FONT_SIZE
+    ):
+        exporter.add_shape(shape, layer=layer)
+
+    # 3. Fingerboard width (at fb bottom level)
+    fb_line = Edge.make_line((-half_fb_width, y_fb_bottom), (half_fb_width, y_fb_bottom))
+    fb_width = half_fb_width * 2
+    for shape, layer in create_horizontal_dimension(
+        fb_line, f"{fb_width:.1f}", offset_y=y_fb_top - y_fb_bottom + 5, font_size=DIMENSION_FONT_SIZE
+    ):
+        exporter.add_shape(shape, layer=layer)
+
+    # Vertical dimensions - heights (on the right side)
+    dim_offset_x = half_fb_width + 10
+
+    # 4. Block height (from button to top of block)
+    block_height = y_top_of_block - y_button
+    block_line = Edge.make_line((dim_offset_x, y_button), (dim_offset_x, y_top_of_block))
+    for shape, layer in create_vertical_dimension(
+        block_line, f"{block_height:.1f}", offset_x=5, font_size=DIMENSION_FONT_SIZE
+    ):
+        exporter.add_shape(shape, layer=layer)
+
+    # 5. Overstand (from top of block to fb bottom)
+    overstand = y_fb_bottom - y_top_of_block
+    overstand_line = Edge.make_line((dim_offset_x + 15, y_top_of_block),
+                                     (dim_offset_x + 15, y_fb_bottom))
+    for shape, layer in create_vertical_dimension(
+        overstand_line, f"{overstand:.1f}", offset_x=5, font_size=DIMENSION_FONT_SIZE
+    ):
+        exporter.add_shape(shape, layer=layer)

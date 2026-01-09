@@ -165,6 +165,19 @@ def generate_cross_section_svg(params: Dict[str, Any], show_measurements: bool =
         sagitta_at_join=cs_geom['sagitta_at_join']
     )
 
+    # Add dimensions
+    svg_renderer.add_cross_section_dimensions(
+        exporter, show_measurements,
+        y_button=cs_geom['y_button'],
+        y_top_of_block=cs_geom['y_top_of_block'],
+        y_fb_bottom=cs_geom['y_fb_bottom'],
+        y_fb_top=cs_geom['y_fb_top'],
+        half_button_width=cs_geom['half_button_width'],
+        half_neck_width_at_ribs=cs_geom['half_neck_width_at_ribs'],
+        half_fb_width=cs_geom['half_fb_width'],
+        sagitta_at_join=cs_geom['sagitta_at_join']
+    )
+
     # Add title text
     instrument_name = params.get('instrument_name', 'Instrument')
     title_text = Text(f"{instrument_name} - Neck Cross-Section", TITLE_FONT_SIZE, font=FONT_NAME)
