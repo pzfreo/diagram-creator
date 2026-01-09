@@ -167,6 +167,13 @@ def add_viol_back_dimensions(exporter: ExportSVG, show_measurements: bool,
     ):
         exporter.add_shape(shape, layer=layer)
 
+    # Add dashed reference line to show angle measurement baseline
+    angle_ref_line = Edge.make_line(
+        (break_end_x, break_end_y),
+        (break_end_x - 15, break_end_y)
+    )
+    exporter.add_shape(angle_ref_line, layer="dimensions")
+
 
 def draw_neck(exporter: ExportSVG, overstand: float, neck_end_x: float, neck_end_y: float,
              bridge_height: float, body_stop: float, arching_height: float,
