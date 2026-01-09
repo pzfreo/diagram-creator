@@ -569,8 +569,9 @@ def draw_neck_cross_section(exporter: ExportSVG,
         arc_center_y = fb_visible_height - vertical_dist
 
         # Calculate angles from center to the edge points
-        start_angle = math.atan2(vertical_dist, -half_fb_width)  # Left edge (second quadrant)
-        end_angle = math.atan2(vertical_dist, half_fb_width)     # Right edge (first quadrant)
+        # Swap start/end to get the arc curving upward (minor arc) instead of downward (major arc)
+        start_angle = math.atan2(vertical_dist, half_fb_width)   # Right edge (first quadrant)
+        end_angle = math.atan2(vertical_dist, -half_fb_width)    # Left edge (second quadrant)
 
         fb_top_arc = Arc.make_arc(
             center=(0, arc_center_y),
