@@ -445,3 +445,222 @@ def add_dimensions(exporter: ExportSVG, show_measurements: bool,
         downforce_text = Text("downforce", DIMENSION_FONT_SIZE, font=FONT_NAME)
         downforce_text = downforce_text.move(Location((right_edge - downforce_width, arrow_mid_y - line_height / 2)))
         exporter.add_shape(downforce_text, layer="dimensions")
+
+
+def draw_neck_cross_section(exporter: ExportSVG,
+                            y_button: float, y_top_of_block: float,
+                            y_fb_bottom: float, y_fb_top: float,
+                            half_button_width: float, half_neck_width_at_ribs: float,
+                            half_fb_width: float, fingerboard_radius: float,
+                            sagitta_at_join: float) -> None:
+    """
+    Draw the neck cross-section at the body join.
+
+    The cross-section is symmetrical about X=0.
+    Y=0 is at the back plate level (button).
+
+    Segments drawn (from bottom to top):
+    1. Button - thin horizontal slice at Y=0
+    2. Straight angled sides - from button width to neck width at ribs
+    3. Smooth curve outward - from neck width at ribs to fingerboard width
+    4. Fingerboard - with radiused top
+    """
+    # Button line (bottom horizontal)
+    button_line = Edge.make_line((-half_button_width, y_button), (half_button_width, y_button))
+    exporter.add_shape(button_line, layer="drawing")
+
+    # Left side: straight angled line from button to top of block
+    left_straight = Edge.make_line(
+        (-half_button_width, y_button),
+        (-half_neck_width_at_ribs, y_top_of_block)
+    )
+    exporter.add_shape(left_straight, layer="drawing")
+
+    # Right side: straight angled line from button to top of block
+    right_straight = Edge.make_line(
+        (half_button_width, y_button),
+        (half_neck_width_at_ribs, y_top_of_block)
+    )
+    exporter.add_shape(right_straight, layer="drawing")
+
+    # Calculate fingerboard visible height (edge height, not center)
+    fb_visible_height = y_fb_top - sagitta_at_join
+
+    # Check if fillet curve is geometrically valid
+    # The fingerboard must be wider than the neck at top of ribs for outward curve
+    if half_fb_width <= half_neck_width_at_ribs:
+        # Invalid geometry - neck is already as wide as fingerboard
+        # Draw straight vertical lines instead and add warning
+        left_fillet = Edge.make_line(
+            (-half_neck_width_at_ribs, y_top_of_block),
+            (-half_fb_width, y_fb_bottom)
+        )
+        right_fillet = Edge.make_line(
+            (half_neck_width_at_ribs, y_top_of_block),
+            (half_fb_width, y_fb_bottom)
+        )
+        exporter.add_shape(left_fillet, layer="drawing")
+        exporter.add_shape(right_fillet, layer="drawing")
+    else:
+        # Valid geometry - create smooth fillet curves with tangent continuity
+        # The fillet must:
+        # - Match the tangent of the incoming straight line at the bottom
+        # - End vertically at the fingerboard bottom
+
+        # Calculate the slope of the straight section (button to top of ribs)
+        # This determines the tangent at the fillet start
+        dx_straight = half_neck_width_at_ribs - half_button_width
+        dy_straight = y_top_of_block - y_button
+        overstand_height = y_fb_bottom - y_top_of_block
+
+        # Use a quadratic Bezier approach: the control point determines tangents
+        # For left side: start at (-half_neck_width_at_ribs, y_top_of_block)
+        #                end at (-half_fb_width, y_fb_bottom)
+        # Control point should be along the tangent from start, and create vertical end tangent
+
+        # The control point x should be at -half_fb_width (to make end tangent vertical)
+        # The control point y is determined by extending the incoming tangent
+        if dx_straight > 0:
+            # Extend the incoming line's slope to find where it intersects x = -half_fb_width
+            slope = dy_straight / dx_straight
+            dx_to_fb = half_fb_width - half_neck_width_at_ribs
+            control_y = y_top_of_block + slope * dx_to_fb
+        else:
+            # Straight sides (no taper) - use midpoint
+            control_y = (y_top_of_block + y_fb_bottom) / 2
+
+        # Left fillet curve using spline through 3 points
+        # Middle point positioned to approximate tangent matching
+        left_fillet = Spline.interpolate_three_points(
+            (-half_neck_width_at_ribs, y_top_of_block),
+            (-half_fb_width, min(control_y, y_fb_bottom - 1)),  # Clamp to stay below fb_bottom
+            (-half_fb_width, y_fb_bottom)
+        )
+        exporter.add_shape(left_fillet, layer="drawing")
+
+        # Right fillet curve (mirror)
+        right_fillet = Spline.interpolate_three_points(
+            (half_neck_width_at_ribs, y_top_of_block),
+            (half_fb_width, min(control_y, y_fb_bottom - 1)),
+            (half_fb_width, y_fb_bottom)
+        )
+        exporter.add_shape(right_fillet, layer="drawing")
+
+    # Fingerboard sides (vertical from fb_bottom to visible height)
+    left_fb_side = Edge.make_line(
+        (-half_fb_width, y_fb_bottom),
+        (-half_fb_width, fb_visible_height)
+    )
+    exporter.add_shape(left_fb_side, layer="drawing")
+
+    right_fb_side = Edge.make_line(
+        (half_fb_width, y_fb_bottom),
+        (half_fb_width, fb_visible_height)
+    )
+    exporter.add_shape(right_fb_side, layer="drawing")
+
+    # Fingerboard radiused top (arc from left to right)
+    # The arc represents the curved playing surface - higher in center, lower at edges
+    if fingerboard_radius > 0 and half_fb_width < fingerboard_radius:
+        # Calculate arc center position (below the edge level)
+        # The arc passes through (-half_fb_width, fb_visible_height) and (half_fb_width, fb_visible_height)
+        # with the given radius, curving upward in the center
+        vertical_dist = math.sqrt(fingerboard_radius**2 - half_fb_width**2)
+        arc_center_y = fb_visible_height - vertical_dist
+
+        # Calculate angles from center to the edge points
+        # Swap start/end to get the arc curving upward (minor arc) instead of downward (major arc)
+        start_angle = math.atan2(vertical_dist, half_fb_width)   # Right edge (first quadrant)
+        end_angle = math.atan2(vertical_dist, -half_fb_width)    # Left edge (second quadrant)
+
+        fb_top_arc = Arc.make_arc(
+            center=(0, arc_center_y),
+            radius=fingerboard_radius,
+            start_angle=start_angle,
+            end_angle=end_angle
+        )
+        exporter.add_shape(fb_top_arc, layer="drawing")
+    else:
+        # Flat top if no radius or invalid geometry
+        fb_top_line = Edge.make_line(
+            (-half_fb_width, fb_visible_height),
+            (half_fb_width, fb_visible_height)
+        )
+        exporter.add_shape(fb_top_line, layer="drawing")
+
+    # Fingerboard bottom line (connecting the sides)
+    fb_bottom_line = Edge.make_line(
+        (-half_fb_width, y_fb_bottom),
+        (half_fb_width, y_fb_bottom)
+    )
+    exporter.add_shape(fb_bottom_line, layer="drawing")
+
+    # Add a horizontal reference line at top of block (belly level)
+    block_ref_line = Edge.make_line(
+        (-half_fb_width - 5, y_top_of_block),
+        (half_fb_width + 5, y_top_of_block)
+    )
+    exporter.add_shape(block_ref_line, layer="schematic")
+
+
+def add_cross_section_dimensions(exporter: ExportSVG, show_measurements: bool,
+                                  y_button: float, y_top_of_block: float,
+                                  y_fb_bottom: float, y_fb_top: float,
+                                  half_button_width: float, half_neck_width_at_ribs: float,
+                                  half_fb_width: float, sagitta_at_join: float) -> None:
+    """
+    Add dimension annotations to the cross-section view.
+    """
+    if not show_measurements:
+        return
+
+    fb_visible_height = y_fb_top - sagitta_at_join
+
+    # Horizontal dimensions - widths
+    dim_offset_y = -8  # Below the feature
+
+    # 1. Button width (at bottom)
+    button_line = Edge.make_line((-half_button_width, y_button), (half_button_width, y_button))
+    button_width = half_button_width * 2
+    for shape, layer in create_horizontal_dimension(
+        button_line, f"{button_width:.1f}", offset_y=dim_offset_y, font_size=DIMENSION_FONT_SIZE
+    ):
+        exporter.add_shape(shape, layer=layer)
+
+    # 2. Neck width at top of ribs
+    neck_line = Edge.make_line((-half_neck_width_at_ribs, y_top_of_block),
+                                (half_neck_width_at_ribs, y_top_of_block))
+    neck_width = half_neck_width_at_ribs * 2
+    # Offset to the right side to avoid overlap
+    for shape, layer in create_horizontal_dimension(
+        neck_line, f"{neck_width:.1f}", offset_y=dim_offset_y - 8, font_size=DIMENSION_FONT_SIZE
+    ):
+        exporter.add_shape(shape, layer=layer)
+
+    # 3. Fingerboard width (at fb bottom level)
+    fb_line = Edge.make_line((-half_fb_width, y_fb_bottom), (half_fb_width, y_fb_bottom))
+    fb_width = half_fb_width * 2
+    for shape, layer in create_horizontal_dimension(
+        fb_line, f"{fb_width:.1f}", offset_y=y_fb_top - y_fb_bottom + 5, font_size=DIMENSION_FONT_SIZE
+    ):
+        exporter.add_shape(shape, layer=layer)
+
+    # Vertical dimensions - heights (on the right side)
+    dim_offset_x = half_fb_width + 10
+
+    # 4. Block height (from button to top of block)
+    block_height = y_top_of_block - y_button
+    block_line = Edge.make_line((dim_offset_x, y_button), (dim_offset_x, y_top_of_block))
+    for shape, layer in create_vertical_dimension(
+        block_line, f"{block_height:.1f}", offset_x=5, font_size=DIMENSION_FONT_SIZE
+    ):
+        exporter.add_shape(shape, layer=layer)
+
+    # 5. Overstand (from top of block to fb bottom)
+    overstand = y_fb_bottom - y_top_of_block
+    overstand_line = Edge.make_line((dim_offset_x + 15, y_top_of_block),
+                                     (dim_offset_x + 15, y_fb_bottom))
+    for shape, layer in create_vertical_dimension(
+        overstand_line, f"{overstand:.1f}", offset_x=5, font_size=DIMENSION_FONT_SIZE
+    ):
+        exporter.add_shape(shape, layer=layer)
