@@ -33,15 +33,40 @@ def setup_exporter(show_measurements: bool) -> ExportSVG:
     return exporter
 
 def draw_body(exporter: ExportSVG, body_length: float, belly_edge_thickness: float,
-             rib_height: float, body_stop: float, arching_height: float) -> None:
-    """Draw body geometry."""
+             rib_height: float, body_stop: float, arching_height: float,
+             viol_break_end_x: float = None, viol_break_end_y: float = None) -> None:
+    """Draw body geometry.
+
+    For viols, pass viol_break_end_x/y to skip drawing the rib rectangle portion
+    that falls below the back break line.
+    """
     belly_rect = Rectangle(width=body_length, height=belly_edge_thickness)
     belly_rect = belly_rect.move(Location((body_length/2, belly_edge_thickness/2)))
     exporter.add_shape(belly_rect, layer="drawing")
 
-    rect = Rectangle(width=body_length, height=rib_height)
-    rect = rect.move(Location((body_length/2, belly_edge_thickness - rib_height/2)))
-    exporter.add_shape(rect, layer="drawing")
+    back_y = belly_edge_thickness - rib_height
+
+    if viol_break_end_x is not None:
+        # For viols: draw individual edges, skipping the cut corner
+        # Top edge (at belly level) is already drawn as belly rectangle bottom
+        # Right edge: full height at x=body_length
+        right_edge = Edge.make_line(
+            (body_length, belly_edge_thickness),
+            (body_length, back_y)
+        )
+        exporter.add_shape(right_edge, layer="drawing")
+        # Bottom edge: only from break_end_x to body_length (skip left portion)
+        bottom_edge = Edge.make_line(
+            (viol_break_end_x, back_y),
+            (body_length, back_y)
+        )
+        exporter.add_shape(bottom_edge, layer="drawing")
+        # Left edge is drawn by draw_viol_back (vertical + break line)
+    else:
+        # For non-viols: draw full rectangle
+        rect = Rectangle(width=body_length, height=rib_height)
+        rect = rect.move(Location((body_length/2, belly_edge_thickness - rib_height/2)))
+        exporter.add_shape(rect, layer="drawing")
 
     arch_spline = Spline.interpolate_three_points(
         (0, belly_edge_thickness),
@@ -100,13 +125,14 @@ def add_viol_back_dimensions(exporter: ExportSVG, show_measurements: bool,
     back_y = belly_edge_thickness - rib_height
 
     # Back break length dimension (horizontal, below the back)
+    # Use offset_y=-45 to avoid clashing with body stop (-15) and body length (-30)
     break_length_line = Edge.make_line(
         (break_end_x, back_y),
         (body_length, back_y)
     )
     for shape, layer in create_horizontal_dimension(
         break_length_line, f"{back_break_length:.1f}",
-        offset_y=-15, extension_length=3, font_size=DIMENSION_FONT_SIZE
+        offset_y=-45, extension_length=3, font_size=DIMENSION_FONT_SIZE
     ):
         exporter.add_shape(shape, layer=layer)
 
@@ -121,16 +147,16 @@ def add_viol_back_dimensions(exporter: ExportSVG, show_measurements: bool,
     ):
         exporter.add_shape(shape, layer=layer)
 
-    # Break angle dimension
-    # Create horizontal reference line at break start point
+    # Break angle dimension - placed at bottom of break segment (break_end)
+    # Horizontal reference line at break end point, pointing right (toward tail)
     horizontal_ref = Edge.make_line(
-        (break_start_x, break_start_y),
-        (break_start_x + 20, break_start_y)
+        (break_end_x, break_end_y),
+        (break_end_x + 20, break_end_y)
     )
-    # Break line for angle measurement
+    # Break line from break_end up to break_start
     break_line = Edge.make_line(
-        (break_start_x, break_start_y),
-        (break_end_x, break_end_y)
+        (break_end_x, break_end_y),
+        (break_start_x, break_start_y)
     )
     for shape, layer in create_angle_dimension(
         horizontal_ref, break_line,
