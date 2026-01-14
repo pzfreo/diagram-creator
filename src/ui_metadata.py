@@ -152,7 +152,28 @@ SECTIONS = {
     ),
 
     # ============================================
-    # STAGE 5: CROSS-SECTION - NECK DIMENSIONS
+    # STAGE 5: FINGERBOARD GEOMETRY
+    # ============================================
+    'fingerboard': SectionDefinition(
+        id='fingerboard',
+        title='Fingerboard',
+        type=SectionType.INPUT_ADVANCED,
+        icon='🎯',
+        default_expanded=False,
+        order=5,
+        parameter_names=[
+            'fingerboard_length',
+            'fingerboard_radius',
+            'fingerboard_width_at_nut',
+            'fingerboard_width_at_end',
+            'fb_visible_height_at_nut',
+            'fb_visible_height_at_join'
+        ],
+        description='Fingerboard dimensions - length (side view), curvature and width (cross-section), visible heights (both views)'
+    ),
+
+    # ============================================
+    # STAGE 6: CROSS-SECTION - NECK DIMENSIONS
     # ============================================
     'neck_cross_section': SectionDefinition(
         id='neck_cross_section',
@@ -160,33 +181,13 @@ SECTIONS = {
         type=SectionType.INPUT_ADVANCED,
         icon='📏',
         default_expanded=False,
-        order=5,
+        order=6,
         parameter_names=[
             'button_width_at_join',
             'neck_width_at_top_of_ribs',
             'fb_blend_percent'
         ],
-        description='Neck dimensions at the body join - defines the cross-section view'
-    ),
-
-    # ============================================
-    # STAGE 6: CROSS-SECTION - FINGERBOARD
-    # ============================================
-    'fingerboard_cross_section': SectionDefinition(
-        id='fingerboard_cross_section',
-        title='Cross-Section: Fingerboard',
-        type=SectionType.INPUT_ADVANCED,
-        icon='🎯',
-        default_expanded=False,
-        order=6,
-        parameter_names=[
-            'fingerboard_radius',
-            'fingerboard_width_at_nut',
-            'fingerboard_width_at_end',
-            'fb_visible_height_at_nut',
-            'fb_visible_height_at_join'
-        ],
-        description='Fingerboard dimensions and curvature - defines the playing surface in cross-section'
+        description='Neck dimensions at the body join - defines the neck cross-section view'
     ),
 
     # ============================================
@@ -216,7 +217,6 @@ SECTIONS = {
         default_expanded=False,
         order=8,
         parameter_names=[
-            'fingerboard_length',
             'rib_height',
             'belly_edge_thickness',
             'tailpiece_height'
