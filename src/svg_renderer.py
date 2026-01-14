@@ -611,12 +611,48 @@ def draw_neck_cross_section(exporter: ExportSVG,
         )
         exporter.add_shape(fb_bottom_line, layer="drawing")
 
-    # Add a horizontal reference line at top of block (belly level)
-    block_ref_line = Edge.make_line(
-        (-half_fb_width - 5, y_top_of_block),
-        (half_fb_width + 5, y_top_of_block)
+    # Add horizontal reference lines for key levels
+    # 1. Belly/ribs top line (dashed, extends beyond profile)
+    belly_ref_line = Edge.make_line(
+        (-half_fb_width - 15, y_top_of_block),
+        (half_fb_width + 15, y_top_of_block)
     )
-    exporter.add_shape(block_ref_line, layer="schematic")
+    exporter.add_shape(belly_ref_line, layer="schematic")
+
+    # 2. Fingerboard bottom reference line (dashed)
+    fb_bottom_ref = Edge.make_line(
+        (-half_fb_width - 15, y_fb_bottom),
+        (half_fb_width + 15, y_fb_bottom)
+    )
+    exporter.add_shape(fb_bottom_ref, layer="schematic")
+
+    # Add layer labels on the left side
+    label_x = -half_fb_width - 20
+    label_font_size = 3.0
+
+    # Neck Root / Block label (centered between button and top of block)
+    neck_root_y = (y_button + y_top_of_block) / 2
+    neck_root_label = Text("Neck Root", label_font_size, font=FONT_NAME)
+    neck_root_label = neck_root_label.move(Location((label_x - 15, neck_root_y)))
+    exporter.add_shape(neck_root_label, layer="dimensions")
+
+    # Belly label (at top of block level)
+    belly_label = Text("Belly", label_font_size, font=FONT_NAME)
+    belly_label = belly_label.move(Location((label_x - 15, y_top_of_block)))
+    exporter.add_shape(belly_label, layer="dimensions")
+
+    # Overstand label (centered between top of block and fb bottom)
+    overstand_y = (y_top_of_block + y_fb_bottom) / 2
+    overstand_label = Text("Overstand", label_font_size, font=FONT_NAME)
+    overstand_label = overstand_label.move(Location((label_x - 15, overstand_y)))
+    exporter.add_shape(overstand_label, layer="dimensions")
+
+    # Fingerboard label (centered in fingerboard area)
+    fb_visible_top = y_fb_top - sagitta_at_join
+    fb_label_y = (y_fb_bottom + fb_visible_top) / 2
+    fb_label = Text("Fingerboard", label_font_size, font=FONT_NAME)
+    fb_label = fb_label.move(Location((label_x - 15, fb_label_y)))
+    exporter.add_shape(fb_label, layer="dimensions")
 
 
 def add_cross_section_dimensions(exporter: ExportSVG, show_measurements: bool,
