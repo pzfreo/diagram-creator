@@ -20,11 +20,9 @@ function debounce(func, wait) {
     };
 }
 
-// Debounced generation - skips if errors are showing
+// Debounced generation
 const debouncedGenerate = debounce(() => {
-    if (!elements.errorPanel.classList.contains('show')) {
-        generateNeck();
-    }
+    generateNeck();
 }, DEBOUNCE_GENERATE);
 
 function markParametersModified() {
@@ -191,7 +189,7 @@ async function initializePython() {
         elements.genBtn.disabled = false;
     } catch (error) {
         ui.setStatus('error', '❌ Initialization failed');
-        ui.showErrors([`Failed to initialize: ${error.message}`]);
+        ui.showErrors([`Failed to initialize: ${error.message}`], 'critical');
         console.error('Initialization error:', error);
     }
 }
@@ -295,6 +293,28 @@ function collectParameters() {
     return params;
 }
 
+function classifyErrors(errors) {
+    if (!errors || errors.length === 0) return 'transient';
+
+    const errorText = errors.join(' ').toLowerCase();
+
+    // Validation errors are transient
+    if (errorText.includes('validation') ||
+        errorText.includes('must be') ||
+        errorText.includes('invalid value')) {
+        return 'transient';
+    }
+
+    // Geometry/calculation failures are persistent
+    if (errorText.includes('geometry') ||
+        errorText.includes('calculation') ||
+        errorText.includes('failed')) {
+        return 'persistent';
+    }
+
+    return 'transient';
+}
+
 async function generateNeck() {
     if (state.isGenerating) return;
     ui.hideErrors();
@@ -333,14 +353,15 @@ async function generateNeck() {
             // Track successful generation
             analytics.trackTemplateGenerated(params.instrument_family || 'unknown');
         } else {
-            ui.showErrors(result.errors);
+            const errorType = classifyErrors(result.errors);
+            ui.showErrors(result.errors, errorType);
             ui.setStatus('error', '❌ Generation failed - see errors below');
             analytics.trackError('generation', result.errors?.[0] || 'Unknown error');
         }
     } catch (error) {
         console.error('[Generate] Exception:', error);
         console.error('[Generate] Error stack:', error.stack);
-        ui.showErrors([`Unexpected error: ${error.message}`]);
+        ui.showErrors([`Unexpected error: ${error.message}`], 'persistent');
         ui.setStatus('error', '❌ Generation failed');
         analytics.trackError('generation_exception', error.message);
     } finally {
