@@ -4,18 +4,46 @@ import { OutputSection } from './components/output-section.js';
 import { ZOOM_CONFIG } from './constants.js';
 import { trackInstrumentFamilyChanged, trackParameterEdit } from './analytics.js';
 
+let errorDismissTimer = null;
+
 export function setStatus(type, message) {
     elements.status.className = `status-bar ${type}`;
     elements.statusText.textContent = message;
 }
 
-export function showErrors(errors) {
+export function showErrors(errors, type = 'transient') {
+    // Clear any existing auto-dismiss timer
+    if (errorDismissTimer) {
+        clearTimeout(errorDismissTimer);
+        errorDismissTimer = null;
+    }
+
     elements.errorList.innerHTML = errors.map(e => `<li>${e}</li>`).join('');
     elements.errorPanel.classList.add('show');
+
+    // Add error type class for styling
+    elements.errorPanel.classList.remove('transient', 'persistent', 'critical');
+    elements.errorPanel.classList.add(type);
+
+    // Auto-dismiss transient errors after 4 seconds
+    if (type === 'transient') {
+        errorDismissTimer = setTimeout(() => {
+            hideErrors();
+            errorDismissTimer = null;
+        }, 4000);
+    }
 }
 
 export function hideErrors() {
+    if (errorDismissTimer) {
+        clearTimeout(errorDismissTimer);
+        errorDismissTimer = null;
+    }
+
     elements.errorPanel.classList.remove('show');
+    setTimeout(() => {
+        elements.errorPanel.classList.remove('transient', 'persistent', 'critical');
+    }, 300);
 }
 
 export function checkParameterVisibility(param, currentParams) {

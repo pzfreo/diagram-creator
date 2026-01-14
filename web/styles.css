@@ -18,6 +18,8 @@
     --color-error-dark: #dc2626;
 
     --color-warning: #f59e0b;
+    --color-warning-dark: #d97706;
+    --color-warning-light: #fef3c7;
 
     --color-blue: #3b82f6;
     --color-blue-dark: #2563eb;
@@ -1041,6 +1043,33 @@ input[type="checkbox"] {
     left: 0.25rem;
     color: var(--color-error);
     font-weight: bold;
+}
+
+/* Transient errors - lighter, less alarming */
+.error-panel.transient {
+    background: var(--color-warning-light);
+    border-color: var(--color-warning-light);
+    border-left-color: var(--color-warning);
+}
+
+.error-panel.transient h3 {
+    color: var(--color-warning-dark);
+}
+
+.error-panel.transient li {
+    color: var(--color-warning-dark);
+}
+
+.error-panel.transient li:before {
+    color: var(--color-warning);
+}
+
+/* Persistent errors - standard error styling (already defined above) */
+
+/* Critical errors - strong emphasis */
+.error-panel.critical {
+    border-left-width: 6px;
+    box-shadow: var(--shadow-lg);
 }
 
 @media (max-width: 1200px) {
